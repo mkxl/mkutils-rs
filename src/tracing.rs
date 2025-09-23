@@ -1,11 +1,9 @@
-use crate::utils::Utils;
 use console_subscriber::{ConsoleLayer, Server as ConsoleServer};
-use std::net::IpAddr;
+use std::{io::StderrLock, net::IpAddr};
 use tracing_subscriber::{
     filter::LevelFilter,
     fmt::{MakeWriter, format::FmtSpan},
     layer::{Layer, SubscriberExt},
-    registry::Registry,
     util::SubscriberInitExt,
 };
 
@@ -15,10 +13,10 @@ pub struct Tracing<T> {
     tokio_console_enabled: bool,
     tokio_console_ip_addr: IpAddr,
     tokio_console_port: u16,
-    writer: Option<T>,
+    writer: T,
 }
 
-impl Default for Tracing<()> {
+impl Default for Tracing<fn() -> StderrLock<'static>> {
     fn default() -> Self {
         Self {
             level_filter: Self::DEFAULT_LEVEL_FILTER,
@@ -26,7 +24,7 @@ impl Default for Tracing<()> {
             tokio_console_enabled: Self::DEFAULT_TOKIO_CONSOLE_ENABLED,
             tokio_console_ip_addr: Self::DEFAULT_TOKIO_CONSOLE_IP_ADDR,
             tokio_console_port: Self::DEFAULT_TOKIO_CONSOLE_PORT,
-            writer: None,
+            writer: Self::default_writer,
         }
     }
 }
@@ -41,6 +39,10 @@ impl<T> Tracing<T> {
         FmtSpan::NEW | FmtSpan::CLOSE
     }
 
+    fn default_writer() -> StderrLock<'static> {
+        std::io::stderr().lock()
+    }
+
     #[must_use]
     pub fn with_writer<W>(self, writer: W) -> Tracing<W> {
         // TODO: any better way to do this?
@@ -50,11 +52,19 @@ impl<T> Tracing<T> {
             tokio_console_enabled: self.tokio_console_enabled,
             tokio_console_ip_addr: self.tokio_console_ip_addr,
             tokio_console_port: self.tokio_console_port,
-            writer: writer.some(),
+            writer,
         }
     }
 
-    fn init_helper<L: Layer<Registry> + Send + Sync>(&self, log_layer: L) {
+    pub fn init(self)
+    where
+        T: 'static + for<'a> MakeWriter<'a> + Send + Sync,
+    {
+        let log_layer = tracing_subscriber::fmt::layer()
+            .with_span_events(self.span_events)
+            .json()
+            .with_writer(self.writer)
+            .with_filter(self.level_filter);
         let registry = tracing_subscriber::registry().with(log_layer);
 
         if self.tokio_console_enabled {
@@ -65,21 +75,6 @@ impl<T> Tracing<T> {
             registry.init();
         } else {
             registry.init();
-        }
-    }
-
-    pub fn init(mut self)
-    where
-        T: 'static + for<'a> MakeWriter<'a> + Send + Sync,
-    {
-        // TODO: [https://github.com/tokio-rs/tracing/pull/2739]
-        let log_layer = tracing_subscriber::fmt::layer()
-            .with_span_events(self.span_events.clone())
-            .json();
-
-        match self.writer.take() {
-            Some(writer) => self.init_helper(log_layer.with_writer(writer).with_filter(self.level_filter)),
-            None => self.init_helper(log_layer.with_filter(self.level_filter)),
         }
     }
 }

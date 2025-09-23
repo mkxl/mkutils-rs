@@ -6,10 +6,11 @@ edition = "2024"
 [dependencies]
 anyhow = { version = "1.0.100" }
 console-subscriber = "0.4.1"
-poem-openapi = "5.1.16"
+poem = { git = "https://github.com/0xb002f0/poem", version = "3.1.12", features = ["anyhow", "websocket"], branch = "0xb002f0/ulid" }
+poem-openapi = { git = "https://github.com/0xb002f0/poem", version = "5.1.16", features = ["ulid", "websocket"], branch = "0xb002f0/ulid" }
 reqwest = { version = "0.12.23", features = ["json"] }
 serde = { version = "1.0.226", features = ["derive"] }
-serde_json = "1.0.145"
+serde_json = { git = "https://github.com/mkxl/serde-json", version = "1.0.144" }
 tokio = "1.47.1"
 tracing = { version = "0.1.41", features = ["valuable"] }
 tracing-subscriber = { version = "0.3.20", features = ["json", "valuable"] }

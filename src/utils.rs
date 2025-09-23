@@ -95,6 +95,17 @@ pub trait Utils {
         self.as_ref().file_name().context("path has no file_name")
     }
 
+    #[allow(async_fn_in_trait)]
+    async fn into_select<T: Future<Output = Self::Output>>(self, rhs: T) -> Self::Output
+    where
+        Self: Future + Sized,
+    {
+        tokio::select! {
+            value = self => value,
+            value = rhs => value,
+        }
+    }
+
     fn into_string(self) -> Result<String, Error>
     where
         Self: Is<PathBuf> + Sized,

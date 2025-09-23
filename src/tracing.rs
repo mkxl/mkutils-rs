@@ -16,6 +16,13 @@ pub struct Tracing<T> {
     writer: T,
 }
 
+impl Tracing<fn() -> StderrLock<'static>> {
+    pub const DEFAULT_LEVEL_FILTER: LevelFilter = LevelFilter::INFO;
+    pub const DEFAULT_TOKIO_CONSOLE_ENABLED: bool = false;
+    pub const DEFAULT_TOKIO_CONSOLE_IP_ADDR: IpAddr = ConsoleServer::DEFAULT_IP;
+    pub const DEFAULT_TOKIO_CONSOLE_PORT: u16 = ConsoleServer::DEFAULT_PORT;
+}
+
 impl Default for Tracing<fn() -> StderrLock<'static>> {
     fn default() -> Self {
         Self {
@@ -30,12 +37,6 @@ impl Default for Tracing<fn() -> StderrLock<'static>> {
 }
 
 impl<T> Tracing<T> {
-    pub const DEFAULT_TOKIO_CONSOLE_PORT: u16 = ConsoleServer::DEFAULT_PORT;
-
-    const DEFAULT_LEVEL_FILTER: LevelFilter = LevelFilter::INFO;
-    const DEFAULT_TOKIO_CONSOLE_ENABLED: bool = false;
-    const DEFAULT_TOKIO_CONSOLE_IP_ADDR: IpAddr = ConsoleServer::DEFAULT_IP;
-
     fn default_span_events() -> FmtSpan {
         FmtSpan::NEW | FmtSpan::CLOSE
     }

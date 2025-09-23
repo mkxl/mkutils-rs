@@ -30,10 +30,11 @@ impl Default for Tracing<fn() -> StderrLock<'static>> {
 }
 
 impl<T> Tracing<T> {
+    pub const DEFAULT_TOKIO_CONSOLE_PORT: u16 = ConsoleServer::DEFAULT_PORT;
+
     const DEFAULT_LEVEL_FILTER: LevelFilter = LevelFilter::INFO;
     const DEFAULT_TOKIO_CONSOLE_ENABLED: bool = false;
     const DEFAULT_TOKIO_CONSOLE_IP_ADDR: IpAddr = ConsoleServer::DEFAULT_IP;
-    const DEFAULT_TOKIO_CONSOLE_PORT: u16 = ConsoleServer::DEFAULT_PORT;
 
     fn default_span_events() -> FmtSpan {
         FmtSpan::NEW | FmtSpan::CLOSE

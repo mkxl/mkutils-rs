@@ -1,0 +1,12 @@
+[package]
+name = "mkutils"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+console-subscriber = "0.4.1"
+tracing = { version = "0.1.41", features = ["valuable"] }
+tracing-subscriber = { version = "0.3.20", features = ["json", "valuable"] }
+
+[lints.clippy.pedantic]
+level = "deny"

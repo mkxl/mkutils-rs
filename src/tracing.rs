@@ -44,6 +44,20 @@ impl<T> Tracing<T> {
     }
 
     #[must_use]
+    pub fn with_tokio_console_port(mut self, tokio_console_port: u16) -> Self {
+        self.tokio_console_port = tokio_console_port;
+
+        self
+    }
+
+    #[must_use]
+    pub fn with_tokio_console_enabled(mut self, tokio_console_enabled: bool) -> Self {
+        self.tokio_console_enabled = tokio_console_enabled;
+
+        self
+    }
+
+    #[must_use]
     pub fn with_writer<W>(self, writer: W) -> Tracing<W> {
         // TODO: any better way to do this?
         Tracing {

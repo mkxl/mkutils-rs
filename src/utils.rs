@@ -9,6 +9,7 @@ use std::{
     ffi::OsStr,
     fmt::{Debug, Display},
     fs::File,
+    future::Future,
     io::Error as IoError,
     marker::Unpin,
     path::{Path, PathBuf},
@@ -22,6 +23,16 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         std::path::absolute(self)?.ok()
+    }
+
+    #[allow(async_fn_in_trait)]
+    async fn achain<T: Future>(self, rhs: T) -> T::Output
+    where
+        Self: Future + Sized,
+    {
+        self.await;
+
+        rhs.await
     }
 
     fn as_utf8(&self) -> Result<&str, Utf8Error>

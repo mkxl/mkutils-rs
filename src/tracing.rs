@@ -18,7 +18,7 @@ pub struct Tracing<T> {
     writer: Option<T>,
 }
 
-impl<T> Default for Tracing<T> {
+impl Default for Tracing<()> {
     fn default() -> Self {
         Self {
             level_filter: Self::DEFAULT_LEVEL_FILTER,
@@ -42,10 +42,16 @@ impl<T> Tracing<T> {
     }
 
     #[must_use]
-    pub fn with_writer(mut self, writer: T) -> Self {
-        self.writer = writer.some();
-
-        self
+    pub fn with_writer<W>(self, writer: W) -> Tracing<W> {
+        // TODO: any better way to do this?
+        Tracing {
+            level_filter: self.level_filter,
+            span_events: self.span_events,
+            tokio_console_enabled: self.tokio_console_enabled,
+            tokio_console_ip_addr: self.tokio_console_ip_addr,
+            tokio_console_port: self.tokio_console_port,
+            writer: writer.some(),
+        }
     }
 
     fn init_helper<L: Layer<Registry> + Send + Sync>(&self, log_layer: L) {

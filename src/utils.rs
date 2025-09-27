@@ -1,5 +1,6 @@
 use crate::{debugged::Debugged, is::Is};
 use anyhow::{Context, Error};
+use poem::{Endpoint, IntoResponse};
 use poem_openapi::payload::Json as PoemJson;
 use reqwest::Response;
 use serde::Serialize;
@@ -86,6 +87,15 @@ pub trait Utils {
 
     fn debug(&self) -> Debugged<Self> {
         Debugged::new(self)
+    }
+
+    fn into_endpoint(self) -> impl Endpoint<Output = Self>
+    where
+        Self: Clone + IntoResponse + Sync,
+    {
+        let func = move |_request| self.clone();
+
+        poem::endpoint::make_sync(func)
     }
 
     fn file_name_ok(&self) -> Result<&OsStr, Error>

@@ -1,6 +1,6 @@
 use crate::{debugged::Debugged, is::Is};
 use anyhow::{Context, Error as AnyhowError};
-use futures::StreamExt;
+use futures::{Sink, SinkExt, StreamExt};
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::payload::Json as PoemJson;
 use reqwest::Response;
@@ -202,6 +202,13 @@ pub trait Utils {
         (self, rhs)
     }
 
+    fn pipe<T, F: FnOnce(Self) -> T>(self, func: F) -> T
+    where
+        Self: Sized,
+    {
+        func(self)
+    }
+
     fn poem_json(self) -> PoemJson<Self>
     where
         Self: Sized,
@@ -232,6 +239,13 @@ pub trait Utils {
         Self: Sized,
     {
         std::future::ready(self)
+    }
+
+    async fn send_to<T: Sink<Self> + Unpin>(self, mut sink: T) -> Result<(), T::Error>
+    where
+        Self: Sized,
+    {
+        sink.send(self).await
     }
 
     fn send_to_oneshot(self, sender: OneshotSender<Self>) -> Result<(), AnyhowError>

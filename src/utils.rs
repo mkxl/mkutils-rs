@@ -1,5 +1,6 @@
 use crate::{debugged::Debugged, is::Is};
 use anyhow::{Context, Error as AnyhowError};
+use futures::StreamExt;
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::payload::Json as PoemJson;
 use reqwest::Response;
@@ -16,11 +17,7 @@ use std::{
     path::{Path, PathBuf},
     str::Utf8Error,
 };
-use tokio::{
-    io::AsyncReadExt,
-    sync::{mpsc::UnboundedReceiver, oneshot::Sender as OneshotSender},
-    task::JoinHandle,
-};
+use tokio::{io::AsyncReadExt, sync::oneshot::Sender as OneshotSender, task::JoinHandle};
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
@@ -206,16 +203,15 @@ pub trait Utils {
         std::println!("{self}");
     }
 
-    async fn receive<T>(&mut self) -> Result<T, AnyhowError>
+    async fn next_stream(&mut self) -> Result<Self::Item, AnyhowError>
     where
-        Self: BorrowMut<UnboundedReceiver<T>>,
+        Self: StreamExt + Unpin,
     {
-        // [https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.UnboundedReceiver.html#method.recv]
-        match self.borrow_mut().recv().await {
-            Some(value) => value.ok(),
+        match self.borrow_mut().next().await {
+            Some(item) => item.ok(),
             None => anyhow::bail!(
-                "{type_name} channel has been closed and there are no remaining messages in its buffer",
-                type_name = std::any::type_name::<T>()
+                "{type_name} stream has been closed",
+                type_name = std::any::type_name::<Self::Item>()
             ),
         }
     }

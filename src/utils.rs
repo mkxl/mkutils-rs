@@ -10,7 +10,7 @@ use std::{
     ffi::OsStr,
     fmt::{Debug, Display},
     fs::File,
-    future::Future,
+    future::{Future, Ready},
     io::Error as IoError,
     marker::Unpin,
     path::{Path, PathBuf},
@@ -229,6 +229,13 @@ pub trait Utils {
         self.read_to_string(&mut string).await?;
 
         string.ok()
+    }
+
+    fn ready(self) -> Ready<Self>
+    where
+        Self: Sized,
+    {
+        std::future::ready(self)
     }
 
     fn send_to_oneshot(self, sender: OneshotSender<Self>) -> Result<(), AnyhowError>

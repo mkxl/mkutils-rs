@@ -175,6 +175,19 @@ pub trait Utils {
         }
     }
 
+    async fn next_item(&mut self) -> Result<Self::Item, AnyhowError>
+    where
+        Self: StreamExt + Unpin,
+    {
+        match self.borrow_mut().next().await {
+            Some(item) => item.ok(),
+            None => anyhow::bail!(
+                "{type_name} stream has been closed",
+                type_name = std::any::type_name::<Self::Item>()
+            ),
+        }
+    }
+
     fn ok<E>(self) -> Result<Self, E>
     where
         Self: Sized,
@@ -201,19 +214,6 @@ pub trait Utils {
         Self: Display,
     {
         std::println!("{self}");
-    }
-
-    async fn next_stream(&mut self) -> Result<Self::Item, AnyhowError>
-    where
-        Self: StreamExt + Unpin,
-    {
-        match self.borrow_mut().next().await {
-            Some(item) => item.ok(),
-            None => anyhow::bail!(
-                "{type_name} stream has been closed",
-                type_name = std::any::type_name::<Self::Item>()
-            ),
-        }
     }
 
     async fn read_string(&mut self) -> Result<String, AnyhowError>

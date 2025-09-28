@@ -206,10 +206,11 @@ pub trait Utils {
         std::println!("{self}");
     }
 
-    async fn try_recv<T>(&mut self) -> Result<T, AnyhowError>
+    async fn receive<T>(&mut self) -> Result<T, AnyhowError>
     where
         Self: BorrowMut<UnboundedReceiver<T>>,
     {
+        // [https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.UnboundedReceiver.html#method.recv]
         match self.borrow_mut().recv().await {
             Some(value) => value.ok(),
             None => anyhow::bail!(

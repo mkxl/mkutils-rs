@@ -1,12 +1,12 @@
 use crate::{debugged::Debugged, is::Is};
-use anyhow::{Context, Error};
+use anyhow::{Context, Error as AnyhowError};
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::payload::Json as PoemJson;
 use reqwest::Response;
 use serde::Serialize;
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
-    borrow::Borrow,
+    borrow::{Borrow, BorrowMut},
     ffi::OsStr,
     fmt::{Debug, Display},
     fs::File,
@@ -16,8 +16,13 @@ use std::{
     path::{Path, PathBuf},
     str::Utf8Error,
 };
-use tokio::{io::AsyncReadExt, sync::oneshot::Sender as OneshotSender, task::JoinHandle};
+use tokio::{
+    io::AsyncReadExt,
+    sync::{mpsc::UnboundedReceiver, oneshot::Sender as OneshotSender},
+    task::JoinHandle,
+};
 
+#[allow(async_fn_in_trait)]
 pub trait Utils {
     fn absolute(&self) -> Result<PathBuf, IoError>
     where
@@ -26,7 +31,6 @@ pub trait Utils {
         std::path::absolute(self)?.ok()
     }
 
-    #[allow(async_fn_in_trait)]
     async fn achain<T: Future>(self, rhs: T) -> T::Output
     where
         Self: Future + Sized,
@@ -51,8 +55,7 @@ pub trait Utils {
     }
 
     // NOTE: [https://docs.rs/reqwest/latest/reqwest/struct.Response.html#method.error_for_status]
-    #[allow(async_fn_in_trait)]
-    async fn check_status(self) -> Result<Response, Error>
+    async fn check_status(self) -> Result<Response, AnyhowError>
     where
         Self: Into<Response>,
     {
@@ -98,14 +101,13 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
-    fn file_name_ok(&self) -> Result<&OsStr, Error>
+    fn file_name_ok(&self) -> Result<&OsStr, AnyhowError>
     where
         Self: AsRef<Path>,
     {
         self.as_ref().file_name().context("path has no file_name")
     }
 
-    #[allow(async_fn_in_trait)]
     async fn into_select<T: Future<Output = Self::Output>>(self, rhs: T) -> Self::Output
     where
         Self: Future + Sized,
@@ -116,7 +118,7 @@ pub trait Utils {
         }
     }
 
-    fn into_string(self) -> Result<String, Error>
+    fn into_string(self) -> Result<String, AnyhowError>
     where
         Self: Is<PathBuf> + Sized,
     {
@@ -126,7 +128,7 @@ pub trait Utils {
         }
     }
 
-    fn invalid_utf8_err<T>(&self) -> Result<T, Error>
+    fn invalid_utf8_err<T>(&self) -> Result<T, AnyhowError>
     where
         Self: Debug,
     {
@@ -204,8 +206,20 @@ pub trait Utils {
         std::println!("{self}");
     }
 
-    #[allow(async_fn_in_trait)]
-    async fn read_string(&mut self) -> Result<String, Error>
+    async fn try_recv<T>(&mut self) -> Result<T, AnyhowError>
+    where
+        Self: BorrowMut<UnboundedReceiver<T>>,
+    {
+        match self.borrow_mut().recv().await {
+            Some(value) => value.ok(),
+            None => anyhow::bail!(
+                "{type_name} channel has been closed and there are no remaining messages in its buffer",
+                type_name = std::any::type_name::<T>()
+            ),
+        }
+    }
+
+    async fn read_string(&mut self) -> Result<String, AnyhowError>
     where
         Self: AsyncReadExt + Unpin,
     {
@@ -216,7 +230,7 @@ pub trait Utils {
         string.ok()
     }
 
-    fn send_to_oneshot(self, sender: OneshotSender<Self>) -> Result<(), Error>
+    fn send_to_oneshot(self, sender: OneshotSender<Self>) -> Result<(), AnyhowError>
     where
         Self: Sized,
     {
@@ -256,7 +270,7 @@ pub trait Utils {
         (begin, end).some()
     }
 
-    fn to_str_ok(&self) -> Result<&str, Error>
+    fn to_str_ok(&self) -> Result<&str, AnyhowError>
     where
         Self: AsRef<Path>,
     {
@@ -268,7 +282,7 @@ pub trait Utils {
         }
     }
 
-    fn to_uri(&self) -> Result<String, Error>
+    fn to_uri(&self) -> Result<String, AnyhowError>
     where
         Self: AsRef<Path>,
     {

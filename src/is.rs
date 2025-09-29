@@ -1,4 +1,4 @@
-pub trait Is<T> {
+pub trait Is<T>: Sized {
     fn get(self) -> T;
 }
 

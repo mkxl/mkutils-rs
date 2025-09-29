@@ -54,9 +54,9 @@ pub trait Utils {
     // NOTE: [https://docs.rs/reqwest/latest/reqwest/struct.Response.html#method.error_for_status]
     async fn check_status(self) -> Result<Response, AnyhowError>
     where
-        Self: Into<Response>,
+        Self: Is<Response>,
     {
-        let response = self.into();
+        let response = self.get();
         let status = response.status();
 
         if !status.is_client_error() && !status.is_server_error() {
@@ -117,7 +117,7 @@ pub trait Utils {
 
     fn into_string(self) -> Result<String, AnyhowError>
     where
-        Self: Is<PathBuf> + Sized,
+        Self: Is<PathBuf>,
     {
         match self.get().into_os_string().into_string() {
             Ok(string) => string.ok(),
@@ -160,7 +160,7 @@ pub trait Utils {
 
     fn map_into<Y, X: Into<Y>>(self) -> Option<Y>
     where
-        Self: Is<Option<X>> + Sized,
+        Self: Is<Option<X>>,
     {
         self.get().map(X::into)
     }

@@ -7,7 +7,7 @@ use reqwest::Response;
 use serde::Serialize;
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
-    borrow::{Borrow, BorrowMut},
+    borrow::Borrow,
     collections::HashMap,
     ffi::OsStr,
     fmt::{Debug, Display},
@@ -177,14 +177,27 @@ pub trait Utils {
         }
     }
 
-    async fn next_item(&mut self) -> Result<Self::Item, AnyhowError>
+    async fn next_item_async(&mut self) -> Result<Self::Item, AnyhowError>
     where
         Self: StreamExt + Unpin,
     {
-        match self.borrow_mut().next().await {
+        match self.next().await {
             Some(item) => item.ok(),
             None => anyhow::bail!(
-                "{type_name} stream has been closed",
+                "{type_name} stream is empty",
+                type_name = std::any::type_name::<Self::Item>()
+            ),
+        }
+    }
+
+    fn next_item(&mut self) -> Result<Self::Item, AnyhowError>
+    where
+        Self: Iterator,
+    {
+        match self.next() {
+            Some(item) => item.ok(),
+            None => anyhow::bail!(
+                "{type_name} iterator is empty",
                 type_name = std::any::type_name::<Self::Item>()
             ),
         }

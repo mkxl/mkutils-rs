@@ -150,11 +150,11 @@ pub trait Utils {
     }
 
     #[must_use]
-    fn log(self) -> Self
+    fn log<C: Display>(self, message: C) -> Self
     where
         Self: Debug + Sized,
     {
-        tracing::info!(value = ?self);
+        tracing::info!(%message, value = ?self);
 
         self
     }

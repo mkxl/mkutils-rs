@@ -15,6 +15,7 @@ use std::{
     future::{Future, Ready},
     hash::Hash,
     io::Error as IoError,
+    iter::Once,
     marker::Unpin,
     path::{Path, PathBuf},
     str::Utf8Error,
@@ -208,6 +209,13 @@ pub trait Utils {
         Self: Sized,
     {
         Ok(self)
+    }
+
+    fn once(self) -> Once<Self>
+    where
+        Self: Sized,
+    {
+        std::iter::once(self)
     }
 
     fn pair<T>(self, rhs: T) -> (Self, T)

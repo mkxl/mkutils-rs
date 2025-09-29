@@ -150,6 +150,16 @@ pub trait Utils {
     }
 
     #[must_use]
+    fn log(self) -> Self
+    where
+        Self: Debug + Sized,
+    {
+        tracing::info!(value = ?self);
+
+        self
+    }
+
+    #[must_use]
     fn log_error<T, C: Display, E: Debug + Display>(self, context: C) -> Self
     where
         Self: Borrow<Result<T, E>> + Sized,

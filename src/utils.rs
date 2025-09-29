@@ -3,7 +3,7 @@ use anyhow::{Context, Error as AnyhowError};
 use futures::{Sink, SinkExt, StreamExt};
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::payload::Json as PoemJson;
-use reqwest::Response;
+use reqwest::{RequestBuilder, Response};
 use serde::Serialize;
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
@@ -244,6 +244,16 @@ pub trait Utils {
         Self: Display,
     {
         std::println!("{self}");
+    }
+
+    fn query_once<T: Serialize>(self, name: &str, value: Option<T>) -> RequestBuilder
+    where
+        Self: Is<RequestBuilder>,
+    {
+        let query: &[(&str, T)] = if let Some(value) = value { &[(name, value)] } else { &[] };
+        let request_builder = self.into_self();
+
+        request_builder.query(query)
     }
 
     async fn read_string(&mut self) -> Result<String, AnyhowError>

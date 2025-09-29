@@ -8,10 +8,12 @@ use serde::Serialize;
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
     borrow::{Borrow, BorrowMut},
+    collections::HashMap,
     ffi::OsStr,
     fmt::{Debug, Display},
     fs::File,
     future::{Future, Ready},
+    hash::Hash,
     io::Error as IoError,
     marker::Unpin,
     path::{Path, PathBuf},
@@ -56,7 +58,7 @@ pub trait Utils {
     where
         Self: Is<Response>,
     {
-        let response = self.get();
+        let response = self.into_self();
         let status = response.status();
 
         if !status.is_client_error() && !status.is_server_error() {
@@ -119,7 +121,7 @@ pub trait Utils {
     where
         Self: Is<PathBuf>,
     {
-        match self.get().into_os_string().into_string() {
+        match self.into_self().into_os_string().into_string() {
             Ok(string) => string.ok(),
             Err(os_string) => os_string.invalid_utf8_err(),
         }
@@ -162,7 +164,7 @@ pub trait Utils {
     where
         Self: Is<Option<X>>,
     {
-        self.get().map(X::into)
+        self.into_self().map(X::into)
     }
 
     fn map_as_ref<'a, Y: ?Sized, X: 'a + AsRef<Y>>(&'a self) -> Option<&'a Y>
@@ -305,6 +307,13 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         "file://".cat(self.absolute()?.to_str_ok()?).ok()
+    }
+
+    fn try_get<'a, V, Q: Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash>(&'a self, key: &Q) -> Result<&'a V, AnyhowError>
+    where
+        Self: Borrow<HashMap<K, V>>,
+    {
+        self.borrow().get(key).context("the key is not present in the hashmap")
     }
 
     fn unit(&self) {}

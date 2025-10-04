@@ -77,8 +77,8 @@ impl Process {
     }
 
     #[must_use]
-    pub fn into_stdio(self) -> (ChildStdin, ChildStdout, ChildStderr) {
-        (self.stdin, self.stdout, self.stderr)
+    pub fn into_parts(self) -> (Child, ChildStdin, ChildStdout, ChildStderr) {
+        (self.child, self.stdin, self.stdout, self.stderr)
     }
 
     pub async fn run(&mut self) -> Result<ExitStatus, AnyhowError> {

@@ -1,25 +1,24 @@
 use console_subscriber::{ConsoleLayer, Server as ConsoleServer};
 use std::{io::StderrLock, net::IpAddr};
-use tracing::Subscriber as SubscriberTrait;
 use tracing_subscriber::{
     filter::LevelFilter,
     fmt::{
         FormatEvent, FormatFields, Layer, MakeWriter,
         format::{FmtSpan, Format},
     },
-    layer::{Layer as LayerTrait, SubscriberExt},
-    registry::LookupSpan,
+    layer::{Layer as _, SubscriberExt},
+    registry::Registry,
     util::SubscriberInitExt,
 };
 
-pub struct Tracing<T> {
+pub struct Tracing<W> {
     level_filter: LevelFilter,
     span_events: FmtSpan,
     json_enabled: bool,
     tokio_console_enabled: bool,
     tokio_console_ip_addr: IpAddr,
     tokio_console_port: u16,
-    writer: T,
+    writer: W,
 }
 
 impl Tracing<fn() -> StderrLock<'static>> {
@@ -44,7 +43,7 @@ impl Default for Tracing<fn() -> StderrLock<'static>> {
     }
 }
 
-impl<T> Tracing<T> {
+impl<W> Tracing<W> {
     fn default_span_events() -> FmtSpan {
         FmtSpan::NEW | FmtSpan::CLOSE
     }
@@ -68,7 +67,7 @@ impl<T> Tracing<T> {
     }
 
     #[must_use]
-    pub fn with_writer<W>(self, writer: W) -> Tracing<W> {
+    pub fn with_writer<W2>(self, writer: W2) -> Tracing<W2> {
         // TODO: any better way to do this?
         Tracing {
             level_filter: self.level_filter,
@@ -81,43 +80,40 @@ impl<T> Tracing<T> {
         }
     }
 
-    fn layer() {}
-
-    fn init_helper<S, N, F, T2, W>(self, log_layer: Layer<S, N, Format<F, T2>, W>)
+    fn init_helper<N, F, T, W0>(self, layer: Layer<Registry, N, Format<F, T>, W0>)
     where
-        S: for<'a> LookupSpan<'a> + SubscriberTrait,
-        N: 'static + for<'a> FormatFields<'a>,
-        Format<F, T2>: 'static + FormatEvent<S, N>,
-        T: 'static + for<'a> MakeWriter<'a>,
-        W: 'static + for<'a> MakeWriter<'a>, // T: 'static + for<'a> MakeWriter<'a> + Send + Sync,
+        N: 'static + for<'a> FormatFields<'a> + Send + Sync,
+        Format<F, T>: 'static + FormatEvent<Registry, N> + Send + Sync,
+        W0: 'static + for<'a> MakeWriter<'a> + Send + Sync,
+        W: 'static + for<'a> MakeWriter<'a> + Send + Sync,
     {
-        let log_layer = log_layer
+        let layer = layer
             .with_span_events(self.span_events)
             .with_writer(self.writer)
             .with_filter(self.level_filter);
-        let registry = tracing_subscriber::registry().with(log_layer);
+        let layer = tracing_subscriber::registry().with(layer);
 
         if self.tokio_console_enabled {
             let tokio_console_server_addr = (self.tokio_console_ip_addr, self.tokio_console_port);
             let console_layer = ConsoleLayer::builder().server_addr(tokio_console_server_addr).spawn();
-            let registry = registry.with(console_layer);
+            let layer = layer.with(console_layer);
 
-            registry.init();
+            layer.init();
         } else {
-            registry.init();
+            layer.init();
         }
     }
 
     pub fn init(self)
     where
-        T: 'static + for<'a> MakeWriter<'a> + Send + Sync,
+        W: 'static + for<'a> MakeWriter<'a> + Send + Sync,
     {
-        let log_layer = tracing_subscriber::fmt::layer();
+        let layer = tracing_subscriber::fmt::layer();
 
         if self.json_enabled {
-            self.init_helper(log_layer.json())
+            self.init_helper(layer.json());
         } else {
-            self.init_helper(log_layer)
+            self.init_helper(layer);
         }
     }
 }

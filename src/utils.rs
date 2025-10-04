@@ -4,7 +4,7 @@ use futures::{Sink, SinkExt, StreamExt};
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::payload::Json as PoemJson;
 use reqwest::{RequestBuilder, Response};
-use serde::Serialize;
+use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
     borrow::Borrow,
@@ -147,6 +147,13 @@ pub trait Utils {
         Self: Serialize,
     {
         serde_json::to_value(self)
+    }
+
+    fn json_from_bytes<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>
+    where
+        Self: AsRef<[u8]>,
+    {
+        serde_json::from_slice(self.as_ref())
     }
 
     #[must_use]

@@ -7,7 +7,7 @@ use reqwest::{RequestBuilder, Response};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
-    borrow::Borrow,
+    borrow::{Borrow, Cow},
     collections::HashMap,
     ffi::OsStr,
     fmt::{Debug, Display},
@@ -24,11 +24,17 @@ use tokio::{io::AsyncReadExt, sync::oneshot::Sender as OneshotSender, task::Join
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
-    fn absolute(&self) -> Result<PathBuf, IoError>
+    fn absolute(&self) -> Result<Cow<Path>, IoError>
     where
         Self: AsRef<Path>,
     {
-        std::path::absolute(self)?.ok()
+        let path = self.as_ref();
+
+        if path.is_absolute() {
+            path.borrowed().ok()
+        } else {
+            std::path::absolute(path)?.owned::<Path>().ok()
+        }
     }
 
     async fn achain<T: Future>(self, rhs: T) -> T::Output
@@ -45,6 +51,13 @@ pub trait Utils {
         Self: AsRef<[u8]>,
     {
         str::from_utf8(self.as_ref())
+    }
+
+    fn borrowed(&self) -> Cow<Self>
+    where
+        Self: ToOwned,
+    {
+        Cow::Borrowed(self)
     }
 
     fn cat<T: Display>(&self, rhs: T) -> String
@@ -233,6 +246,13 @@ pub trait Utils {
         Self: Sized,
     {
         std::iter::once(self)
+    }
+
+    fn owned<B: ?Sized + ToOwned<Owned = Self>>(self) -> Cow<'static, B>
+    where
+        Self: Sized,
+    {
+        Cow::Owned(self)
     }
 
     fn pair<T>(self, rhs: T) -> (Self, T)

@@ -149,7 +149,7 @@ pub trait Utils {
         serde_json::to_value(self)
     }
 
-    fn json_from_bytes<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>
+    fn json_from_byte_str<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>
     where
         Self: AsRef<[u8]>,
     {

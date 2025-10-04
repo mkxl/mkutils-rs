@@ -12,7 +12,7 @@ poem-openapi = { git = "https://github.com/0xb002f0/poem", version = "5.1.16", f
 reqwest = { version = "0.12.23", features = ["json"] }
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = { git = "https://github.com/mkxl/serde-json", version = "1.0.144" }
-tokio = "1.47.1"
+tokio = { version = "1.47.1", features = ["process"] }
 tokio-stream = { version = "0.1.17", features = ["io-util"] }
 tracing = { version = "0.1.41", features = ["valuable"] }
 tracing-subscriber = { version = "0.3.20", features = ["json", "valuable"] }

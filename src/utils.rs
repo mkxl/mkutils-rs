@@ -19,6 +19,7 @@ use std::{
     marker::Unpin,
     path::{Path, PathBuf},
     str::Utf8Error,
+    sync::atomic::{AtomicUsize, Ordering},
 };
 use tokio::{io::AsyncReadExt, sync::oneshot::Sender as OneshotSender, task::JoinHandle};
 
@@ -103,6 +104,13 @@ pub trait Utils {
 
     fn debug(&self) -> Debugged<Self> {
         Debugged::new(self)
+    }
+
+    fn inc(&self) -> usize
+    where
+        Self: Borrow<AtomicUsize>,
+    {
+        self.borrow().fetch_add(1, Ordering::SeqCst)
     }
 
     fn into_endpoint(self) -> impl Endpoint<Output = Self>

@@ -1,10 +1,10 @@
 use futures::Stream;
 use tokio::{
     io::{AsyncBufRead, Lines},
-    sync::mpsc::UnboundedReceiver as UnboundedMpscReceiver,
+    sync::mpsc::UnboundedReceiver as MpscUnboundedReceiver,
     time::Interval,
 };
-use tokio_stream::wrappers::{IntervalStream, LinesStream, UnboundedReceiverStream as UnboundedMpscReceiverStream};
+use tokio_stream::wrappers::{IntervalStream, LinesStream, UnboundedReceiverStream as MpscUnboundedReceiverStream};
 
 pub trait IntoStream {
     type Stream: Stream;
@@ -28,8 +28,8 @@ impl<R: AsyncBufRead> IntoStream for Lines<R> {
     }
 }
 
-impl<T> IntoStream for UnboundedMpscReceiver<T> {
-    type Stream = UnboundedMpscReceiverStream<T>;
+impl<T> IntoStream for MpscUnboundedReceiver<T> {
+    type Stream = MpscUnboundedReceiverStream<T>;
 
     fn into_stream(self) -> Self::Stream {
         self.into()

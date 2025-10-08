@@ -387,7 +387,7 @@ pub trait Utils {
 
     fn to_str_ok(&self) -> Result<&str, AnyhowError>
     where
-        Self: AsRef<Path>,
+        Self: AsRef<OsStr>,
     {
         let path = self.as_ref();
 
@@ -401,7 +401,7 @@ pub trait Utils {
     where
         Self: AsRef<Path>,
     {
-        "file://".cat(self.absolute()?.to_str_ok()?).ok()
+        "file://".cat(self.absolute()?.as_os_str().to_str_ok()?).ok()
     }
 
     fn try_get<'a, V, Q: Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash>(&'a self, key: &Q) -> Result<&'a V, AnyhowError>

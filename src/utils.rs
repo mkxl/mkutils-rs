@@ -21,7 +21,12 @@ use std::{
     str::Utf8Error,
     sync::atomic::{AtomicUsize, Ordering},
 };
-use tokio::{io::AsyncReadExt, sync::oneshot::Sender as OneshotSender, task::JoinHandle};
+use tokio::{
+    fs::File as TokioFile,
+    io::{AsyncRead, AsyncReadExt, BufReader as TokioBufReader},
+    sync::oneshot::Sender as OneshotSender,
+    task::JoinHandle,
+};
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
@@ -59,6 +64,13 @@ pub trait Utils {
         Self: ToOwned,
     {
         Cow::Borrowed(self)
+    }
+
+    fn buf_reader_async(self) -> TokioBufReader<Self>
+    where
+        Self: AsyncRead + Sized,
+    {
+        TokioBufReader::new(self)
     }
 
     fn cat<T: Display>(&self, rhs: T) -> String
@@ -256,6 +268,13 @@ pub trait Utils {
         std::iter::once(self)
     }
 
+    async fn open_async(&self) -> Result<TokioFile, IoError>
+    where
+        Self: AsRef<Path>,
+    {
+        TokioFile::open(self).await
+    }
+
     fn owned<B: ?Sized + ToOwned<Owned = Self>>(self) -> Cow<'static, B>
     where
         Self: Sized,
@@ -301,7 +320,7 @@ pub trait Utils {
         request_builder.query(query)
     }
 
-    async fn read_string(&mut self) -> Result<String, AnyhowError>
+    async fn read_string_async(&mut self) -> Result<String, AnyhowError>
     where
         Self: AsyncReadExt + Unpin,
     {

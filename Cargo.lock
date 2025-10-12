@@ -1313,7 +1313,7 @@ checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 [[package]]
 name = "poem"
 version = "3.1.12"
-source = "git+https://github.com/0xb002f0/poem?rev=70ee9a70f335c5961f12e290706fc89ddb1f54e7#70ee9a70f335c5961f12e290706fc89ddb1f54e7"
+source = "git+https://github.com/poem-web/poem?branch=master#c09b469b1fc056723747538f4b08ecb8cad8467f"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1353,7 +1353,7 @@ dependencies = [
 [[package]]
 name = "poem-derive"
 version = "3.1.12"
-source = "git+https://github.com/0xb002f0/poem?rev=70ee9a70f335c5961f12e290706fc89ddb1f54e7#70ee9a70f335c5961f12e290706fc89ddb1f54e7"
+source = "git+https://github.com/poem-web/poem?branch=master#c09b469b1fc056723747538f4b08ecb8cad8467f"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -1364,7 +1364,7 @@ dependencies = [
 [[package]]
 name = "poem-openapi"
 version = "5.1.16"
-source = "git+https://github.com/0xb002f0/poem?rev=70ee9a70f335c5961f12e290706fc89ddb1f54e7#70ee9a70f335c5961f12e290706fc89ddb1f54e7"
+source = "git+https://github.com/poem-web/poem?branch=master#c09b469b1fc056723747538f4b08ecb8cad8467f"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -1390,7 +1390,7 @@ dependencies = [
 [[package]]
 name = "poem-openapi-derive"
 version = "5.1.16"
-source = "git+https://github.com/0xb002f0/poem?rev=70ee9a70f335c5961f12e290706fc89ddb1f54e7#70ee9a70f335c5961f12e290706fc89ddb1f54e7"
+source = "git+https://github.com/poem-web/poem?branch=master#c09b469b1fc056723747538f4b08ecb8cad8467f"
 dependencies = [
  "darling",
  "http",

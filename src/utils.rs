@@ -168,13 +168,6 @@ pub trait Utils {
         anyhow::bail!("{self:?} is not valid utf-8")
     }
 
-    fn json_byte_str(&self) -> Result<Vec<u8>, SerdeJsonError>
-    where
-        Self: Serialize,
-    {
-        serde_json::to_vec(self)
-    }
-
     fn json(&self) -> Result<Json, SerdeJsonError>
     where
         Self: Serialize,
@@ -182,11 +175,25 @@ pub trait Utils {
         serde_json::to_value(self)
     }
 
+    fn json_byte_str(&self) -> Result<Vec<u8>, SerdeJsonError>
+    where
+        Self: Serialize,
+    {
+        serde_json::to_vec(self)
+    }
+
     fn json_from_byte_str<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>
     where
         Self: AsRef<[u8]>,
     {
         serde_json::from_slice(self.as_ref())
+    }
+
+    fn json_str(&self) -> Result<String, SerdeJsonError>
+    where
+        Self: Serialize,
+    {
+        serde_json::to_string(self)
     }
 
     #[must_use]

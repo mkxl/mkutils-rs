@@ -1,6 +1,6 @@
 use crate::{debugged::Debugged, is::Is};
 use anyhow::{Context, Error as AnyhowError};
-use futures::{Sink, SinkExt, StreamExt};
+use futures::{Sink, SinkExt, StreamExt, TryFuture};
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::payload::Json as PoemJson;
 use reqwest::{RequestBuilder, Response};
@@ -409,6 +409,16 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         "file://".cat(self.absolute()?.as_os_str().to_str_ok()?).ok()
+    }
+
+    // NOTE: would prefer to do [Result<Vec<Self::Item::Ok>, Self::Item::Error>] but getting
+    // [error[E0223]: ambiguous associated type]
+    async fn try_join_all<T, E>(self) -> Result<Vec<T>, E>
+    where
+        Self: IntoIterator + Sized,
+        Self::Item: TryFuture<Ok = T, Error = E>,
+    {
+        futures::future::try_join_all(self).await
     }
 
     fn try_get<'a, V, Q: Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash>(&'a self, key: &Q) -> Result<&'a V, AnyhowError>

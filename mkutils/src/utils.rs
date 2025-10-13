@@ -4,7 +4,7 @@ use futures::{Sink, SinkExt, StreamExt, TryFuture};
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::payload::Json as PoemJson;
 use reqwest::{RequestBuilder, Response};
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
     borrow::{Borrow, Cow},
@@ -202,11 +202,18 @@ pub trait Utils {
         serde_json::to_vec(self)
     }
 
-    fn json_from_byte_str<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>
+    fn json_from_byte_str<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeJsonError>
     where
         Self: AsRef<[u8]>,
     {
         serde_json::from_slice(self.as_ref())
+    }
+
+    fn json_from_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
+    where
+        Self: Read + Sized,
+    {
+        serde_json::from_reader(self)
     }
 
     fn json_str(&self) -> Result<String, SerdeJsonError>

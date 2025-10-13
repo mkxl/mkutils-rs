@@ -11,7 +11,7 @@ pub fn context(args_tokens: TokenStream, input_tokens: TokenStream) -> TokenStre
         }
     } else {
         quote::quote! {
-            ::anyhow::Context::context((move || #block)(), #context)
+            ::anyhow::Context::context((move || -> #sig #block)(), #context)
         }
     };
     let item_fn_tokens = quote::quote! {

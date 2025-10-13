@@ -11,3 +11,4 @@ pub mod utils;
 pub use crate::{
     debugged::Debugged, into_stream::IntoStream, is::Is, process::Process, tracing::Tracing, utils::Utils,
 };
+pub use mkutils_macros::context;

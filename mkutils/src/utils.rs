@@ -197,22 +197,12 @@ pub trait Utils {
     }
 
     #[must_use]
-    fn log<C: Display>(self, message: C) -> Self
-    where
-        Self: Debug + Sized,
-    {
-        tracing::info!(%message, value = ?self);
-
-        self
-    }
-
-    #[must_use]
-    fn log_error<T, C: Display, E: Debug + Display>(self, context: C) -> Self
+    fn log_if_error<T, E: Display>(self) -> Self
     where
         Self: Borrow<Result<T, E>> + Sized,
     {
-        if let Err(err) = self.borrow() {
-            tracing::warn!(?err, "{context}: {err}");
+        if let Err(error) = self.borrow() {
+            tracing::warn!(%error);
         }
 
         self

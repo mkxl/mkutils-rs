@@ -299,6 +299,13 @@ pub trait Utils {
         std::iter::once(self)
     }
 
+    fn open(&self) -> Result<File, IoError>
+    where
+        Self: AsRef<Path>,
+    {
+        File::open(self)
+    }
+
     async fn open_async(&self) -> Result<TokioFile, IoError>
     where
         Self: AsRef<Path>,

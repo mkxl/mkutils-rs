@@ -4,6 +4,7 @@ pub mod debugged;
 pub mod into_stream;
 pub mod is;
 pub mod process;
+pub mod status;
 pub mod tracing;
 pub mod utils;
 

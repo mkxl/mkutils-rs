@@ -134,6 +134,13 @@ pub trait Utils {
         File::create(self)
     }
 
+    fn create_dir_all(&self) -> Result<(), IoError>
+    where
+        Self: AsRef<Path>,
+    {
+        std::fs::create_dir_all(self)
+    }
+
     fn debug(&self) -> Debugged<Self> {
         Debugged(self)
     }

@@ -376,6 +376,13 @@ pub trait Utils {
         std::future::ready(self)
     }
 
+    fn remove_file(&self) -> Result<(), IoError>
+    where
+        Self: AsRef<Path>,
+    {
+        std::fs::remove_file(self)
+    }
+
     async fn send_to<T: Sink<Self> + Unpin>(self, mut sink: T) -> Result<(), T::Error>
     where
         Self: Sized,

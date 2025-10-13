@@ -16,7 +16,9 @@ pub fn context(args_tokens: TokenStream, input_tokens: TokenStream) -> TokenStre
     };
     let item_fn_tokens = quote::quote! {
         #(#attrs)*
-        #vis #sig #block_tokens
+        #vis #sig {
+            #block_tokens
+        }
     };
 
     item_fn_tokens.into()

@@ -14,7 +14,7 @@ use std::{
     fs::File,
     future::{Future, Ready},
     hash::Hash,
-    io::Error as IoError,
+    io::{Error as IoError, Write},
     iter::Once,
     marker::Unpin,
     path::{Path, PathBuf},
@@ -194,6 +194,13 @@ pub trait Utils {
         Self: Serialize,
     {
         serde_json::to_string(self)
+    }
+
+    fn json_to_writer<T: Write>(&self, writer: T) -> Result<(), SerdeJsonError>
+    where
+        Self: Serialize,
+    {
+        serde_json::to_writer(writer, self)
     }
 
     #[must_use]

@@ -30,7 +30,7 @@ use tokio::{
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
-    fn absolute(&self) -> Result<Cow<Path>, IoError>
+    fn absolute(&self) -> Result<Cow<'_, Path>, IoError>
     where
         Self: AsRef<Path>,
     {
@@ -56,10 +56,10 @@ pub trait Utils {
     where
         Self: AsRef<[u8]>,
     {
-        str::from_utf8(self.as_ref())
+        std::str::from_utf8(self.as_ref())
     }
 
-    fn borrowed(&self) -> Cow<Self>
+    fn borrowed(&self) -> Cow<'_, Self>
     where
         Self: ToOwned,
     {
@@ -141,7 +141,7 @@ pub trait Utils {
         std::fs::create_dir_all(self)
     }
 
-    fn debug(&self) -> Debugged<Self> {
+    fn debug(&self) -> Debugged<'_, Self> {
         Debugged(self)
     }
 

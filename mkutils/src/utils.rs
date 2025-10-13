@@ -107,6 +107,19 @@ pub trait Utils {
         self.into()
     }
 
+    fn context_path<T, E, C: 'static + Display + Send + Sync, P: AsRef<Path>>(
+        self,
+        context: C,
+        path: P,
+    ) -> Result<T, AnyhowError>
+    where
+        Self: Context<T, E> + Sized,
+    {
+        let context = std::format!("{context}: {path}", path = path.as_ref().display());
+
+        self.context(context)
+    }
+
     fn create(&self) -> Result<File, IoError>
     where
         Self: AsRef<Path>,

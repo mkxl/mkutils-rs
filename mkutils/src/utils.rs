@@ -238,12 +238,12 @@ pub trait Utils {
     }
 
     #[must_use]
-    fn log_if_error<T, E: Display>(self) -> Self
+    fn log_if_error<T, E: Debug>(self) -> Self
     where
         Self: Borrow<Result<T, E>> + Sized,
     {
         if let Err(error) = self.borrow() {
-            tracing::warn!(%error);
+            tracing::warn!(?error);
         }
 
         self

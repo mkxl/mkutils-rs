@@ -14,7 +14,7 @@ use std::{
     fs::File,
     future::{Future, Ready},
     hash::Hash,
-    io::{Error as IoError, Write},
+    io::{BufReader, Error as IoError, Read, Write},
     iter::Once,
     marker::Unpin,
     path::{Path, PathBuf},
@@ -64,6 +64,13 @@ pub trait Utils {
         Self: ToOwned,
     {
         Cow::Borrowed(self)
+    }
+
+    fn buf_reader(self) -> BufReader<Self>
+    where
+        Self: Read + Sized,
+    {
+        BufReader::new(self)
     }
 
     fn buf_reader_async(self) -> TokioBufReader<Self>

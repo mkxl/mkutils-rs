@@ -1,4 +1,4 @@
-use crate::{debugged::Debugged, is::Is};
+use crate::{debugged::Debugged, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use futures::{Sink, SinkExt, StreamExt, TryFuture};
 use poem::{Endpoint, IntoResponse};
@@ -115,7 +115,7 @@ pub trait Utils {
     }
 
     fn debug(&self) -> Debugged<Self> {
-        Debugged::new(self)
+        Debugged(self)
     }
 
     fn inc(&self) -> usize
@@ -376,6 +376,13 @@ pub trait Utils {
         Self::Output: 'static + Send,
     {
         tokio::spawn(self)
+    }
+
+    fn status<T, E>(&self) -> Status<T, E>
+    where
+        Self: Borrow<Result<T, E>>,
+    {
+        Status(self.borrow())
     }
 
     // TODO-4eef0b: permit reverse search

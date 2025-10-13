@@ -388,11 +388,11 @@ pub trait Utils {
         tokio::spawn(self)
     }
 
-    fn status<T, E>(&self) -> Status<T, E>
+    fn into_status<T, E>(self) -> Status<T, E>
     where
-        Self: Borrow<Result<T, E>>,
+        Self: Is<Result<T, E>>,
     {
-        Status(self.borrow())
+        Status(self.into_self())
     }
 
     // TODO-4eef0b: permit reverse search

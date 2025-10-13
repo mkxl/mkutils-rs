@@ -5,13 +5,14 @@ use syn::{ItemFn, LitStr};
 pub fn context(args_tokens: TokenStream, input_tokens: TokenStream) -> TokenStream {
     let context = syn::parse_macro_input!(args_tokens as LitStr);
     let ItemFn { attrs, vis, sig, block } = syn::parse_macro_input!(input_tokens);
+    let output = &sig.output;
     let block_tokens = if sig.asyncness.is_some() {
         quote::quote! {
             ::anyhow::Context::context((async move #block).await, #context)
         }
     } else {
         quote::quote! {
-            ::anyhow::Context::context((move || -> #sig #block)(), #context)
+            ::anyhow::Context::context((move || #output #block)(), #context)
         }
     };
     let item_fn_tokens = quote::quote! {

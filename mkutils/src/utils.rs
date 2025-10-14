@@ -3,6 +3,7 @@ use anyhow::{Context, Error as AnyhowError};
 use futures::{Sink, SinkExt, StreamExt, TryFuture};
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::payload::Json as PoemJson;
+use postcard::Error as PostcardError;
 use reqwest::{RequestBuilder, Response};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Error as SerdeJsonError, Value as Json};
@@ -414,6 +415,13 @@ pub trait Utils {
         Self: Serialize,
     {
         serde_json::to_vec(self)
+    }
+
+    fn to_postcard_byte_str(&self) -> Result<Vec<u8>, PostcardError>
+    where
+        Self: Serialize,
+    {
+        postcard::to_stdvec(self)
     }
 
     fn to_json_str(&self) -> Result<String, SerdeJsonError>

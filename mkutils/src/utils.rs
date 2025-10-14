@@ -457,6 +457,13 @@ pub trait Utils {
         serde_json::from_slice(self.as_ref())
     }
 
+    fn to_value_from_postcard_byte_str<'a, T: Deserialize<'a>>(&'a self) -> Result<T, PostcardError>
+    where
+        Self: AsRef<[u8]>,
+    {
+        postcard::from_bytes(self.as_ref())
+    }
+
     fn to_value_from_json_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
     where
         Self: Read + Sized,

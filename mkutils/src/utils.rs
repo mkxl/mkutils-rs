@@ -18,6 +18,7 @@ use std::{
     io::{BufReader, Error as IoError, Read, Write},
     iter::Once,
     marker::Unpin,
+    ops::ControlFlow,
     path::{Path, PathBuf},
     str::Utf8Error,
     sync::atomic::{AtomicUsize, Ordering},
@@ -153,6 +154,20 @@ pub trait Utils {
         self.borrow().fetch_add(1, Ordering::SeqCst)
     }
 
+    fn into_break<C>(self) -> ControlFlow<Self, C>
+    where
+        Self: Sized,
+    {
+        ControlFlow::Break(self)
+    }
+
+    fn into_continue<B>(self) -> ControlFlow<B, Self>
+    where
+        Self: Sized,
+    {
+        ControlFlow::Continue(self)
+    }
+
     fn into_endpoint(self) -> impl Endpoint<Output = Self>
     where
         Self: Clone + IntoResponse + Sync,
@@ -177,6 +192,13 @@ pub trait Utils {
             value = self => value,
             value = rhs => value,
         }
+    }
+
+    fn into_status<T, E>(self) -> Status<T, E>
+    where
+        Self: Is<Result<T, E>>,
+    {
+        Status(self.into_self())
     }
 
     fn into_string(self) -> Result<String, AnyhowError>
@@ -380,13 +402,6 @@ pub trait Utils {
         Self::Output: 'static + Send,
     {
         tokio::spawn(self)
-    }
-
-    fn into_status<T, E>(self) -> Status<T, E>
-    where
-        Self: Is<Result<T, E>>,
-    {
-        Status(self.into_self())
     }
 
     // TODO-4eef0b: permit reverse search

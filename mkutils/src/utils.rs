@@ -195,48 +195,6 @@ pub trait Utils {
         anyhow::bail!("{self:?} is not valid utf-8")
     }
 
-    fn json(&self) -> Result<Json, SerdeJsonError>
-    where
-        Self: Serialize,
-    {
-        serde_json::to_value(self)
-    }
-
-    fn json_byte_str(&self) -> Result<Vec<u8>, SerdeJsonError>
-    where
-        Self: Serialize,
-    {
-        serde_json::to_vec(self)
-    }
-
-    fn json_from_byte_str<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeJsonError>
-    where
-        Self: AsRef<[u8]>,
-    {
-        serde_json::from_slice(self.as_ref())
-    }
-
-    fn json_from_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
-    where
-        Self: Read + Sized,
-    {
-        serde_json::from_reader(self)
-    }
-
-    fn json_str(&self) -> Result<String, SerdeJsonError>
-    where
-        Self: Serialize,
-    {
-        serde_json::to_string(self)
-    }
-
-    fn json_to_writer<T: Write>(&self, writer: T) -> Result<(), SerdeJsonError>
-    where
-        Self: Serialize,
-    {
-        serde_json::to_writer(writer, self)
-    }
-
     #[must_use]
     fn log_if_error<T, E: Display>(self) -> Self
     where
@@ -444,6 +402,27 @@ pub trait Utils {
         (begin, end).some()
     }
 
+    fn to_json(&self) -> Result<Json, SerdeJsonError>
+    where
+        Self: Serialize,
+    {
+        serde_json::to_value(self)
+    }
+
+    fn to_json_byte_str(&self) -> Result<Vec<u8>, SerdeJsonError>
+    where
+        Self: Serialize,
+    {
+        serde_json::to_vec(self)
+    }
+
+    fn to_json_str(&self) -> Result<String, SerdeJsonError>
+    where
+        Self: Serialize,
+    {
+        serde_json::to_string(self)
+    }
+
     fn to_str_ok(&self) -> Result<&str, AnyhowError>
     where
         Self: AsRef<OsStr>,
@@ -461,6 +440,20 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         "file://".cat(self.absolute()?.as_os_str().to_str_ok()?).ok()
+    }
+
+    fn to_value_from_json_byte_str<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeJsonError>
+    where
+        Self: AsRef<[u8]>,
+    {
+        serde_json::from_slice(self.as_ref())
+    }
+
+    fn to_value_from_json_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
+    where
+        Self: Read + Sized,
+    {
+        serde_json::from_reader(self)
     }
 
     // NOTE: would prefer to do [Result<Vec<Self::Item::Ok>, Self::Item::Error>] but getting
@@ -481,6 +474,13 @@ pub trait Utils {
     }
 
     fn unit(&self) {}
+
+    fn write_as_json_to<T: Write>(&self, writer: T) -> Result<(), SerdeJsonError>
+    where
+        Self: Serialize,
+    {
+        serde_json::to_writer(writer, self)
+    }
 }
 
 impl<T: ?Sized> Utils for T {}

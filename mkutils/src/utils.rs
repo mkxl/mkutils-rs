@@ -203,11 +203,11 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
-    fn file_name_ok(&self) -> Result<&OsStr, AnyhowError>
+    async fn into_future<T>(self) -> Result<T, AnyhowError>
     where
-        Self: AsRef<Path>,
+        Self: Is<JoinHandle<T>>,
     {
-        self.as_ref().file_name().context("path has no file_name")
+        self.into_self().await?.ok()
     }
 
     async fn into_select<T: Future<Output = Self::Output>>(self, rhs: T) -> Self::Output
@@ -242,6 +242,13 @@ pub trait Utils {
         Self: Debug,
     {
         anyhow::bail!("{self:?} is not valid utf-8")
+    }
+
+    fn file_name_ok(&self) -> Result<&OsStr, AnyhowError>
+    where
+        Self: AsRef<Path>,
+    {
+        self.as_ref().file_name().context("path has no file_name")
     }
 
     #[must_use]

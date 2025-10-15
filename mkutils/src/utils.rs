@@ -25,7 +25,9 @@ use std::{
 };
 use tokio::{
     fs::File as TokioFile,
-    io::{AsyncRead, AsyncReadExt, BufReader as TokioBufReader},
+    io::{
+        AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader as TokioBufReader, BufWriter as TokioBufWriter,
+    },
     sync::oneshot::Sender as OneshotSender,
     task::JoinHandle,
 };
@@ -80,6 +82,13 @@ pub trait Utils {
         Self: AsyncRead + Sized,
     {
         TokioBufReader::new(self)
+    }
+
+    fn buf_writer_async(self) -> TokioBufWriter<Self>
+    where
+        Self: AsyncWrite + Sized,
+    {
+        TokioBufWriter::new(self)
     }
 
     fn cat<T: Display>(&self, rhs: T) -> String
@@ -510,6 +519,15 @@ pub trait Utils {
         Self: Serialize,
     {
         serde_json::to_writer(writer, self)
+    }
+
+    async fn write_all_and_flush_async<T: AsRef<[u8]>>(&mut self, byte_str: T) -> Result<(), IoError>
+    where
+        Self: AsyncWriteExt + Unpin,
+    {
+        self.write_all(byte_str.as_ref()).await?;
+
+        self.flush().await
     }
 }
 

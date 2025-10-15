@@ -8,7 +8,7 @@ use reqwest::{RequestBuilder, Response};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
-    borrow::{Borrow, Cow},
+    borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
     ffi::OsStr,
     fmt::{Debug, Display},
@@ -31,6 +31,16 @@ use tokio::{
     sync::oneshot::Sender as OneshotSender,
     task::JoinHandle,
 };
+
+macro_rules! try_get {
+    ($expr:expr, $method:ident, $key:ident) => {{
+        // NOTE: can't have [$key] in format string
+        match $expr.$method($key) {
+            Some(value) => value.ok(),
+            None => ::anyhow::bail!("key {} is not present in the hashmap", $key),
+        }
+    }};
+}
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
@@ -512,11 +522,24 @@ pub trait Utils {
         futures::future::try_join_all(self).await
     }
 
-    fn try_get<'a, V, Q: Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash>(&'a self, key: &Q) -> Result<&'a V, AnyhowError>
+    fn try_get<'a, V, Q: Display + Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash>(
+        &'a self,
+        key: &Q,
+    ) -> Result<&'a V, AnyhowError>
     where
         Self: Borrow<HashMap<K, V>>,
     {
-        self.borrow().get(key).context("the key is not present in the hashmap")
+        try_get!(self.borrow(), get, key)
+    }
+
+    fn try_get_mut<'a, V, Q: Display + Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash>(
+        &'a mut self,
+        key: &Q,
+    ) -> Result<&'a mut V, AnyhowError>
+    where
+        Self: BorrowMut<HashMap<K, V>>,
+    {
+        try_get!(self.borrow_mut(), get_mut, key)
     }
 
     fn unit(&self) {}

@@ -2,7 +2,7 @@ use crate::{debugged::Debugged, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use futures::{Sink, SinkExt, StreamExt, TryFuture};
 use poem::{Endpoint, IntoResponse};
-use poem_openapi::payload::Json as PoemJson;
+use poem_openapi::{error::ParseRequestPayloadError, payload::Json as PoemJson};
 use postcard::Error as PostcardError;
 use reqwest::{RequestBuilder, Response};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -173,6 +173,13 @@ pub trait Utils {
         Debugged(self)
     }
 
+    fn err<T>(self) -> Result<T, Self>
+    where
+        Self: Sized,
+    {
+        Err(self)
+    }
+
     fn inc(&self) -> usize
     where
         Self: Borrow<AtomicUsize>,
@@ -203,12 +210,18 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
-    async fn try_wait<T, E: 'static + Send + Sync>(self) -> Result<T, AnyhowError>
+    // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]
+    fn into_parse_request_payload_result<T>(self) -> Result<T, ParseRequestPayloadError>
     where
-        Self: Is<JoinHandle<Result<T, E>>>,
-        AnyhowError: From<E>,
+        Self: Is<Result<T, SerdeJsonError>>,
     {
-        self.into_self().await??.ok()
+        match self.into_self() {
+            Ok(value) => value.ok(),
+            Err(serde_json_error) => ParseRequestPayloadError {
+                reason: serde_json_error.to_string(),
+            }
+            .err(),
+        }
     }
 
     async fn into_select<T: Future<Output = Self::Output>>(self, rhs: T) -> Self::Output
@@ -548,6 +561,14 @@ pub trait Utils {
         Self: BorrowMut<HashMap<K, V>>,
     {
         try_get!(self.borrow_mut(), get_mut, key)
+    }
+
+    async fn try_wait<T, E: 'static + Send + Sync>(self) -> Result<T, AnyhowError>
+    where
+        Self: Is<JoinHandle<Result<T, E>>>,
+        AnyhowError: From<E>,
+    {
+        self.into_self().await??.ok()
     }
 
     fn unit(&self) {}

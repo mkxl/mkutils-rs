@@ -10,6 +10,7 @@ use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
+    error::Error as StdError,
     ffi::OsStr,
     fmt::{Debug, Display},
     fs::File,
@@ -203,11 +204,11 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
-    async fn try_wait<T>(self) -> Result<T, AnyhowError>
+    async fn try_wait<T, E: 'static + Send + StdError + Sync>(self) -> Result<T, AnyhowError>
     where
-        Self: Is<JoinHandle<T>>,
+        Self: Is<JoinHandle<Result<T, E>>>,
     {
-        self.into_self().await?.ok()
+        self.into_self().await??.ok()
     }
 
     async fn into_select<T: Future<Output = Self::Output>>(self, rhs: T) -> Self::Output

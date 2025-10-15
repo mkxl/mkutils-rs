@@ -203,7 +203,7 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
-    async fn into_future<T>(self) -> Result<T, AnyhowError>
+    async fn try_wait<T>(self) -> Result<T, AnyhowError>
     where
         Self: Is<JoinHandle<T>>,
     {

@@ -15,7 +15,7 @@ use std::{
     fs::File,
     future::{Future, Ready},
     hash::Hash,
-    io::{BufReader, Error as IoError, Read, Write},
+    io::{BufReader, BufWriter, Error as IoError, Read, Write},
     iter::Once,
     marker::Unpin,
     ops::ControlFlow,
@@ -82,6 +82,13 @@ pub trait Utils {
         Self: AsyncRead + Sized,
     {
         TokioBufReader::new(self)
+    }
+
+    fn buf_writer(self) -> BufWriter<Self>
+    where
+        Self: Write + Sized,
+    {
+        BufWriter::new(self)
     }
 
     fn buf_writer_async(self) -> TokioBufWriter<Self>

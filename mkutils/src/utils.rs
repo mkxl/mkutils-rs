@@ -12,7 +12,7 @@ use std::{
     collections::HashMap,
     ffi::OsStr,
     fmt::{Debug, Display},
-    fs::File,
+    fs::{File, Metadata},
     future::{Future, Ready},
     hash::Hash,
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
@@ -265,13 +265,20 @@ pub trait Utils {
         self.as_ref().file_name().context("path has no file_name")
     }
 
+    fn log_error(&self)
+    where
+        Self: Display,
+    {
+        tracing::warn!("{self:#}");
+    }
+
     #[must_use]
     fn log_if_error<T, E: Display>(self) -> Self
     where
         Self: Borrow<Result<T, E>> + Sized,
     {
         if let Err(error) = self.borrow() {
-            tracing::warn!("{error:#}");
+            error.log_error();
         }
 
         self
@@ -292,6 +299,13 @@ pub trait Utils {
             Some(x) => x.as_ref().some(),
             None => None,
         }
+    }
+
+    async fn metadata_async(&self) -> Result<Metadata, IoError>
+    where
+        Self: AsRef<Path>,
+    {
+        tokio::fs::metadata(self).await
     }
 
     async fn next_item_async(&mut self) -> Result<Self::Item, AnyhowError>
@@ -402,6 +416,13 @@ pub trait Utils {
         self.read_to_string(&mut string).await?;
 
         string.ok()
+    }
+
+    async fn read_to_string_async(&self) -> Result<String, IoError>
+    where
+        Self: AsRef<Path>,
+    {
+        tokio::fs::read_to_string(self).await
     }
 
     fn ready(self) -> Ready<Self>

@@ -187,6 +187,13 @@ pub trait Utils {
         self.borrow().fetch_add(1, Ordering::SeqCst)
     }
 
+    fn insert_mut<'a, K: 'a + Eq + Hash, V>(&'a mut self, key: K, value: V) -> &'a mut V
+    where
+        Self: BorrowMut<HashMap<K, V>>,
+    {
+        self.borrow_mut().entry(key).insert_entry(value).into_mut()
+    }
+
     fn into_break<C>(self) -> ControlFlow<Self, C>
     where
         Self: Sized,

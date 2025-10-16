@@ -269,7 +269,7 @@ pub trait Utils {
     where
         Self: Display,
     {
-        tracing::warn!("{self:#}");
+        tracing::warn!(error = %self, "error: {self:#}");
     }
 
     #[must_use]

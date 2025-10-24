@@ -404,11 +404,15 @@ pub trait Utils {
         std::println!("{self}");
     }
 
-    fn query_once<T: Serialize>(self, name: &str, value: Option<T>) -> RequestBuilder
+    fn query_once<T: Serialize, S: Into<Option<T>>>(self, name: &str, value: S) -> RequestBuilder
     where
         Self: Is<RequestBuilder>,
     {
-        let query: &[(&str, T)] = if let Some(value) = value { &[(name, value)] } else { &[] };
+        let query: &[(&str, T)] = if let Some(value) = value.into() {
+            &[(name, value)]
+        } else {
+            &[]
+        };
         let request_builder = self.into_self();
 
         request_builder.query(query)
@@ -547,6 +551,13 @@ pub trait Utils {
         serde_json::from_slice(self.as_ref())
     }
 
+    fn to_value_from_json_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
+    where
+        Self: Read + Sized,
+    {
+        serde_json::from_reader(self)
+    }
+
     fn to_value_from_postcard_byte_str<'a, T: Deserialize<'a>>(&'a self) -> Result<T, PostcardError>
     where
         Self: AsRef<[u8]>,
@@ -554,11 +565,14 @@ pub trait Utils {
         postcard::from_bytes(self.as_ref())
     }
 
-    fn to_value_from_json_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
+    fn to_value_from_value<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>
     where
-        Self: Read + Sized,
+        Self: Serialize,
     {
-        serde_json::from_reader(self)
+        let value = serde_json::to_value(self)?;
+        let value = serde_json::from_value::<T>(value)?;
+
+        value.ok()
     }
 
     // NOTE: would prefer to do [Result<Vec<Self::Item::Ok>, Self::Item::Error>] but getting

@@ -180,6 +180,10 @@ pub trait Utils {
         Err(self)
     }
 
+    fn immutable(&mut self) -> &Self {
+        self
+    }
+
     fn inc(&self) -> usize
     where
         Self: Borrow<AtomicUsize>,

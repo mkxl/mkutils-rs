@@ -12,6 +12,7 @@ poem = { git = "https://github.com/poem-web/poem", version = "3.1.12", features 
 poem-openapi = { git = "https://github.com/poem-web/poem", version = "5.1.16", features = ["ulid", "websocket"], branch = "master" }
 postcard = { version = "1.1.3", features = ["use-std"] }
 reqwest = { version = "0.12.23", features = ["json"] }
+ropey = "1.6.1"
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = { git = "https://github.com/mkxl/serde-json", version = "1.0.144" }
 tokio = { version = "1.47.1", features = ["process"] }

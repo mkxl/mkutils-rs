@@ -1,15 +1,16 @@
 #![allow(clippy::missing_errors_doc)]
 
-pub mod debugged;
-pub mod into_stream;
-pub mod is;
-pub mod process;
-pub mod rope_builder;
-pub mod status;
-pub mod tracing;
-pub mod utils;
+mod debugged;
+mod into_stream;
+mod is;
+mod process;
+mod rope_builder;
+mod status;
+mod tracing;
+mod utils;
 
 pub use crate::{
-    debugged::Debugged, into_stream::IntoStream, is::Is, process::Process, tracing::Tracing, utils::Utils,
+    debugged::Debugged, into_stream::IntoStream, is::Is, process::Process, rope_builder::RopeBuilder, tracing::Tracing,
+    utils::Utils,
 };
 pub use mkutils_macros::context;

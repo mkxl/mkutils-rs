@@ -20,6 +20,7 @@ use std::{
     marker::Unpin,
     ops::ControlFlow,
     path::{Path, PathBuf},
+    pin::Pin,
     str::Utf8Error,
     sync::atomic::{AtomicUsize, Ordering},
 };
@@ -385,6 +386,13 @@ pub trait Utils {
         Self: Sized,
     {
         (self, rhs)
+    }
+
+    fn pin(self) -> Pin<Box<Self>>
+    where
+        Self: Sized,
+    {
+        Box::pin(self)
     }
 
     fn pipe<T, F: FnOnce(Self) -> T>(self, func: F) -> T

@@ -1,5 +1,5 @@
 use crate::Utils;
-use ropey::{Rope, RopeBuilder};
+use ropey::{Rope, RopeBuilder as RopeyBuilder};
 use std::{
     io::{Error as IoError, ErrorKind as IoErrorKind},
     marker::Unpin,
@@ -11,28 +11,28 @@ use tokio::{
     io::{AsyncReadExt, BufReader as TokioBufReader},
 };
 
-pub struct AsyncRopeBuilder<R, const N: usize = 8192> {
+pub struct RopeBuilder<R, const N: usize = 8192> {
     reader: R,
-    rope_builder: RopeBuilder,
+    builder: RopeyBuilder,
     buffer: [u8; N],
     unprocessed_byte_indices: Range<usize>,
     seen_eof: bool,
 }
 
-impl<R: AsyncReadExt + Unpin, const N: usize> AsyncRopeBuilder<R, N> {
+impl<R: AsyncReadExt + Unpin, const N: usize> RopeBuilder<R, N> {
     const INITIAL_BUFFER: [u8; N] = [0; N];
     const INITIAL_SEEN_EOF: bool = false;
     const INITIAL_UNPROCESSED_BYTE_INDICES: Range<usize> = 0..0;
 
     pub fn new(reader: R) -> Self {
-        let rope_builder = RopeBuilder::new();
+        let builder = RopeyBuilder::new();
         let buffer = Self::INITIAL_BUFFER;
         let unprocessed_byte_indices = Self::INITIAL_UNPROCESSED_BYTE_INDICES.clone();
         let seen_eof = Self::INITIAL_SEEN_EOF;
 
         Self {
             reader,
-            rope_builder,
+            builder,
             buffer,
             unprocessed_byte_indices,
             seen_eof,
@@ -50,7 +50,7 @@ impl<R: AsyncReadExt + Unpin, const N: usize> AsyncRopeBuilder<R, N> {
         )
     }
 
-    fn feed(unprocessed_byte_indices: &mut Range<usize>, rope_builder: &mut RopeBuilder, text: &str) {
+    fn feed(unprocessed_byte_indices: &mut Range<usize>, builder: &mut RopeyBuilder, text: &str) {
         unprocessed_byte_indices.start += text.len();
 
         // NOTE: without the [.immutable()], this generates:
@@ -59,7 +59,7 @@ impl<R: AsyncReadExt + Unpin, const N: usize> AsyncRopeBuilder<R, N> {
             *unprocessed_byte_indices = Self::INITIAL_UNPROCESSED_BYTE_INDICES.clone();
         }
 
-        rope_builder.append(text);
+        builder.append(text);
     }
 
     async fn read(&mut self) -> Result<(), IoError> {
@@ -86,11 +86,11 @@ impl<R: AsyncReadExt + Unpin, const N: usize> AsyncRopeBuilder<R, N> {
         ().ok()
     }
 
-    pub async fn finish(mut self) -> Result<Rope, IoError> {
+    pub async fn build(mut self) -> Result<Rope, IoError> {
         loop {
             if self.unprocessed_byte_indices.is_empty() {
                 if self.seen_eof {
-                    return self.rope_builder.finish().ok();
+                    return self.builder.finish().ok();
                 }
 
                 self.read().await?;
@@ -98,14 +98,14 @@ impl<R: AsyncReadExt + Unpin, const N: usize> AsyncRopeBuilder<R, N> {
                 let byte_str = &self.buffer[self.unprocessed_byte_indices.clone()];
 
                 match byte_str.as_utf8() {
-                    Ok(text) => Self::feed(&mut self.unprocessed_byte_indices, &mut self.rope_builder, text),
+                    Ok(text) => Self::feed(&mut self.unprocessed_byte_indices, &mut self.builder, text),
                     Err(utf8_error) => {
                         let byte_substr_end_index = utf8_error.valid_up_to();
                         let byte_substr = &byte_str[..byte_substr_end_index];
                         let text = unsafe { std::str::from_utf8_unchecked(byte_substr) };
 
                         if 0 < byte_substr_end_index {
-                            Self::feed(&mut self.unprocessed_byte_indices, &mut self.rope_builder, text);
+                            Self::feed(&mut self.unprocessed_byte_indices, &mut self.builder, text);
                         } else if utf8_error.error_len().is_some() {
                             return Self::io_error_invalid_utf8().err();
                         } else if self.seen_eof {
@@ -120,7 +120,7 @@ impl<R: AsyncReadExt + Unpin, const N: usize> AsyncRopeBuilder<R, N> {
     }
 }
 
-impl<const N: usize> AsyncRopeBuilder<TokioBufReader<TokioFile>, N> {
+impl<const N: usize> RopeBuilder<TokioBufReader<TokioFile>, N> {
     pub async fn from_filepath(filepath: &Path) -> Result<Self, IoError> {
         filepath.open_async().await?.buf_reader_async().pipe(Self::new).ok()
     }

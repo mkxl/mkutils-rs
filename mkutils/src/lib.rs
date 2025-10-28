@@ -1,10 +1,10 @@
 #![allow(clippy::missing_errors_doc)]
 
-pub mod async_rope_builder;
 pub mod debugged;
 pub mod into_stream;
 pub mod is;
 pub mod process;
+pub mod rope_builder;
 pub mod status;
 pub mod tracing;
 pub mod utils;

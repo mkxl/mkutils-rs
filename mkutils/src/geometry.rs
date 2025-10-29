@@ -7,7 +7,7 @@ pub enum Orientation {
     Vertical,
 }
 
-#[derive(Constructor)]
+#[derive(Clone, Constructor, Copy)]
 pub struct Point<T> {
     x: T,
     y: T,

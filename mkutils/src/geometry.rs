@@ -23,6 +23,10 @@ impl<T> Point<T> {
         Self::const_new(x.into(), y.into())
     }
 
+    pub fn to<S: From<T>>(self) -> Point<S> {
+        Point::new(self.x, self.y)
+    }
+
     pub fn get(&self, orientation: Orientation) -> &T {
         match orientation {
             Orientation::Horizontal => &self.x,
@@ -35,12 +39,6 @@ impl<T> Point<T> {
             Orientation::Horizontal => &mut self.x,
             Orientation::Vertical => &mut self.y,
         }
-    }
-}
-
-impl<T, T1: Into<T>, T2: Into<T>> From<(T1, T2)> for Point<T> {
-    fn from((x, y): (T1, T2)) -> Self {
-        Self::new(x, y)
     }
 }
 

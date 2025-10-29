@@ -46,4 +46,5 @@ impl<T: ConstZero> Point<T> {
     pub const ORIGIN: Self = Self { x: T::ZERO, y: T::ZERO };
 }
 
+pub type PointU16 = Point<u16>;
 pub type PointUsize = Point<usize>;

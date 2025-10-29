@@ -12,7 +12,7 @@ mod utils;
 
 pub use crate::{
     debugged::Debugged,
-    geometry::{Orientation, Point, PointUsize},
+    geometry::{Orientation, Point, PointU16, PointUsize},
     into_stream::IntoStream,
     is::Is,
     process::Process,

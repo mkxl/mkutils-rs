@@ -1,4 +1,5 @@
 use num::traits::ConstZero;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy)]
 pub enum Orientation {
@@ -6,7 +7,7 @@ pub enum Orientation {
     Vertical,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Point<T> {
     pub x: T,
     pub y: T,

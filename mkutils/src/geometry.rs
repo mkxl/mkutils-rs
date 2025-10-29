@@ -22,10 +22,7 @@ impl<T> Point<T> {
         Self::const_new(x.into(), y.into())
     }
 
-    pub fn into_pair<X: From<T>, Y: From<T>>(self) -> (X, Y) {
-        (self.x.into(), self.y.into())
-    }
-
+    // TODO: would like to have an [impl<T, S: Into<T>> From<Point<S>> for Point<T>] impl
     pub fn into_point<S: From<T>>(self) -> Point<S> {
         Point::new(self.x, self.y)
     }
@@ -42,6 +39,18 @@ impl<T> Point<T> {
             Orientation::Horizontal => &mut self.x,
             Orientation::Vertical => &mut self.y,
         }
+    }
+}
+
+impl<T, X: Into<T>, Y: Into<T>> From<(X, Y)> for Point<T> {
+    fn from((x, y): (X, Y)) -> Self {
+        Self::new(x, y)
+    }
+}
+
+impl<T, X: From<T>, Y: From<T>> From<Point<T>> for (X, Y) {
+    fn from(point: Point<T>) -> Self {
+        (point.x.into(), point.y.into())
     }
 }
 

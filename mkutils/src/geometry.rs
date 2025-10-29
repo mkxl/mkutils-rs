@@ -23,8 +23,12 @@ impl<T> Point<T> {
         Self::const_new(x.into(), y.into())
     }
 
-    pub fn to<S: From<T>>(self) -> Point<S> {
+    pub fn embed<S: From<T>>(self) -> Point<S> {
         Point::new(self.x, self.y)
+    }
+
+    pub fn into_pair<X: From<T>, Y: From<T>>(self) -> (X, Y) {
+        (self.x.into(), self.y.into())
     }
 
     pub fn get(&self, orientation: Orientation) -> &T {

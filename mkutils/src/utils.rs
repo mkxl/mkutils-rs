@@ -1,9 +1,4 @@
-use crate::{
-    debugged::Debugged,
-    geometry::{Point, PointUsize},
-    is::Is,
-    status::Status,
-};
+use crate::{debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use futures::{Sink, SinkExt, StreamExt, TryFuture};
 use num::traits::{SaturatingAdd, SaturatingSub};
@@ -249,15 +244,6 @@ pub trait Utils {
             }
             .err(),
         }
-    }
-
-    fn into_point<T, X: Into<T>, Y: Into<T>>(self) -> Point<T>
-    where
-        Self: Into<(X, Y)>,
-    {
-        let (x, y) = self.into();
-
-        Point::new(x, y)
     }
 
     async fn into_select<T: Future<Output = Self::Output>>(self, rhs: T) -> Self::Output

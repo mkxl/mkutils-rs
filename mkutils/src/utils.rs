@@ -1,6 +1,7 @@
 use crate::{debugged::Debugged, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use futures::{Sink, SinkExt, StreamExt, TryFuture};
+use num::traits::{SaturatingAdd, SaturatingSub};
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::{error::ParseRequestPayloadError, payload::Json as PoemJson};
 use postcard::Error as PostcardError;
@@ -460,6 +461,19 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         std::fs::remove_file(self)
+    }
+
+    fn saturating_add_or_sub_in_place_with_max(&mut self, rhs: Self, max_value: Self, add: bool)
+    where
+        Self: Ord + SaturatingAdd + SaturatingSub + Sized,
+    {
+        let value = if add {
+            self.saturating_add(&rhs)
+        } else {
+            self.saturating_sub(&rhs)
+        };
+
+        *self = value.min(max_value);
     }
 
     async fn send_to<T: Sink<Self> + Unpin>(self, mut sink: T) -> Result<(), T::Error>

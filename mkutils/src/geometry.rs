@@ -1,3 +1,4 @@
+use crate::utils::Utils;
 use num::traits::ConstZero;
 use serde::{Deserialize, Serialize};
 
@@ -37,9 +38,15 @@ impl<T> Point<T> {
     }
 }
 
-impl<T> From<(T, T)> for Point<T> {
-    fn from((x, y): (T, T)) -> Self {
+impl<T, T1: Into<T>, T2: Into<T>> From<(T1, T2)> for Point<T> {
+    fn from((x, y): (T1, T2)) -> Self {
         Self::new(x, y)
+    }
+}
+
+impl<T, T1: From<T>, T2: From<T>> From<Point<T>> for (T1, T2) {
+    fn from(point: Point<T>) -> Self {
+        point.x.convert::<T1>().pair(point.y.into())
     }
 }
 

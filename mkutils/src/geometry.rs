@@ -9,8 +9,8 @@ pub enum Orientation {
 
 #[derive(Clone, Constructor, Copy)]
 pub struct Point<T> {
-    x: T,
-    y: T,
+    pub x: T,
+    pub y: T,
 }
 
 impl<T> Point<T> {

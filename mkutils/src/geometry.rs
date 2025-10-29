@@ -1,4 +1,3 @@
-use derive_more::Constructor;
 use num::traits::ConstZero;
 
 #[derive(Clone, Copy)]
@@ -7,13 +6,20 @@ pub enum Orientation {
     Vertical,
 }
 
-#[derive(Clone, Constructor, Copy)]
+#[derive(Clone, Copy)]
 pub struct Point<T> {
     pub x: T,
     pub y: T,
 }
 
 impl<T> Point<T> {
+    pub fn new<X: Into<T>, Y: Into<T>>(x: X, y: Y) -> Self {
+        let x = x.into();
+        let y = y.into();
+
+        Self { x, y }
+    }
+
     pub fn get(&self, orientation: Orientation) -> &T {
         match orientation {
             Orientation::Horizontal => &self.x,

@@ -1,4 +1,4 @@
-use crate::{debugged::Debugged, is::Is, status::Status};
+use crate::{debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use futures::{Sink, SinkExt, StreamExt, TryFuture};
 use num::traits::{SaturatingAdd, SaturatingSub};
@@ -6,6 +6,7 @@ use poem::{Endpoint, IntoResponse};
 use poem_openapi::{error::ParseRequestPayloadError, payload::Json as PoemJson};
 use postcard::Error as PostcardError;
 use reqwest::{RequestBuilder, Response};
+use ropey::Rope;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
@@ -33,6 +34,7 @@ use tokio::{
     sync::oneshot::Sender as OneshotSender,
     task::JoinHandle,
 };
+use unicode_segmentation::{Graphemes, UnicodeSegmentation};
 
 macro_rules! try_get {
     ($expr:expr, $method:ident, $key:ident) => {{
@@ -182,6 +184,13 @@ pub trait Utils {
         Err(self)
     }
 
+    fn extended_graphemes(&self) -> Graphemes<'_>
+    where
+        Self: AsRef<str>,
+    {
+        self.as_ref().graphemes(true)
+    }
+
     fn immutable(&mut self) -> &Self {
         self
     }
@@ -276,6 +285,13 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         self.as_ref().file_name().context("path has no file_name")
+    }
+
+    fn len_extended_graphemes(&self) -> usize
+    where
+        Self: AsRef<str>,
+    {
+        self.as_ref().extended_graphemes().count()
     }
 
     fn log_error(&self)
@@ -461,6 +477,21 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         std::fs::remove_file(self)
+    }
+
+    fn rope_size(&self) -> PointUsize
+    where
+        Self: Borrow<Rope>,
+    {
+        let rope = self.borrow();
+        let y = rope.len_lines();
+        let x = rope
+            .lines()
+            .map(|line_rope| line_rope.chunks().map(str::len_extended_graphemes).sum())
+            .max()
+            .unwrap_or(0);
+
+        PointUsize::new(x, y)
     }
 
     fn saturating_add_or_sub_in_place_with_max(&mut self, rhs: Self, max_value: Self, add: bool)

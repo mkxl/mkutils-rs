@@ -13,11 +13,12 @@ pub struct Point<T> {
 }
 
 impl<T> Point<T> {
-    pub fn new<X: Into<T>, Y: Into<T>>(x: X, y: Y) -> Self {
-        let x = x.into();
-        let y = y.into();
-
+    pub const fn new_const(x: T, y: T) -> Self {
         Self { x, y }
+    }
+
+    pub fn new<X: Into<T>, Y: Into<T>>(x: X, y: Y) -> Self {
+        Self::new_const(x.into(), y.into())
     }
 
     pub fn get(&self, orientation: Orientation) -> &T {

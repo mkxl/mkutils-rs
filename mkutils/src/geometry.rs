@@ -1,4 +1,3 @@
-use crate::utils::Utils;
 use num::traits::ConstZero;
 use serde::{Deserialize, Serialize};
 
@@ -23,12 +22,12 @@ impl<T> Point<T> {
         Self::const_new(x.into(), y.into())
     }
 
-    pub fn embed<S: From<T>>(self) -> Point<S> {
-        Point::new(self.x, self.y)
-    }
-
     pub fn into_pair<X: From<T>, Y: From<T>>(self) -> (X, Y) {
         (self.x.into(), self.y.into())
+    }
+
+    pub fn into_point<S: From<T>>(self) -> Point<S> {
+        Point::new(self.x, self.y)
     }
 
     pub fn get(&self, orientation: Orientation) -> &T {
@@ -43,12 +42,6 @@ impl<T> Point<T> {
             Orientation::Horizontal => &mut self.x,
             Orientation::Vertical => &mut self.y,
         }
-    }
-}
-
-impl<T, T1: From<T>, T2: From<T>> From<Point<T>> for (T1, T2) {
-    fn from(point: Point<T>) -> Self {
-        point.x.convert::<T1>().pair(point.y.into())
     }
 }
 

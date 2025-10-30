@@ -10,8 +10,8 @@ impl AsRopeSlice for Rope {
     }
 }
 
-impl AsRopeSlice for RopeSlice<'_> {
-    fn as_rope_slice(&self) -> RopeSlice<'_> {
+impl<'a> AsRopeSlice for RopeSlice<'a> {
+    fn as_rope_slice(&self) -> RopeSlice<'a> {
         *self
     }
 }

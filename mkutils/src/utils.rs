@@ -6,7 +6,10 @@ use poem::{Endpoint, IntoResponse};
 use poem_openapi::{error::ParseRequestPayloadError, payload::Json as PoemJson};
 use postcard::Error as PostcardError;
 use reqwest::{RequestBuilder, Response};
-use ropey::{Rope, iter::Chunks};
+use ropey::{
+    Rope,
+    iter::{Chunks, Lines},
+};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
@@ -137,16 +140,6 @@ pub trait Utils {
         };
 
         anyhow::bail!("({status}) {text}")
-    }
-
-    fn chunks_at_extended_grapheme(&self, extended_grapheme_idx: usize) -> Chunks<'_>
-    where
-        Self: AsRopeSlice,
-    {
-        let rope_slice = self.as_rope_slice();
-        let extended_grapheme_idx = rope_slice.len_chars().min(extended_grapheme_idx);
-
-        rope_slice.chunks_at_char(extended_grapheme_idx).0
     }
 
     fn convert<T: From<Self>>(self) -> T
@@ -502,6 +495,33 @@ pub trait Utils {
             .unwrap_or(0);
 
         PointUsize::new(x, y)
+    }
+
+    fn saturating_chunks_at_extended_grapheme(&self, _extended_grapheme_idx: usize) -> Chunks<'_>
+    where
+        Self: AsRopeSlice,
+    {
+        std::todo!()
+    }
+
+    fn saturating_chunks_at_char(&self, char_idx: usize) -> Chunks<'_>
+    where
+        Self: AsRopeSlice,
+    {
+        let rope_slice = self.as_rope_slice();
+        let char_idx = rope_slice.len_chars().min(char_idx);
+
+        rope_slice.chunks_at_char(char_idx).0
+    }
+
+    fn saturating_lines_at(&self, line_idx: usize) -> Lines<'_>
+    where
+        Self: AsRopeSlice,
+    {
+        let rope_slice = self.as_rope_slice();
+        let line_idx = rope_slice.len_lines().min(line_idx);
+
+        rope_slice.lines_at(line_idx)
     }
 
     fn saturating_add_or_sub_in_place_with_max(&mut self, rhs: Self, max_value: Self, add: bool)

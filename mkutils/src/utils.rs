@@ -1,4 +1,4 @@
-use crate::{as_rope_slice::AsRopeSlice, debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
+use crate::{debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use futures::{Sink, SinkExt, StreamExt, TryFuture};
 use num::traits::{SaturatingAdd, SaturatingSub};
@@ -7,7 +7,7 @@ use poem_openapi::{error::ParseRequestPayloadError, payload::Json as PoemJson};
 use postcard::Error as PostcardError;
 use reqwest::{RequestBuilder, Response};
 use ropey::{
-    Rope,
+    Rope, RopeSlice,
     iter::{Chunks, Lines},
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -497,28 +497,28 @@ pub trait Utils {
         PointUsize::new(x, y)
     }
 
-    fn saturating_chunks_at_extended_grapheme(&self, _extended_grapheme_idx: usize) -> Chunks<'_>
+    fn saturating_chunks_at_extended_grapheme<'a>(self, _extended_grapheme_idx: usize) -> Chunks<'a>
     where
-        Self: AsRopeSlice,
+        Self: Is<RopeSlice<'a>>,
     {
         std::todo!()
     }
 
-    fn saturating_chunks_at_char(&self, char_idx: usize) -> Chunks<'_>
+    fn saturating_chunks_at_char<'a>(self, char_idx: usize) -> Chunks<'a>
     where
-        Self: AsRopeSlice,
+        Self: Is<RopeSlice<'a>>,
     {
-        let rope_slice = self.as_rope_slice();
+        let rope_slice = self.into_self();
         let char_idx = rope_slice.len_chars().min(char_idx);
 
         rope_slice.chunks_at_char(char_idx).0
     }
 
-    fn saturating_lines_at(&self, line_idx: usize) -> Lines<'_>
+    fn saturating_lines_at<'a>(self, line_idx: usize) -> Lines<'a>
     where
-        Self: AsRopeSlice,
+        Self: Is<RopeSlice<'a>>,
     {
-        let rope_slice = self.as_rope_slice();
+        let rope_slice = self.into_self();
         let line_idx = rope_slice.len_lines().min(line_idx);
 
         rope_slice.lines_at(line_idx)

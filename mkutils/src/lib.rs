@@ -1,6 +1,5 @@
 #![allow(clippy::missing_errors_doc)]
 
-mod as_rope_slice;
 mod debugged;
 mod geometry;
 mod into_stream;

@@ -80,6 +80,13 @@ pub trait Utils {
         std::str::from_utf8(self.as_ref())
     }
 
+    fn as_slice(&self) -> RopeSlice<'_>
+    where
+        Self: Borrow<Rope>,
+    {
+        self.borrow().slice(..)
+    }
+
     fn borrowed(&self) -> Cow<'_, Self>
     where
         Self: ToOwned,

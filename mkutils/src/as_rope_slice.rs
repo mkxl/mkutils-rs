@@ -11,7 +11,7 @@ impl AsRopeSlice for Rope {
 }
 
 impl<'a> AsRopeSlice for RopeSlice<'a> {
-    fn as_rope_slice(&self) -> RopeSlice<'a> {
+    fn as_rope_slice<'b>(&'b self) -> RopeSlice<'a> {
         *self
     }
 }

@@ -504,13 +504,17 @@ pub trait Utils {
         PointUsize::new(x, y)
     }
 
-    fn saturating_chunks_at_extended_grapheme<'a>(self, _extended_grapheme_idx: usize) -> Chunks<'a>
+    // TODO-ac2072:
+    // - add [AsRopeSlice] trait that both [Rope] and [RopeSlice<'_>] implement
+    // - i was doing this, but it didn't work due to some use of tempoarary variables error
+    fn saturating_chunks_at_extended_grapheme<'a>(self, extended_grapheme_idx: usize) -> Chunks<'a>
     where
         Self: Is<RopeSlice<'a>>,
     {
-        std::todo!()
+        self.saturating_chunks_at_char(extended_grapheme_idx)
     }
 
+    // TODO-ac2072
     fn saturating_chunks_at_char<'a>(self, char_idx: usize) -> Chunks<'a>
     where
         Self: Is<RopeSlice<'a>>,
@@ -521,6 +525,7 @@ pub trait Utils {
         rope_slice.chunks_at_char(char_idx).0
     }
 
+    // TODO-ac2072
     fn saturating_lines_at<'a>(self, line_idx: usize) -> Lines<'a>
     where
         Self: Is<RopeSlice<'a>>,

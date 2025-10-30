@@ -22,7 +22,8 @@ impl<T> Point<T> {
         Self::const_new(x.into(), y.into())
     }
 
-    // TODO: would like to have an [impl<T, S: Into<T>> From<Point<S>> for Point<T>] impl
+    // TODO: would like to have an [impl<T, S: Into<T>> From<Point<S>> for Point<T>]
+    // impl but conflicts with [From<T> for T] when [S = T] in the first
     pub fn into_point<S: From<T>>(self) -> Point<S> {
         Point::new(self.x, self.y)
     }

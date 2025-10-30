@@ -6,7 +6,7 @@ use poem::{Endpoint, IntoResponse};
 use poem_openapi::{error::ParseRequestPayloadError, payload::Json as PoemJson};
 use postcard::Error as PostcardError;
 use reqwest::{RequestBuilder, Response};
-use ropey::Rope;
+use ropey::{Rope, iter::Chunks};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
@@ -137,6 +137,16 @@ pub trait Utils {
         };
 
         anyhow::bail!("({status}) {text}")
+    }
+
+    fn chunks_at_extended_grapheme(&self, extended_grapheme_idx: usize) -> Chunks<'_>
+    where
+        Self: Borrow<Rope>,
+    {
+        let rope = self.borrow();
+        let extended_grapheme_idx = rope.len_chars().min(extended_grapheme_idx);
+
+        rope.chunks_at_char(extended_grapheme_idx).0
     }
 
     fn convert<T: From<Self>>(self) -> T
@@ -479,7 +489,7 @@ pub trait Utils {
         std::fs::remove_file(self)
     }
 
-    fn rope_size(&self) -> PointUsize
+    fn num_lines_and_extended_graphemes(&self) -> PointUsize
     where
         Self: Borrow<Rope>,
     {

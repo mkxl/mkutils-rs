@@ -1,4 +1,4 @@
-use crate::{debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
+use crate::{as_rope_slice::AsRopeSlice, debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use futures::{Sink, SinkExt, StreamExt, TryFuture};
 use num::traits::{SaturatingAdd, SaturatingSub};
@@ -141,12 +141,12 @@ pub trait Utils {
 
     fn chunks_at_extended_grapheme(&self, extended_grapheme_idx: usize) -> Chunks<'_>
     where
-        Self: Borrow<Rope>,
+        Self: AsRopeSlice,
     {
-        let rope = self.borrow();
-        let extended_grapheme_idx = rope.len_chars().min(extended_grapheme_idx);
+        let rope_slice = self.as_rope_slice();
+        let extended_grapheme_idx = rope_slice.len_chars().min(extended_grapheme_idx);
 
-        rope.chunks_at_char(extended_grapheme_idx).0
+        rope_slice.chunks_at_char(extended_grapheme_idx).0
     }
 
     fn convert<T: From<Self>>(self) -> T

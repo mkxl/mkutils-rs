@@ -5,6 +5,7 @@ use num::traits::{SaturatingAdd, SaturatingSub};
 use poem::{Endpoint, IntoResponse};
 use poem_openapi::{error::ParseRequestPayloadError, payload::Json as PoemJson};
 use postcard::Error as PostcardError;
+use ratatui::text::Line;
 use reqwest::{RequestBuilder, Response};
 use ropey::{
     Rope, RopeSlice,
@@ -258,6 +259,13 @@ pub trait Utils {
         let func = move |_request| self.clone();
 
         poem::endpoint::make_sync(func)
+    }
+
+    fn into_line<'a>(self) -> Line<'a>
+    where
+        Self: Into<Cow<'a, str>>,
+    {
+        self.into().into()
     }
 
     // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]

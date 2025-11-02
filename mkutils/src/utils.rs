@@ -73,6 +73,17 @@ pub trait Utils {
         rhs.await
     }
 
+    fn append(self, rhs: &str) -> String
+    where
+        Self: Is<String>,
+    {
+        let mut string = self.into_self();
+
+        string.push_str(rhs);
+
+        string
+    }
+
     fn as_utf8(&self) -> Result<&str, Utf8Error>
     where
         Self: AsRef<[u8]>,

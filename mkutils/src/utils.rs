@@ -1,9 +1,13 @@
 use crate::{debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
-use futures::{Sink, SinkExt, StreamExt, TryFuture};
+use bytes::Bytes;
+use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture};
 use num::traits::{SaturatingAdd, SaturatingSub};
-use poem::{Endpoint, IntoResponse};
-use poem_openapi::{error::ParseRequestPayloadError, payload::Json as PoemJson};
+use poem::{Body as PoemBody, Endpoint, IntoResponse};
+use poem_openapi::{
+    error::ParseRequestPayloadError,
+    payload::{Binary as PoemBinary, Json as PoemJson},
+};
 use postcard::Error as PostcardError;
 use ratatui::text::Line;
 use reqwest::{RequestBuilder, Response};
@@ -16,6 +20,7 @@ use serde_json::{Error as SerdeJsonError, Value as Json};
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
+    error::Error as StdError,
     ffi::OsStr,
     fmt::{Debug, Display},
     fs::{File, Metadata},
@@ -227,6 +232,13 @@ pub trait Utils {
         self.as_ref().graphemes(true)
     }
 
+    fn file_name_ok(&self) -> Result<&OsStr, AnyhowError>
+    where
+        Self: AsRef<Path>,
+    {
+        self.as_ref().file_name().context("path has no file_name")
+    }
+
     fn immutable(&mut self) -> &Self {
         self
     }
@@ -323,11 +335,18 @@ pub trait Utils {
         anyhow::bail!("{self:?} is not valid utf-8")
     }
 
-    fn file_name_ok(&self) -> Result<&OsStr, AnyhowError>
+    fn io_error(self) -> IoError
     where
-        Self: AsRef<Path>,
+        Self: Into<Box<dyn StdError + Send + Sync>>,
     {
-        self.as_ref().file_name().context("path has no file_name")
+        IoError::other(self)
+    }
+
+    fn io_result<T, E: Into<Box<dyn StdError + Send + Sync>>>(self) -> Result<T, IoError>
+    where
+        Self: Is<Result<T, E>>,
+    {
+        self.into_self().map_err(E::io_error)
     }
 
     fn len_extended_graphemes(&self) -> usize
@@ -467,11 +486,25 @@ pub trait Utils {
         func(self)
     }
 
+    fn poem_binary(self) -> PoemBinary<Self>
+    where
+        Self: Sized,
+    {
+        PoemBinary(self)
+    }
+
     fn poem_json(self) -> PoemJson<Self>
     where
         Self: Sized,
     {
         PoemJson(self)
+    }
+
+    fn poem_stream_body<O: 'static + Into<Bytes>, E: 'static + Into<IoError>>(self) -> PoemBinary<PoemBody>
+    where
+        Self: 'static + Send + Sized + Stream<Item = Result<O, E>>,
+    {
+        PoemBody::from_bytes_stream(self).poem_binary()
     }
 
     fn println(&self)

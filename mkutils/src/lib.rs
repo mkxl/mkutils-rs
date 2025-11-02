@@ -7,6 +7,7 @@ mod is;
 mod process;
 mod rope_builder;
 mod status;
+mod to_value;
 mod tracing;
 mod utils;
 
@@ -17,6 +18,7 @@ pub use crate::{
     is::Is,
     process::Process,
     rope_builder::RopeBuilder,
+    to_value::ToValue,
     tracing::Tracing,
     utils::Utils,
 };

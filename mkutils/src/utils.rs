@@ -122,6 +122,13 @@ pub trait Utils {
         TokioBufWriter::new(self)
     }
 
+    fn cast_ref<T>(&self) -> &T {
+        let ptr = std::ptr::from_ref(self).cast::<T>();
+        let value = unsafe { ptr.as_ref() };
+
+        value.unwrap()
+    }
+
     fn cat<T: Display>(&self, rhs: T) -> String
     where
         Self: Display,
@@ -338,6 +345,14 @@ pub trait Utils {
             Some(x) => x.as_ref().some(),
             None => None,
         }
+    }
+
+    #[must_use]
+    fn mem_take(&mut self) -> Self
+    where
+        Self: Default,
+    {
+        std::mem::take(self)
     }
 
     async fn metadata_async(&self) -> Result<Metadata, IoError>

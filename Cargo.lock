@@ -253,7 +253,7 @@ dependencies = [
  "prost",
  "prost-types",
  "serde",
- "serde_json 1.0.145",
+ "serde_json",
  "thread_local",
  "tokio",
  "tokio-stream",
@@ -1165,13 +1165,14 @@ dependencies = [
  "reqwest",
  "ropey",
  "serde",
- "serde_json 1.0.144",
+ "serde_json",
  "tokio",
  "tokio-stream",
  "tracing",
  "tracing-subscriber",
  "unicode-segmentation",
  "url",
+ "valuable",
 ]
 
 [[package]]
@@ -1473,7 +1474,7 @@ dependencies = [
  "regex",
  "rfc7239",
  "serde",
- "serde_json 1.0.145",
+ "serde_json",
  "serde_urlencoded",
  "serde_yaml",
  "smallvec",
@@ -1517,7 +1518,7 @@ dependencies = [
  "quick-xml",
  "regex",
  "serde",
- "serde_json 1.0.145",
+ "serde_json",
  "serde_urlencoded",
  "serde_yaml",
  "thiserror",
@@ -1771,7 +1772,7 @@ dependencies = [
  "pin-project-lite",
  "rustls-pki-types",
  "serde",
- "serde_json 1.0.145",
+ "serde_json",
  "serde_urlencoded",
  "sync_wrapper",
  "tokio",
@@ -1963,18 +1964,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "serde_json"
-version = "1.0.144"
-source = "git+https://github.com/mkxl/serde-json#664f6c10e6874e063d10bc70e9b124b9c326f399"
-dependencies = [
- "itoa",
- "memchr",
- "ryu",
- "serde",
- "valuable",
 ]
 
 [[package]]
@@ -2503,7 +2492,7 @@ dependencies = [
  "once_cell",
  "regex-automata",
  "serde",
- "serde_json 1.0.145",
+ "serde_json",
  "sharded-slab",
  "smallvec",
  "thread_local",

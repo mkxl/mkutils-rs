@@ -1,6 +1,6 @@
 use crate::{debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
-use bytes::Bytes;
+use bytes::{Buf, Bytes};
 use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture};
 use num::traits::{SaturatingAdd, SaturatingSub};
 use poem::{Body as PoemBody, Endpoint, IntoResponse};
@@ -42,6 +42,10 @@ use tokio::{
     },
     sync::oneshot::Sender as OneshotSender,
     task::JoinHandle,
+};
+use tokio_util::{
+    codec::{FramedRead, LinesCodec},
+    io::StreamReader,
 };
 use unicode_segmentation::{Graphemes, UnicodeSegmentation};
 
@@ -285,6 +289,20 @@ pub trait Utils {
         Self: Into<Cow<'a, str>>,
     {
         self.into().into()
+    }
+
+    fn into_stream_reader<B: Buf, E: Into<IoError>>(self) -> StreamReader<Self, B>
+    where
+        Self: Sized + Stream<Item = Result<B, E>>,
+    {
+        StreamReader::new(self)
+    }
+
+    fn into_line_frames(self) -> FramedRead<Self, LinesCodec>
+    where
+        Self: Sized,
+    {
+        FramedRead::new(self, LinesCodec::new())
     }
 
     // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]

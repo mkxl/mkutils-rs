@@ -477,6 +477,17 @@ pub trait Utils {
         std::println!("{self}");
     }
 
+    fn pushed<T>(self, item: T) -> Vec<T>
+    where
+        Self: Is<Vec<T>>,
+    {
+        let mut vec = self.into_self();
+
+        vec.push(item);
+
+        vec
+    }
+
     fn query_once<T: Serialize, S: Into<Option<T>>>(self, name: &str, value: S) -> RequestBuilder
     where
         Self: Is<RequestBuilder>,

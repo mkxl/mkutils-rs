@@ -168,6 +168,13 @@ pub trait Utils {
         anyhow::bail!("({status}) {text}")
     }
 
+    fn compose<X, Y, Z, F: FnOnce(Y) -> Z>(self, func: F) -> impl FnOnce(X) -> Z
+    where
+        Self: Sized + FnOnce(X) -> Y,
+    {
+        |x| self(x).pipe(func)
+    }
+
     fn convert<T: From<Self>>(self) -> T
     where
         Self: Sized,
@@ -360,10 +367,7 @@ pub trait Utils {
     where
         Self: Borrow<Option<X>>,
     {
-        match self.borrow() {
-            Some(x) => x.as_ref().some(),
-            None => None,
-        }
+        self.borrow().as_ref().map(X::as_ref)
     }
 
     #[must_use]
@@ -669,6 +673,7 @@ pub trait Utils {
         serde_json::to_string(self)
     }
 
+    #[allow(clippy::option_if_let_else)]
     fn to_str_ok(&self) -> Result<&str, AnyhowError>
     where
         Self: AsRef<OsStr>,

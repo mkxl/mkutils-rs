@@ -66,28 +66,28 @@ impl<W> Tracing<W> {
     }
 
     #[must_use]
-    pub fn with_level_filter(mut self, level_filter: LevelFilter) -> Self {
+    pub const fn with_level_filter(mut self, level_filter: LevelFilter) -> Self {
         self.level_filter = level_filter;
 
         self
     }
 
     #[must_use]
-    pub fn with_json_enabled(mut self, json_enabled: bool) -> Self {
+    pub const fn with_json_enabled(mut self, json_enabled: bool) -> Self {
         self.json_enabled = json_enabled;
 
         self
     }
 
     #[must_use]
-    pub fn with_tokio_console_port(mut self, tokio_console_port: u16) -> Self {
+    pub const fn with_tokio_console_port(mut self, tokio_console_port: u16) -> Self {
         self.tokio_console_port = tokio_console_port;
 
         self
     }
 
     #[must_use]
-    pub fn with_tokio_console_enabled(mut self, tokio_console_enabled: bool) -> Self {
+    pub const fn with_tokio_console_enabled(mut self, tokio_console_enabled: bool) -> Self {
         self.tokio_console_enabled = tokio_console_enabled;
 
         self

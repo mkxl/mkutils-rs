@@ -12,6 +12,7 @@ pub struct ValuableJsonArray(Vec<Json>);
 pub struct ValuableJsonObject(Map<String, Json>);
 
 impl Valuable for ValuableJson {
+    #[allow(clippy::option_if_let_else)]
     fn as_value(&self) -> Value<'_> {
         match &self.0 {
             Json::Null => Value::Unit,

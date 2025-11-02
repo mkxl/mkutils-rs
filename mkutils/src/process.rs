@@ -64,15 +64,15 @@ impl Process {
         stdio.take().context("unable to set up stdio for process")
     }
 
-    pub fn stdin_mut(&mut self) -> &mut ChildStdin {
+    pub const fn stdin_mut(&mut self) -> &mut ChildStdin {
         &mut self.stdin
     }
 
-    pub fn stdout_mut(&mut self) -> &mut ChildStdout {
+    pub const fn stdout_mut(&mut self) -> &mut ChildStdout {
         &mut self.stdout
     }
 
-    pub fn stderr_mut(&mut self) -> &mut ChildStderr {
+    pub const fn stderr_mut(&mut self) -> &mut ChildStderr {
         &mut self.stderr
     }
 

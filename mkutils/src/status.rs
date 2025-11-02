@@ -5,7 +5,7 @@ pub struct Status<T, E>(pub Result<T, E>);
 
 impl<T, E> Status<T, E> {
     #[must_use]
-    pub fn level(&self) -> Level {
+    pub const fn level(&self) -> Level {
         if self.0.is_ok() { Level::INFO } else { Level::WARN }
     }
 }

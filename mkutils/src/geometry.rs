@@ -28,14 +28,14 @@ impl<T> Point<T> {
         Point::new(self.x, self.y)
     }
 
-    pub fn get(&self, orientation: Orientation) -> &T {
+    pub const fn get(&self, orientation: Orientation) -> &T {
         match orientation {
             Orientation::Horizontal => &self.x,
             Orientation::Vertical => &self.y,
         }
     }
 
-    pub fn get_mut(&mut self, orientation: Orientation) -> &mut T {
+    pub const fn get_mut(&mut self, orientation: Orientation) -> &mut T {
         match orientation {
             Orientation::Horizontal => &mut self.x,
             Orientation::Vertical => &mut self.y,

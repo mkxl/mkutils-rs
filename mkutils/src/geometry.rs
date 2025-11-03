@@ -1,7 +1,8 @@
-use num::traits::ConstZero;
+use derive_more::IsVariant;
+use num::traits::{ConstZero, SaturatingSub};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, IsVariant)]
 pub enum Orientation {
     Horizontal,
     Vertical,
@@ -43,6 +44,22 @@ impl<T> Point<T> {
     }
 }
 
+impl<T: ConstZero> Point<T> {
+    pub const ORIGIN: Self = Self { x: T::ZERO, y: T::ZERO };
+}
+
+impl<T: Clone + SaturatingSub> Point<T> {
+    #[must_use]
+    pub fn saturating_sub(&self, diff: &T, orientation: Orientation) -> Self {
+        if orientation.is_horizontal() {
+            (self.x.saturating_sub(diff), self.y.clone())
+        } else {
+            (self.x.clone(), self.y.saturating_sub(diff))
+        }
+        .into()
+    }
+}
+
 impl<T, X: Into<T>, Y: Into<T>> From<(X, Y)> for Point<T> {
     fn from((x, y): (X, Y)) -> Self {
         Self::new(x, y)
@@ -53,10 +70,6 @@ impl<T, X: From<T>, Y: From<T>> From<Point<T>> for (X, Y) {
     fn from(point: Point<T>) -> Self {
         (point.x.into(), point.y.into())
     }
-}
-
-impl<T: ConstZero> Point<T> {
-    pub const ORIGIN: Self = Self { x: T::ZERO, y: T::ZERO };
 }
 
 pub type PointU16 = Point<u16>;

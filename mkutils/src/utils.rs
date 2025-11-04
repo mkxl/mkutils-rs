@@ -543,7 +543,20 @@ pub trait Utils {
         vec
     }
 
-    fn query_once<T: Serialize, S: Into<Option<T>>>(self, name: &str, value: S) -> RequestBuilder
+    fn query_all<T: Serialize>(self, name: &str, values: impl IntoIterator<Item = T>) -> RequestBuilder
+    where
+        Self: Is<RequestBuilder>,
+    {
+        let mut request_builder = self.into_self();
+
+        for value in values {
+            request_builder = request_builder.query_one(name, value);
+        }
+
+        request_builder
+    }
+
+    fn query_one<T: Serialize>(self, name: &str, value: impl Into<Option<T>>) -> RequestBuilder
     where
         Self: Is<RequestBuilder>,
     {

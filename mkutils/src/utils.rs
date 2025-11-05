@@ -1,7 +1,7 @@
 use crate::{debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use bytes::{Buf, Bytes};
-use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture};
+use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture, stream::Filter};
 use num::traits::{SaturatingAdd, SaturatingSub};
 use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
 use poem_openapi::{
@@ -177,13 +177,6 @@ pub trait Utils {
         anyhow::bail!("({status}) {text}")
     }
 
-    fn compose<X, Y, Z, F: FnOnce(Y) -> Z>(self, func: F) -> impl FnOnce(X) -> Z
-    where
-        Self: Sized + FnOnce(X) -> Y,
-    {
-        |x| self(x).pipe(func)
-    }
-
     fn convert<T: From<Self>>(self) -> T
     where
         Self: Sized,
@@ -234,6 +227,17 @@ pub trait Utils {
         Self: AsRef<str>,
     {
         self.as_ref().graphemes(true)
+    }
+
+    fn filter_sync(
+        self,
+        mut func: impl FnMut(&Self::Item) -> bool,
+    ) -> Filter<Self, Ready<bool>, impl FnMut(&Self::Item) -> Ready<bool>>
+    where
+        Self: Sized + StreamExt,
+    {
+        // TODO: figure out why [func.pipe(bool::ready)] won't work
+        self.filter(move |x| func(x).ready())
     }
 
     fn file_name_ok(&self) -> Result<&OsStr, AnyhowError>
@@ -521,7 +525,14 @@ pub trait Utils {
         Box::pin(self)
     }
 
-    fn pipe<T, F: FnOnce(Self) -> T>(self, func: F) -> T
+    fn pipe<X, Y, Z, F: FnMut(Y) -> Z>(mut self, mut func: F) -> impl FnMut(X) -> Z
+    where
+        Self: Sized + FnMut(X) -> Y,
+    {
+        move |x| self(x).pipe_into(&mut func)
+    }
+
+    fn pipe_into<T, F: FnOnce(Self) -> T>(self, func: F) -> T
     where
         Self: Sized,
     {

@@ -243,12 +243,12 @@ pub trait Utils {
         self.as_ref().file_name().context("path has no file_name")
     }
 
-    fn take_json<K: Index, T: DeserializeOwned>(&mut self, key: K) -> Result<T, SerdeJsonError>
+    fn take_json<T: DeserializeOwned>(&mut self, index: impl Index) -> Result<T, SerdeJsonError>
     where
         Self: BorrowMut<Json>,
     {
         self.borrow_mut()
-            .get_mut(key)
+            .get_mut(index)
             .map_or(Json::Null, std::mem::take)
             .into_value_from_json()
     }

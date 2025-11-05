@@ -16,7 +16,7 @@ use ropey::{
     iter::{Chunks, Lines},
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use serde_json::{Error as SerdeJsonError, Value as Json};
+use serde_json::{Error as SerdeJsonError, Value as Json, value::Index};
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
@@ -243,6 +243,16 @@ pub trait Utils {
         self.as_ref().file_name().context("path has no file_name")
     }
 
+    fn take_json<K: Index, T: DeserializeOwned>(&mut self, key: K) -> Result<T, SerdeJsonError>
+    where
+        Self: BorrowMut<Json>,
+    {
+        self.borrow_mut()
+            .get_mut(key)
+            .map_or(Json::Null, std::mem::take)
+            .into_value_from_json()
+    }
+
     fn immutable(&mut self) -> &Self {
         self
     }
@@ -346,6 +356,13 @@ pub trait Utils {
         }
     }
 
+    fn into_value_from_json<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
+    where
+        Self: Is<Json>,
+    {
+        serde_json::from_value(self.into_self())
+    }
+
     fn invalid_utf8_err<T>(&self) -> Result<T, AnyhowError>
     where
         Self: Debug,
@@ -391,6 +408,13 @@ pub trait Utils {
         }
 
         self
+    }
+
+    fn map_collect<Y, T: FromIterator<Y>>(self, func: impl FnMut(Self::Item) -> Y) -> T
+    where
+        Self: IntoIterator + Sized,
+    {
+        self.into_iter().map(func).collect::<T>()
     }
 
     fn map_into<Y, X: Into<Y>>(self) -> Option<Y>
@@ -730,6 +754,13 @@ pub trait Utils {
         postcard::to_stdvec(self)
     }
 
+    fn to_json_object(&self, key: &str) -> Json
+    where
+        Self: Serialize,
+    {
+        serde_json::json!({key: self})
+    }
+
     fn to_json_str(&self) -> Result<String, SerdeJsonError>
     where
         Self: Serialize,
@@ -782,10 +813,7 @@ pub trait Utils {
     where
         Self: Serialize,
     {
-        let value = serde_json::to_value(self)?;
-        let value = serde_json::from_value::<T>(value)?;
-
-        value.ok()
+        self.to_json()?.into_value_from_json()
     }
 
     // NOTE: would prefer to do [Result<Vec<Self::Item::Ok>, Self::Item::Error>] but getting
@@ -827,6 +855,10 @@ pub trait Utils {
     }
 
     fn unit(&self) {}
+
+    fn with<T>(&self, value: T) -> T {
+        value
+    }
 
     fn write_as_json_to<T: Write>(&self, writer: T) -> Result<(), SerdeJsonError>
     where

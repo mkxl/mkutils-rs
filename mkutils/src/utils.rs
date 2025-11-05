@@ -3,7 +3,7 @@ use anyhow::{Context, Error as AnyhowError};
 use bytes::{Buf, Bytes};
 use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture};
 use num::traits::{SaturatingAdd, SaturatingSub};
-use poem::{Body as PoemBody, Endpoint, IntoResponse};
+use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
 use poem_openapi::{
     error::ParseRequestPayloadError,
     payload::{Binary as PoemBinary, Json as PoemJson},
@@ -535,6 +535,13 @@ pub trait Utils {
         PoemBinary(self)
     }
 
+    fn poem_binary_message(self) -> PoemMessage
+    where
+        Self: Is<Vec<u8>>,
+    {
+        PoemMessage::Binary(self.into_self())
+    }
+
     fn poem_json(self) -> PoemJson<Self>
     where
         Self: Sized,
@@ -547,6 +554,13 @@ pub trait Utils {
         Self: 'static + Send + Sized + Stream<Item = Result<O, E>>,
     {
         PoemBody::from_bytes_stream(self).poem_binary()
+    }
+
+    fn poem_text_message(self) -> PoemMessage
+    where
+        Self: Is<String>,
+    {
+        PoemMessage::Text(self.into_self())
     }
 
     fn println(&self)

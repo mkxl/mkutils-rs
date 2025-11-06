@@ -1,4 +1,4 @@
-use crate::{debugged::Debugged, geometry::PointUsize, is::Is, status::Status};
+use crate::{debugged::Debugged, geometry::PointUsize, is::Is, join::Join, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use bytes::{Buf, Bytes};
 use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture, stream::Filter};
@@ -34,6 +34,7 @@ use std::{
     pin::Pin,
     str::Utf8Error,
     sync::atomic::{AtomicUsize, Ordering},
+    task::Poll,
 };
 use tokio::{
     fs::File as TokioFile,
@@ -41,7 +42,7 @@ use tokio::{
         AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader as TokioBufReader, BufWriter as TokioBufWriter,
     },
     sync::oneshot::Sender as OneshotSender,
-    task::JoinHandle,
+    task::{JoinError, JoinHandle, JoinSet},
 };
 use tokio_util::{
     codec::{FramedRead, LinesCodec},
@@ -247,16 +248,6 @@ pub trait Utils {
         self.as_ref().file_name().context("path has no file_name")
     }
 
-    fn take_json<T: DeserializeOwned>(&mut self, index: impl Index) -> Result<T, SerdeJsonError>
-    where
-        Self: BorrowMut<Json>,
-    {
-        self.borrow_mut()
-            .get_mut(index)
-            .map_or(Json::Null, std::mem::take)
-            .into_value_from_json()
-    }
-
     fn immutable(&mut self) -> &Self {
         self
     }
@@ -386,6 +377,13 @@ pub trait Utils {
         Self: Is<Result<T, E>>,
     {
         self.into_self().map_err(E::io_error)
+    }
+
+    async fn join<T: 'static>(&mut self) -> Result<T, JoinError>
+    where
+        Self: BorrowMut<JoinSet<T>>,
+    {
+        Join::new(self.borrow_mut()).await
     }
 
     fn len_extended_graphemes(&self) -> usize
@@ -530,6 +528,13 @@ pub trait Utils {
         Self: Sized + FnMut(X) -> Y,
     {
         move |x| self(x).pipe_into(&mut func)
+    }
+
+    fn poll_ready(self) -> Poll<Self>
+    where
+        Self: Sized,
+    {
+        Poll::Ready(self)
     }
 
     fn pipe_into<T, F: FnOnce(Self) -> T>(self, func: F) -> T
@@ -756,6 +761,16 @@ pub trait Utils {
         let end = begin + query_len;
 
         (begin, end).some()
+    }
+
+    fn take_json<T: DeserializeOwned>(&mut self, index: impl Index) -> Result<T, SerdeJsonError>
+    where
+        Self: BorrowMut<Json>,
+    {
+        self.borrow_mut()
+            .get_mut(index)
+            .map_or(Json::Null, std::mem::take)
+            .into_value_from_json()
     }
 
     fn to_json(&self) -> Result<Json, SerdeJsonError>

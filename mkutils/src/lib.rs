@@ -4,6 +4,7 @@ mod debugged;
 mod geometry;
 mod into_stream;
 mod is;
+mod join;
 mod macros;
 mod process;
 mod rope_builder;

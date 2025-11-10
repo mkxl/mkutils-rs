@@ -927,7 +927,7 @@ pub trait Utils {
         serde_json::to_writer(writer, self)
     }
 
-    async fn write_all_and_flush<T: AsRef<[u8]>>(&mut self, byte_str: T) -> Result<(), IoError>
+    fn write_all_and_flush<T: AsRef<[u8]>>(&mut self, byte_str: T) -> Result<(), IoError>
     where
         Self: Write + Unpin,
     {

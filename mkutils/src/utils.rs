@@ -597,6 +597,13 @@ pub trait Utils {
         std::println!("{self}");
     }
 
+    fn push_to(self, values: &mut Vec<Self>)
+    where
+        Self: Sized,
+    {
+        values.push(self);
+    }
+
     fn pushed<T>(self, item: T) -> Vec<T>
     where
         Self: Is<Vec<T>>,

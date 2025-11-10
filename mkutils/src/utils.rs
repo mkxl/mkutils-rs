@@ -1,6 +1,7 @@
 use crate::{debugged::Debugged, geometry::PointUsize, is::Is, join::Join, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use bytes::{Buf, Bytes};
+use camino::{Utf8Path, Utf8PathBuf};
 use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture, stream::Filter};
 use num::traits::{SaturatingAdd, SaturatingSub};
 use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
@@ -221,6 +222,16 @@ pub trait Utils {
         Self: Sized,
     {
         Err(self)
+    }
+
+    fn expand_user(&self) -> Cow<'_, Utf8Path>
+    where
+        Self: AsRef<str>,
+    {
+        match shellexpand::tilde(self) {
+            Cow::Borrowed(path_str) => Utf8Path::new(path_str).borrowed(),
+            Cow::Owned(path_str) => path_str.convert::<Utf8PathBuf>().owned(),
+        }
     }
 
     fn extended_graphemes(&self) -> Graphemes<'_>

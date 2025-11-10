@@ -1,4 +1,4 @@
-use crate::{debugged::Debugged, geometry::PointUsize, is::Is, join::Join, status::Status};
+use crate::{debugged::Debugged, geometry::PointUsize, is::Is, join::Join, read_value::ReadValue, status::Status};
 use anyhow::{Context, Error as AnyhowError};
 use bytes::{Buf, Bytes};
 use camino::{Utf8Path, Utf8PathBuf};
@@ -646,11 +646,13 @@ pub trait Utils {
         string.ok()
     }
 
-    async fn read_to_string_async(&self) -> Result<String, IoError>
+    async fn read_to_string_async(self) -> ReadValue<Self>
     where
-        Self: AsRef<Path>,
+        Self: AsRef<Path> + Sized,
     {
-        tokio::fs::read_to_string(self).await
+        let result = tokio::fs::read_to_string(self.as_ref()).await;
+
+        ReadValue::new(self, result)
     }
 
     fn ready(self) -> Ready<Self>

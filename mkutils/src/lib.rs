@@ -7,6 +7,7 @@ mod is;
 mod join;
 mod macros;
 mod process;
+mod read_value;
 mod rope_builder;
 mod status;
 mod to_value;
@@ -19,6 +20,7 @@ pub use crate::{
     into_stream::IntoStream,
     is::Is,
     process::Process,
+    read_value::ReadValue,
     rope_builder::RopeBuilder,
     to_value::ToValue,
     tracing::Tracing,

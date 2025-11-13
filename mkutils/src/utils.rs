@@ -597,6 +597,13 @@ pub trait Utils {
         std::println!("{self}");
     }
 
+    fn print(&self)
+    where
+        Self: Display,
+    {
+        std::print!("{self}");
+    }
+
     fn push_to(self, values: &mut Vec<Self>)
     where
         Self: Sized,

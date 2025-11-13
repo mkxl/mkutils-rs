@@ -14,7 +14,7 @@ anyhow = { version = "1.0.100" }
 bytes = "1.10.1"
 camino = "1.2.1"
 console-subscriber = "0.4.1"
-derive_more = { version = "2.0.1", features = ["constructor", "is_variant"] }
+derive_more = { version = "2.0.1", features = ["constructor", "from", "is_variant"] }
 futures = "0.3.31"
 mkutils-macros = { version = "0.1.0", path = "../mkutils-macros" }
 num = "0.4.3"

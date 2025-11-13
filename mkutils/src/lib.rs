@@ -1,6 +1,7 @@
 #![allow(clippy::missing_errors_doc)]
 
 mod debugged;
+mod event;
 mod geometry;
 mod into_stream;
 mod is;
@@ -16,6 +17,7 @@ mod utils;
 
 pub use crate::{
     debugged::Debugged,
+    event::{Event, EventReceiver, EventSender},
     geometry::{Orientation, Point, PointU16, PointUsize},
     into_stream::IntoStream,
     is::Is,

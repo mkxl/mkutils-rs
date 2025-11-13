@@ -1,45 +1,42 @@
 use crate::utils::Utils;
-use anyhow::Error as AnyhowError;
-use derive_more::From;
-use tokio::sync::oneshot::{
-    Receiver as OneshotReceiver, Sender as OneshotSender, error::RecvError as OneshotRecvError,
-};
+use derive_more::Constructor;
+use std::sync::Arc;
+use tokio::sync::Notify;
 
-#[derive(From)]
 pub struct EventReceiver {
-    oneshot_receiver: Option<OneshotReceiver<()>>,
+    is_set: bool,
+    notify: Arc<Notify>,
 }
 
 impl EventReceiver {
-    fn new(oneshot_receiver: OneshotReceiver<()>) -> Self {
-        let oneshot_receiver = oneshot_receiver.some();
+    const INITIAL_IS_SET: bool = false;
+    const TERMINAL_IS_SET: bool = true;
 
-        Self { oneshot_receiver }
+    const fn new(notify: Arc<Notify>) -> Self {
+        let is_set = Self::INITIAL_IS_SET;
+
+        Self { is_set, notify }
     }
 
-    pub async fn wait(&mut self) -> Result<(), OneshotRecvError> {
-        let Some(oneshot_receiver) = self.oneshot_receiver.take() else { return ().ok() };
+    pub async fn wait(&mut self) {
+        if self.is_set {
+            return;
+        }
 
-        oneshot_receiver.await
+        self.notify.notified().await;
+
+        self.is_set = Self::TERMINAL_IS_SET;
     }
 }
 
-#[derive(From)]
+#[derive(Constructor)]
 pub struct EventSender {
-    oneshot_sender: Option<OneshotSender<()>>,
+    notify: Arc<Notify>,
 }
 
 impl EventSender {
-    fn new(oneshot_sender: OneshotSender<()>) -> Self {
-        let oneshot_sender = oneshot_sender.some();
-
-        Self { oneshot_sender }
-    }
-
-    pub fn set(&mut self) -> Result<(), AnyhowError> {
-        let Some(oneshot_sender) = self.oneshot_sender.take() else { return ().ok() };
-
-        ().send_to_oneshot(oneshot_sender)
+    pub fn set(&self) {
+        self.notify.notify_one();
     }
 }
 
@@ -49,9 +46,9 @@ impl Event {
     #[allow(clippy::new_ret_no_self)]
     #[must_use]
     pub fn new() -> (EventSender, EventReceiver) {
-        let (oneshot_sender, oneshot_receiver) = tokio::sync::oneshot::channel();
-        let event_sender = EventSender::new(oneshot_sender);
-        let event_receiver = EventReceiver::new(oneshot_receiver);
+        let notify = Notify::new().arc();
+        let event_sender = EventSender::new(notify.clone());
+        let event_receiver = EventReceiver::new(notify);
 
         (event_sender, event_receiver)
     }

@@ -34,7 +34,10 @@ use std::{
     path::{Path, PathBuf},
     pin::Pin,
     str::Utf8Error,
-    sync::atomic::{AtomicUsize, Ordering},
+    sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    },
     task::Poll,
 };
 use tokio::{
@@ -94,6 +97,13 @@ pub trait Utils {
         string.push_str(rhs);
 
         string
+    }
+
+    fn arc(self) -> Arc<Self>
+    where
+        Self: Sized,
+    {
+        Arc::new(self)
     }
 
     fn as_utf8(&self) -> Result<&str, Utf8Error>

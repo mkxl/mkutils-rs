@@ -1,6 +1,6 @@
 use crate::{
-    debugged::Debugged, geometry::PointUsize, is::Is, join::Join, read_value::ReadValue, status::Status,
-    unchecked_recv::UncheckedRecv,
+    debugged::Debugged, geometry::PointUsize, is::Is, join::Join, outcome::Outcome, read_value::ReadValue,
+    status::Status, unchecked_recv::UncheckedRecv,
 };
 use anyhow::{Context, Error as AnyhowError};
 use bytes::{Buf, Bytes};
@@ -338,6 +338,13 @@ pub trait Utils {
         Self: Into<Cow<'a, str>>,
     {
         self.into().into()
+    }
+
+    fn into_outcome<T, E>(self) -> Outcome<T, E>
+    where
+        Self: Into<Outcome<T, E>> + Sized,
+    {
+        self.into()
     }
 
     fn into_stream_reader<B: Buf, E: Into<IoError>>(self) -> StreamReader<Self, B>

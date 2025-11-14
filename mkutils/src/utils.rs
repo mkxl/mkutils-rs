@@ -916,6 +916,13 @@ pub trait Utils {
         self.to_json()?.into_value_from_json()
     }
 
+    fn try_convert<T: TryFrom<Self>>(self) -> Result<T, T::Error>
+    where
+        Self: Sized,
+    {
+        self.try_into()
+    }
+
     // NOTE: would prefer to do [Result<Vec<Self::Item::Ok>, Self::Item::Error>] but getting
     // [error[E0223]: ambiguous associated type]
     async fn try_join_all<T, E>(self) -> Result<Vec<T>, E>

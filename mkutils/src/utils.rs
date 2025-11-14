@@ -91,6 +91,13 @@ pub trait Utils {
         rhs.await
     }
 
+    fn anyhow_result<T, E: Into<AnyhowError>>(self) -> Result<T, AnyhowError>
+    where
+        Self: Is<Result<T, E>>,
+    {
+        self.into_self().map_err(E::into)
+    }
+
     fn append(self, rhs: &str) -> String
     where
         Self: Is<String>,

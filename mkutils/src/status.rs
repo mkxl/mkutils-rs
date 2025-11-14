@@ -13,8 +13,8 @@ impl<T, E> Status<T, E> {
 impl<T, E: Display> Display for Status<T, E> {
     fn fmt(&self, formatter: &mut Formatter) -> Result<(), FmtError> {
         match &self.0 {
-            Ok(_ok) => "success".fmt(formatter),
-            Err(err) => err.fmt(formatter),
+            Ok(_ok) => "ok".fmt(formatter),
+            Err(err) => std::write!(formatter, "error: {err}"),
         }
     }
 }

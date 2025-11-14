@@ -1,4 +1,7 @@
-use crate::{debugged::Debugged, geometry::PointUsize, is::Is, join::Join, read_value::ReadValue, status::Status};
+use crate::{
+    debugged::Debugged, geometry::PointUsize, is::Is, join::Join, read_value::ReadValue, status::Status,
+    unchecked_recv::UncheckedRecv,
+};
 use anyhow::{Context, Error as AnyhowError};
 use bytes::{Buf, Bytes};
 use camino::{Utf8Path, Utf8PathBuf};
@@ -167,6 +170,19 @@ pub trait Utils {
         Self: Display,
     {
         std::format!("{self}{rhs}")
+    }
+
+    async fn checked_recv<T>(&mut self) -> Result<T, AnyhowError>
+    where
+        Self: UncheckedRecv<T>,
+    {
+        match self.unchecked_recv().await {
+            Some(value) => value.ok(),
+            None => anyhow::bail!(
+                "{type_name} channel is closed and empty",
+                type_name = std::any::type_name::<T>()
+            ),
+        }
     }
 
     // NOTE: [https://docs.rs/reqwest/latest/reqwest/struct.Response.html#method.error_for_status]

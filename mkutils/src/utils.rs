@@ -49,7 +49,7 @@ use tokio::{
         AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader as TokioBufReader, BufWriter as TokioBufWriter,
     },
     sync::oneshot::Sender as OneshotSender,
-    task::{JoinError, JoinHandle, JoinSet},
+    task::{JoinError, JoinHandle, JoinSet, LocalSet},
 };
 use tokio_util::{
     codec::{Framed, LengthDelimitedCodec, LinesCodec},
@@ -707,6 +707,13 @@ pub trait Utils {
         Self: Sized,
     {
         std::future::ready(self)
+    }
+
+    async fn run_local(self) -> Self::Output
+    where
+        Self: Future + Sized,
+    {
+        LocalSet::new().run_until(self).await
     }
 
     fn remove_file(&self) -> Result<(), IoError>

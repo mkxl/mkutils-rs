@@ -7,7 +7,6 @@ mod into_stream;
 mod is;
 mod join;
 mod macros;
-mod outcome;
 mod process;
 mod read_value;
 mod rope_builder;
@@ -16,6 +15,9 @@ mod to_value;
 mod tracing;
 mod unchecked_recv;
 mod utils;
+
+#[cfg(feature = "nightly")]
+mod outcome;
 
 pub use crate::{
     debugged::Debugged,

@@ -1,4 +1,4 @@
-#![allow(clippy::missing_errors_doc)]
+#![cfg_attr(feature = "nightly", feature(result_option_map_or_default, try_trait_v2))]
 
 mod debugged;
 mod event;
@@ -7,6 +7,7 @@ mod into_stream;
 mod is;
 mod join;
 mod macros;
+mod outcome;
 mod process;
 mod read_value;
 mod rope_builder;
@@ -22,6 +23,7 @@ pub use crate::{
     geometry::{Orientation, Point, PointU16, PointUsize},
     into_stream::IntoStream,
     is::Is,
+    outcome::Outcome,
     process::Process,
     read_value::ReadValue,
     rope_builder::RopeBuilder,

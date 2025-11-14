@@ -49,7 +49,7 @@ use tokio::{
     task::{JoinError, JoinHandle, JoinSet},
 };
 use tokio_util::{
-    codec::{FramedRead, LinesCodec},
+    codec::{Framed, LengthDelimitedCodec, LinesCodec},
     io::StreamReader,
 };
 use unicode_segmentation::{Graphemes, UnicodeSegmentation};
@@ -324,11 +324,18 @@ pub trait Utils {
         StreamReader::new(self)
     }
 
-    fn into_line_frames(self) -> FramedRead<Self, LinesCodec>
+    fn into_length_delimited_frames(self) -> Framed<Self, LengthDelimitedCodec>
     where
         Self: Sized,
     {
-        FramedRead::new(self, LinesCodec::new())
+        Framed::new(self, LengthDelimitedCodec::new())
+    }
+
+    fn into_line_frames(self) -> Framed<Self, LinesCodec>
+    where
+        Self: Sized,
+    {
+        Framed::new(self, LinesCodec::new())
     }
 
     // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]

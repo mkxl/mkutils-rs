@@ -200,7 +200,7 @@ pub trait Utils {
         match self.into_self() {
             Some(item) => item.ok(),
             None => anyhow::bail!(
-                "{type_name} sequence is exhausted",
+                "sequence of {type_name} items is exhausted",
                 type_name = std::any::type_name::<T>(),
             ),
         }

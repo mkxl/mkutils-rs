@@ -7,6 +7,7 @@ mod into_stream;
 mod is;
 mod join;
 mod macros;
+mod outcome;
 mod process;
 mod read_value;
 mod rope_builder;
@@ -15,16 +16,13 @@ mod to_value;
 mod tracing;
 mod unchecked_recv;
 mod utils;
-
-#[cfg(feature = "nightly")]
-mod outcome;
-
 pub use crate::{
     debugged::Debugged,
     event::{Event, EventReceiver, EventSender},
     geometry::{Orientation, Point, PointU16, PointUsize},
     into_stream::IntoStream,
     is::Is,
+    outcome::Outcome,
     process::Process,
     read_value::ReadValue,
     rope_builder::RopeBuilder,
@@ -33,5 +31,3 @@ pub use crate::{
     utils::Utils,
 };
 pub use mkutils_macros::context;
-#[cfg(feature = "nightly")]
-pub use outcome::Outcome;

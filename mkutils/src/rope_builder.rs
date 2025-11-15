@@ -121,7 +121,7 @@ impl<R: AsyncReadExt + Unpin, const N: usize> RopeBuilder<R, N> {
 }
 
 impl<const N: usize> RopeBuilder<TokioBufReader<TokioFile>, N> {
-    pub async fn from_filepath(filepath: &Path) -> Result<Self, IoError> {
+    pub async fn from_filepath<T: AsRef<Path>>(filepath: T) -> Result<Self, IoError> {
         filepath
             .open_async()
             .await?

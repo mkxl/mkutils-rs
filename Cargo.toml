@@ -17,5 +17,6 @@ all = "deny"
 cargo = "deny"
 nursery = "deny"
 pedantic = "deny"
-multiple_crate_versions = { level = "allow", priority = 1 }
+future_not_send = { level = "allow", priority = 1 }
 missing_errors_doc = { level = "allow", priority = 1 }
+multiple_crate_versions = { level = "allow", priority = 1 }

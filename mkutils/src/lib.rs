@@ -25,7 +25,6 @@ pub use crate::{
     geometry::{Orientation, Point, PointU16, PointUsize},
     into_stream::IntoStream,
     is::Is,
-    outcome::Outcome,
     process::Process,
     read_value::ReadValue,
     rope_builder::RopeBuilder,
@@ -34,3 +33,5 @@ pub use crate::{
     utils::Utils,
 };
 pub use mkutils_macros::context;
+#[cfg(feature = "nightly")]
+pub use outcome::Outcome;

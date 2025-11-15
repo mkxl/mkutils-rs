@@ -11,20 +11,20 @@ pub enum Outcome<T, E> {
 
 impl<T, E> Outcome<T, E> {}
 
-impl<T, E> From<Result<T, E>> for Outcome<T, E> {
-    fn from(result: Result<T, E>) -> Self {
+impl<T, E2, E1: From<E2>> From<Result<T, E2>> for Outcome<T, E1> {
+    fn from(result: Result<T, E2>) -> Self {
         match result {
             Ok(ok) => Self::Ok(ok),
-            Err(err) => Self::Err(err),
+            Err(err) => Self::Err(err.into()),
         }
     }
 }
 
-impl<T, E> From<Option<Result<T, E>>> for Outcome<T, E> {
-    fn from(result_opt: Option<Result<T, E>>) -> Self {
+impl<T, E2, E1: From<E2>> From<Option<Result<T, E2>>> for Outcome<T, E1> {
+    fn from(result_opt: Option<Result<T, E2>>) -> Self {
         match result_opt {
             Some(Ok(ok)) => Self::Ok(ok),
-            Some(Err(err)) => Self::Err(err),
+            Some(Err(err)) => Self::Err(err.into()),
             None => Self::None,
         }
     }
@@ -41,6 +41,15 @@ impl<T, E> FromResidual<Option<E>> for Outcome<T, E> {
         residual.map_or_default(Self::Err)
     }
 }
+
+// impl<T, R, E: From<R>> FromResidual<Option<R>> for Outcome<T, E> {
+//     fn from_residual(residual: Option<R>) -> Self {
+//         match residual {
+//             Some(residual) => Self::Err(residual.into()),
+//             None => Self::None,
+//         }
+//     }
+// }
 
 impl<T, E> Try for Outcome<T, E> {
     type Output = T;

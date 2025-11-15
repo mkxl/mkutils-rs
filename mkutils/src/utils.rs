@@ -5,7 +5,7 @@ use crate::{
 use anyhow::{Context, Error as AnyhowError};
 use bytes::{Buf, Bytes};
 use camino::{Utf8Path, Utf8PathBuf};
-use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture, stream::Filter};
+use futures::{FutureExt, Sink, SinkExt, Stream, StreamExt, TryFuture, stream::Filter};
 use num::traits::{SaturatingAdd, SaturatingSub};
 use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
 use poem_openapi::{
@@ -183,11 +183,25 @@ pub trait Utils {
     where
         Self: UncheckedRecv<T>,
     {
-        match self.unchecked_recv().await {
-            Some(value) => value.ok(),
+        self.unchecked_recv().map(Utils::check_next).await
+    }
+
+    async fn checked_next(&mut self) -> Result<Self::Item, AnyhowError>
+    where
+        Self: StreamExt + Unpin,
+    {
+        self.next().map(Utils::check_next).await
+    }
+
+    fn check_next<T>(self) -> Result<T, AnyhowError>
+    where
+        Self: Is<Option<T>>,
+    {
+        match self.into_self() {
+            Some(item) => item.ok(),
             None => anyhow::bail!(
-                "{type_name} channel is closed and empty",
-                type_name = std::any::type_name::<T>()
+                "{type_name} sequence is exhausted",
+                type_name = std::any::type_name::<T>(),
             ),
         }
     }
@@ -504,32 +518,6 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         tokio::fs::metadata(self).await
-    }
-
-    async fn next_item_async(&mut self) -> Result<Self::Item, AnyhowError>
-    where
-        Self: StreamExt + Unpin,
-    {
-        match self.next().await {
-            Some(item) => item.ok(),
-            None => anyhow::bail!(
-                "{type_name} stream is empty",
-                type_name = std::any::type_name::<Self::Item>()
-            ),
-        }
-    }
-
-    fn next_item(&mut self) -> Result<Self::Item, AnyhowError>
-    where
-        Self: Iterator,
-    {
-        match self.next() {
-            Some(item) => item.ok(),
-            None => anyhow::bail!(
-                "{type_name} iterator is empty",
-                type_name = std::any::type_name::<Self::Item>()
-            ),
-        }
     }
 
     fn ok<E>(self) -> Result<Self, E>

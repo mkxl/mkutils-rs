@@ -60,6 +60,7 @@ use tokio_util::{
     codec::{Framed, LengthDelimitedCodec, LinesCodec},
     io::StreamReader,
 };
+use tracing::Level;
 use unicode_segmentation::{Graphemes, UnicodeSegmentation};
 
 macro_rules! try_get {
@@ -462,6 +463,17 @@ pub trait Utils {
         Self: AsRef<str>,
     {
         self.as_ref().extended_graphemes().count()
+    }
+
+    fn level<T, E>(&self) -> Level
+    where
+        Self: Borrow<Result<T, E>>,
+    {
+        if self.borrow().is_ok() {
+            Level::INFO
+        } else {
+            Level::WARN
+        }
     }
 
     fn log_error(&self)

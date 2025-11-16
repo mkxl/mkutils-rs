@@ -1,12 +1,22 @@
+use crate::utils::Utils;
 use derive_more::From;
 
 #[derive(Debug, Default, From)]
 pub struct OptionalResult<T, E>(Option<Result<T, E>>);
 
+impl<T: Default, E> OptionalResult<T, E> {
+    pub fn into_result(self) -> Result<T, E> {
+        match self.0 {
+            Some(Ok(ok)) => ok.ok(),
+            Some(Err(err)) => err.err(),
+            None => T::default().ok(),
+        }
+    }
+}
+
 #[cfg(feature = "nightly")]
 mod nightly {
-    use super::OptionalResult;
-    use crate::utils::Utils;
+    use super::{OptionalResult, Utils};
     use std::{
         convert::Infallible,
         ops::{ControlFlow, FromResidual, Try},

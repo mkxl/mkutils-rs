@@ -17,7 +17,7 @@ mod tracing;
 mod utils;
 pub use crate::{
     event::{Event, EventReceiver, EventSender},
-    fmt::{Debugged, DisplayOptional},
+    fmt::{Debugged, OptionalDisplay},
     geometry::{Orientation, Point, PointU16, PointUsize},
     into_stream::IntoStream,
     is::Is,

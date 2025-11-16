@@ -1,5 +1,5 @@
 use crate::{
-    fmt::{Debugged, DisplayOptional},
+    fmt::{Debugged, OptionalDisplay},
     geometry::PointUsize,
     is::Is,
     join::Join,
@@ -253,10 +253,6 @@ pub trait Utils {
 
     fn debug(&self) -> Debugged<'_, Self> {
         Debugged::new(self)
-    }
-
-    fn display_optional(&self) -> DisplayOptional<'_, Self> {
-        DisplayOptional::new(self)
     }
 
     fn err<T>(self) -> Result<T, Self>
@@ -541,6 +537,10 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         TokioFile::open(self).await
+    }
+
+    fn optional_display(&self) -> OptionalDisplay<'_, Self> {
+        OptionalDisplay::new(self)
     }
 
     fn owned<B: ?Sized + ToOwned<Owned = Self>>(self) -> Cow<'static, B>

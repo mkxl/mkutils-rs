@@ -71,6 +71,8 @@ mod nightly {
     }
 
     // NOTE:
+    // - enables the question mark operator to be applied to Output<T, E> when
+    //   the enclosing function's return value is Output<T, E>
     // - required implementation: [https://doc.rust-lang.org/stable/std/ops/trait.FromResidual.html]
     // - <Self as Try>::Residual = Result<(), E>
     impl<T, E> FromResidual<Result<(), E>> for Output<T, E> {
@@ -83,10 +85,12 @@ mod nightly {
     }
 
     // NOTE:
+    // - enables the question mark operator to be applied to Result<_, E0> when
+    //   the enclosing function's return value is Output<T, E>
     // - [https://doc.rust-lang.org/stable/std/result/enum.Result.html#associatedtype.Residual]
-    // - <Result<T, F> as Try>::Residual = Result<Infallible, F>
-    impl<T, F, E: From<F>> FromResidual<Result<Infallible, F>> for Output<T, E> {
-        fn from_residual(residual: Result<Infallible, F>) -> Self {
+    // - <Result<T, E0> as Try>::Residual = Result<Infallible, E0>
+    impl<T, E0, E: From<E0>> FromResidual<Result<Infallible, E0>> for Output<T, E> {
+        fn from_residual(residual: Result<Infallible, E0>) -> Self {
             match residual {
                 Err(err) => Self::EndErr(err.into()),
             }
@@ -94,6 +98,8 @@ mod nightly {
     }
 
     // NOTE:
+    // - enables the question mark operator to be applied to Option<_> when
+    //   the enclosing function's return value is Output<T, E>
     // - [https://doc.rust-lang.org/stable/std/option/enum.Option.html#associatedtype.Residual]
     // - <Option<T> as Try>::Residual = Option<Infallible>
     impl<T, E> FromResidual<Option<Infallible>> for Output<T, E> {

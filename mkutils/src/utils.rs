@@ -18,7 +18,7 @@ use poem_openapi::{
     payload::{Binary as PoemBinary, Json as PoemJson},
 };
 use postcard::Error as PostcardError;
-use ratatui::text::Line;
+use ratatui::text::{Line, Span};
 use reqwest::{RequestBuilder, Response};
 use ropey::{
     Rope, RopeSlice,
@@ -95,6 +95,17 @@ pub trait Utils {
         self.await;
 
         rhs.await
+    }
+
+    fn add_span<'a, T: Into<Span<'a>>>(self, span: T) -> Line<'a>
+    where
+        Self: Into<Line<'a>>,
+    {
+        let mut line = self.into();
+
+        line.spans.push(span.into());
+
+        line
     }
 
     fn anyhow_result<T, E: Into<AnyhowError>>(self) -> Result<T, AnyhowError>

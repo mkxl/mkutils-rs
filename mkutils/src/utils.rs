@@ -449,6 +449,14 @@ pub trait Utils {
         Join::new(self.borrow_mut()).await
     }
 
+    async fn join_all<T>(self) -> Vec<T>
+    where
+        Self: IntoIterator<Item: Future> + Sized,
+        Self::Item: Future<Output = T>,
+    {
+        futures::future::join_all(self).await
+    }
+
     fn len_extended_graphemes(&self) -> usize
     where
         Self: AsRef<str>,

@@ -14,6 +14,12 @@ impl<T: Default, E> OptionalResult<T, E> {
     }
 }
 
+impl<T, E> From<T> for OptionalResult<T, E> {
+    fn from(ok: T) -> Self {
+        ok.ok().some().into()
+    }
+}
+
 #[cfg(feature = "nightly")]
 mod nightly {
     use super::{OptionalResult, Utils};

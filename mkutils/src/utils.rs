@@ -3,7 +3,6 @@ use crate::{
     geometry::PointUsize,
     is::Is,
     join::Join,
-    outcome::Outcome,
     read_value::ReadValue,
     status::Status,
 };
@@ -355,13 +354,6 @@ pub trait Utils {
         Self: Into<Cow<'a, str>>,
     {
         self.into().into()
-    }
-
-    fn into_outcome<T, E>(self) -> Outcome<T, E>
-    where
-        Self: Into<Outcome<T, E>> + Sized,
-    {
-        self.into()
     }
 
     fn into_stream_reader<B: Buf, E: Into<IoError>>(self) -> StreamReader<Self, B>

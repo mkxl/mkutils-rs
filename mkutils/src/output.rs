@@ -88,8 +88,8 @@ mod nightly {
     }
 
     // NOTE:
-    // - enables the question mark operator to be applied to [Result<_, E2>] when
-    //   the enclosing function's return value is [Output<T, E>]
+    // - enables the question mark operator to be applied to [Result<_, E2>]
+    //   when the enclosing function's return value is [Output<T, E>]
     // - [<Result<_, E2> as Try>::Residual = Result<Infallible, E2>] per
     //   [https://doc.rust-lang.org/stable/std/result/enum.Result.html#associatedtype.Residual]
     impl<T, E2, E: From<E2>> FromResidual<Result<Infallible, E2>> for Output<T, E> {

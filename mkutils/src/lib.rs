@@ -7,7 +7,7 @@ mod into_stream;
 mod is;
 mod join;
 mod macros;
-mod optional_result;
+mod output;
 mod process;
 mod read_value;
 mod rope_builder;
@@ -21,7 +21,7 @@ pub use crate::{
     geometry::{Orientation, Point, PointU16, PointUsize},
     into_stream::IntoStream,
     is::Is,
-    optional_result::OptionalResult,
+    output::Output,
     process::Process,
     read_value::ReadValue,
     rope_builder::RopeBuilder,

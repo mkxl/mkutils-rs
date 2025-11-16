@@ -34,6 +34,12 @@ mod nightly {
         ops::{ControlFlow, FromResidual, Try},
     };
 
+    impl<T, E> OptionalResult<T, E> {
+        pub fn into_control_flow(self) -> ControlFlow<<Self as Try>::Residual, <Self as Try>::Output> {
+            self.branch()
+        }
+    }
+
     impl<T, E> Try for OptionalResult<T, E> {
         type Output = T;
         type Residual = Result<(), E>;

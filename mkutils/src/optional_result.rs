@@ -4,6 +4,12 @@ use derive_more::From;
 #[derive(Debug, Default, From)]
 pub struct OptionalResult<T, E>(Option<Result<T, E>>);
 
+impl<T, E> OptionalResult<T, E> {
+    pub fn into_inner(self) -> Option<Result<T, E>> {
+        self.0
+    }
+}
+
 impl<T: Default, E> OptionalResult<T, E> {
     pub fn into_result(self) -> Result<T, E> {
         match self.0 {

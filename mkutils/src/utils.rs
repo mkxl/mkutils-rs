@@ -1,11 +1,16 @@
 use crate::{
-    debugged::Debugged, geometry::PointUsize, is::Is, join::Join, outcome::Outcome, read_value::ReadValue,
-    status::Status, unchecked_recv::UncheckedRecv,
+    fmt::{Debugged, DisplayOptional},
+    geometry::PointUsize,
+    is::Is,
+    join::Join,
+    outcome::Outcome,
+    read_value::ReadValue,
+    status::Status,
 };
 use anyhow::{Context, Error as AnyhowError};
 use bytes::{Buf, Bytes};
 use camino::{Utf8Path, Utf8PathBuf};
-use futures::{FutureExt, Sink, SinkExt, Stream, StreamExt, TryFuture, stream::Filter};
+use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture, stream::Filter};
 use num::traits::{SaturatingAdd, SaturatingSub};
 use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
 use poem_openapi::{
@@ -179,20 +184,6 @@ pub trait Utils {
         std::format!("{self}{rhs}")
     }
 
-    async fn checked_recv<T>(&mut self) -> Result<T, AnyhowError>
-    where
-        Self: UncheckedRecv<T>,
-    {
-        self.unchecked_recv().map(Utils::check_next).await
-    }
-
-    async fn checked_next(&mut self) -> Result<Self::Item, AnyhowError>
-    where
-        Self: StreamExt + Unpin,
-    {
-        self.next().map(Utils::check_next).await
-    }
-
     fn check_next<T>(self) -> Result<T, AnyhowError>
     where
         Self: Is<Option<T>>,
@@ -261,7 +252,11 @@ pub trait Utils {
     }
 
     fn debug(&self) -> Debugged<'_, Self> {
-        Debugged(self)
+        Debugged::new(self)
+    }
+
+    fn display_optional(&self) -> DisplayOptional<'_, Self> {
+        DisplayOptional::new(self)
     }
 
     fn err<T>(self) -> Result<T, Self>
@@ -971,6 +966,16 @@ pub trait Utils {
     }
 
     fn unit(&self) {}
+
+    async fn unwrap_or_pending<T>(self) -> T
+    where
+        Self: Future<Output = Option<T>> + Sized,
+    {
+        match self.await {
+            Some(value) => value,
+            None => std::future::pending().await,
+        }
+    }
 
     fn with<T>(&self, value: T) -> T {
         value

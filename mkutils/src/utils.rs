@@ -757,13 +757,13 @@ pub trait Utils {
         std::fs::remove_file(self)
     }
 
-    fn num_lines_and_extended_graphemes(&self) -> PointUsize
+    fn num_lines_and_extended_graphemes<'a>(self) -> PointUsize
     where
-        Self: Borrow<Rope>,
+        Self: Is<RopeSlice<'a>>,
     {
-        let rope = self.borrow();
-        let y = rope.len_lines();
-        let x = rope
+        let rope_slice = self.into_self();
+        let y = rope_slice.len_lines();
+        let x = rope_slice
             .lines()
             .map(|line_rope| line_rope.chunks().map(str::len_extended_graphemes).sum())
             .max()

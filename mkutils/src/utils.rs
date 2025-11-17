@@ -856,7 +856,7 @@ pub trait Utils {
     {
         self.borrow_mut()
             .get_mut(index)
-            .map_or(Json::Null, std::mem::take)
+            .map_or_default(std::mem::take)
             .into_value_from_json()
     }
 

@@ -135,7 +135,7 @@ pub trait Utils {
         Arc::new(self)
     }
 
-    fn as_borrowed<'a, B: ToOwned>(&'a self) -> &'a B
+    fn as_borrowed<'a, B: ?Sized + ToOwned>(&'a self) -> &'a B
     where
         Self: Borrow<Cow<'a, B>>,
     {

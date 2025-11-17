@@ -135,6 +135,13 @@ pub trait Utils {
         Arc::new(self)
     }
 
+    fn as_borrowed<'a, B: ToOwned>(&'a self) -> &'a B
+    where
+        Self: Borrow<Cow<'a, B>>,
+    {
+        self.borrow().borrow()
+    }
+
     fn as_utf8(&self) -> Result<&str, Utf8Error>
     where
         Self: AsRef<[u8]>,

@@ -17,7 +17,10 @@ use poem_openapi::{
     payload::{Binary as PoemBinary, Json as PoemJson},
 };
 use postcard::Error as PostcardError;
-use ratatui::text::{Line, Span};
+use ratatui::{
+    layout::Rect,
+    text::{Line, Span},
+};
 use reqwest::{RequestBuilder, Response};
 use ropey::{
     Rope, RopeSlice,
@@ -720,6 +723,17 @@ pub trait Utils {
         let result = tokio::fs::read_to_string(self.as_ref()).await;
 
         ReadValue::new(self, result)
+    }
+
+    fn ratatui_rect(self) -> Rect
+    where
+        Self: Into<(u16, u16)>,
+    {
+        let (width, height) = self.into();
+        let x = 0;
+        let y = 0;
+
+        Rect { x, y, width, height }
     }
 
     fn ready(self) -> Ready<Self>

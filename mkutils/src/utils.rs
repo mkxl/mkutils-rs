@@ -40,7 +40,7 @@ use std::{
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
     iter::Once,
     marker::Unpin,
-    ops::ControlFlow,
+    ops::{ControlFlow, Range},
     path::{Path, PathBuf},
     pin::Pin,
     str::Utf8Error,
@@ -298,6 +298,33 @@ pub trait Utils {
         Self: AsRef<str>,
     {
         self.as_ref().graphemes(true)
+    }
+
+    fn extended_graphemes_at<'a>(self, extended_graphemes_idx_range: Range<usize>) -> impl Iterator<Item = &'a str>
+    where
+        Self: Is<RopeSlice<'a>>,
+    {
+        let extended_graphemes_idx_range = extended_graphemes_idx_range.borrow();
+
+        self.into_self()
+            .chunks()
+            .flat_map(str::extended_graphemes)
+            .skip(extended_graphemes_idx_range.start)
+            .take(extended_graphemes_idx_range.len())
+    }
+
+    fn extended_graphemes_at_rect<'a>(
+        self,
+        lines_idx_range: Range<usize>,
+        extended_graphemes_idx_range: Range<usize>,
+    ) -> impl Iterator<Item = impl Iterator<Item = &'a str>>
+    where
+        Self: Is<RopeSlice<'a>>,
+    {
+        self.into_self()
+            .saturating_lines_at(lines_idx_range.start)
+            .take(lines_idx_range.len())
+            .map(move |line_rope_slice| line_rope_slice.extended_graphemes_at(extended_graphemes_idx_range.clone()))
     }
 
     fn filter_sync(

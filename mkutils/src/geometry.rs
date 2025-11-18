@@ -1,5 +1,6 @@
 use derive_more::IsVariant;
 use num::traits::{ConstZero, SaturatingSub};
+use ratatui::layout::Size;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, IsVariant)]
@@ -69,6 +70,12 @@ impl<T, X: Into<T>, Y: Into<T>> From<(X, Y)> for Point<T> {
 impl<T, X: From<T>, Y: From<T>> From<Point<T>> for (X, Y) {
     fn from(point: Point<T>) -> Self {
         (point.x.into(), point.y.into())
+    }
+}
+
+impl<T: From<u16>> From<Size> for Point<T> {
+    fn from(Size { width, height }: Size) -> Self {
+        Self::new(width, height)
     }
 }
 

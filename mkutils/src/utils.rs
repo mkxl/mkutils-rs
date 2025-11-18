@@ -117,17 +117,6 @@ pub trait Utils {
         self.into_self().map_err(E::into)
     }
 
-    fn append(self, rhs: &str) -> String
-    where
-        Self: Is<String>,
-    {
-        let mut string = self.into_self();
-
-        string.push_str(rhs);
-
-        string
-    }
-
     fn arc(self) -> Arc<Self>
     where
         Self: Sized,
@@ -701,17 +690,6 @@ pub trait Utils {
         values.push(self);
     }
 
-    fn pushed<T>(self, item: T) -> Vec<T>
-    where
-        Self: Is<Vec<T>>,
-    {
-        let mut vec = self.into_self();
-
-        vec.push(item);
-
-        vec
-    }
-
     fn query_all<T: Serialize>(self, name: &str, values: impl IntoIterator<Item = T>) -> RequestBuilder
     where
         Self: Is<RequestBuilder>,
@@ -1060,6 +1038,28 @@ pub trait Utils {
 
     fn with<T>(&self, value: T) -> T {
         value
+    }
+
+    fn with_item_pushed<T>(self, item: T) -> Vec<T>
+    where
+        Self: Is<Vec<T>>,
+    {
+        let mut vec = self.into_self();
+
+        vec.push(item);
+
+        vec
+    }
+
+    fn with_str_pushed(self, rhs: &str) -> String
+    where
+        Self: Is<String>,
+    {
+        let mut string = self.into_self();
+
+        string.push_str(rhs);
+
+        string
     }
 
     fn write_as_json_to<T: Write>(&self, writer: T) -> Result<(), SerdeJsonError>

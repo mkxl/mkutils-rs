@@ -300,31 +300,31 @@ pub trait Utils {
         self.as_ref().graphemes(true)
     }
 
-    fn extended_graphemes_at<'a>(self, extended_graphemes_idx_range: Range<usize>) -> impl Iterator<Item = &'a str>
+    fn extended_graphemes_at<'a>(self, extended_graphemes_index_range: Range<usize>) -> impl Iterator<Item = &'a str>
     where
         Self: Is<RopeSlice<'a>>,
     {
-        let extended_graphemes_idx_range = extended_graphemes_idx_range.borrow();
+        let extended_graphemes_index_range = extended_graphemes_index_range.borrow();
 
         self.into_self()
             .chunks()
             .flat_map(str::extended_graphemes)
-            .skip(extended_graphemes_idx_range.start)
-            .take(extended_graphemes_idx_range.len())
+            .skip(extended_graphemes_index_range.start)
+            .take(extended_graphemes_index_range.len())
     }
 
     fn extended_graphemes_at_rect<'a>(
         self,
-        lines_idx_range: Range<usize>,
-        extended_graphemes_idx_range: Range<usize>,
+        lines_index_range: Range<usize>,
+        extended_graphemes_index_range: Range<usize>,
     ) -> impl Iterator<Item = impl Iterator<Item = &'a str>>
     where
         Self: Is<RopeSlice<'a>>,
     {
         self.into_self()
-            .saturating_lines_at(lines_idx_range.start)
-            .take(lines_idx_range.len())
-            .map(move |line_rope_slice| line_rope_slice.extended_graphemes_at(extended_graphemes_idx_range.clone()))
+            .saturating_lines_at(lines_index_range.start)
+            .take(lines_index_range.len())
+            .map(move |line_rope_slice| line_rope_slice.extended_graphemes_at(extended_graphemes_index_range.clone()))
     }
 
     fn filter_sync(
@@ -809,33 +809,33 @@ pub trait Utils {
     // TODO-ac2072:
     // - add [AsRopeSlice] trait that both [Rope] and [RopeSlice<'_>] implement
     // - i was doing this, but it didn't work due to some use of tempoarary variables error
-    fn saturating_chunks_at_extended_grapheme<'a>(self, extended_grapheme_idx: usize) -> Chunks<'a>
+    fn saturating_chunks_at_extended_grapheme<'a>(self, extended_grapheme_index: usize) -> Chunks<'a>
     where
         Self: Is<RopeSlice<'a>>,
     {
-        self.saturating_chunks_at_char(extended_grapheme_idx)
+        self.saturating_chunks_at_char(extended_grapheme_index)
     }
 
     // TODO-ac2072
-    fn saturating_chunks_at_char<'a>(self, char_idx: usize) -> Chunks<'a>
+    fn saturating_chunks_at_char<'a>(self, char_index: usize) -> Chunks<'a>
     where
         Self: Is<RopeSlice<'a>>,
     {
         let rope_slice = self.into_self();
-        let char_idx = rope_slice.len_chars().min(char_idx);
+        let char_index = rope_slice.len_chars().min(char_index);
 
-        rope_slice.chunks_at_char(char_idx).0
+        rope_slice.chunks_at_char(char_index).0
     }
 
     // TODO-ac2072
-    fn saturating_lines_at<'a>(self, line_idx: usize) -> Lines<'a>
+    fn saturating_lines_at<'a>(self, line_index: usize) -> Lines<'a>
     where
         Self: Is<RopeSlice<'a>>,
     {
         let rope_slice = self.into_self();
-        let line_idx = rope_slice.len_lines().min(line_idx);
+        let line_index = rope_slice.len_lines().min(line_index);
 
-        rope_slice.lines_at(line_idx)
+        rope_slice.lines_at(line_index)
     }
 
     fn saturating_add_or_sub_in_place_with_max(&mut self, rhs: Self, max_value: Self, add: bool)

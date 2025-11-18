@@ -298,7 +298,7 @@ pub trait Utils {
             if relative_path_str.is_empty() {
                 "~".convert::<Utf8PathBuf>().owned()
             } else if relative_path_str.convert::<&Utf8Path>().is_absolute() {
-                "~".convert::<&Utf8Path>().join(relative_path_str).owned()
+                "~".cat(relative_path_str).convert::<Utf8PathBuf>().owned()
             } else {
                 path_str.convert::<&Utf8Path>().borrowed()
             }

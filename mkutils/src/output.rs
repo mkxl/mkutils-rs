@@ -1,6 +1,7 @@
 use crate::utils::Utils;
 use std::ops::ControlFlow;
 
+#[derive(Debug)]
 pub enum Output<T, E> {
     Ok(T),
     EndOk,

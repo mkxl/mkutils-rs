@@ -1,5 +1,6 @@
 #![cfg_attr(feature = "nightly", feature(result_option_map_or_default, try_trait_v2))]
 
+mod active_vec;
 mod event;
 mod fmt;
 mod geometry;
@@ -16,6 +17,7 @@ mod to_value;
 mod tracing;
 mod utils;
 pub use crate::{
+    active_vec::ActiveVec,
     event::{Event, EventReceiver, EventSender},
     fmt::{Debugged, OptionalDisplay},
     geometry::{Orientation, Point, PointU16, PointUsize},

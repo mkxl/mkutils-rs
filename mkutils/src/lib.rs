@@ -6,7 +6,6 @@ mod fmt;
 mod geometry;
 mod into_stream;
 mod is;
-mod join;
 mod macros;
 mod output;
 mod process;

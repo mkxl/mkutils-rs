@@ -2,7 +2,6 @@ use crate::{
     fmt::{Debugged, OptionalDisplay},
     geometry::PointUsize,
     is::Is,
-    join::Join,
     read_value::ReadValue,
     status::Status,
 };
@@ -56,7 +55,7 @@ use tokio::{
         AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader as TokioBufReader, BufWriter as TokioBufWriter,
     },
     sync::oneshot::Sender as OneshotSender,
-    task::{JoinError, JoinHandle, JoinSet, LocalSet},
+    task::{JoinHandle, LocalSet},
 };
 use tokio_util::{
     codec::{Framed, LengthDelimitedCodec, LinesCodec},
@@ -276,9 +275,35 @@ pub trait Utils {
     where
         Self: AsRef<str>,
     {
-        match shellexpand::tilde(self) {
-            Cow::Borrowed(path_str) => Utf8Path::new(path_str).borrowed(),
-            Cow::Owned(path_str) => path_str.convert::<Utf8PathBuf>().owned(),
+        let path_str = self.as_ref();
+
+        if let Some(relative_path_str) = path_str.strip_prefix("~/")
+            && let Some(home_dirpath) = Self::home_dirpath()
+        {
+            home_dirpath.join(relative_path_str).owned()
+        } else {
+            path_str.convert::<&Utf8Path>().borrowed()
+        }
+    }
+
+    fn unexpand_user(&self) -> Cow<'_, Utf8Path>
+    where
+        Self: AsRef<str>,
+    {
+        let path_str = self.as_ref();
+
+        if let Some(home_dirpath) = Self::home_dirpath()
+            && let Some(relative_path_str) = path_str.strip_prefix(home_dirpath.as_str())
+        {
+            if relative_path_str.is_empty() {
+                "~".convert::<Utf8PathBuf>().owned()
+            } else if relative_path_str.convert::<&Utf8Path>().is_absolute() {
+                "~".convert::<&Utf8Path>().join(relative_path_str).owned()
+            } else {
+                path_str.convert::<&Utf8Path>().borrowed()
+            }
+        } else {
+            path_str.convert::<&Utf8Path>().borrowed()
         }
     }
 
@@ -332,6 +357,11 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         self.as_ref().file_name().context("path has no file_name")
+    }
+
+    #[must_use]
+    fn home_dirpath() -> Option<Utf8PathBuf> {
+        home::home_dir()?.try_convert::<Utf8PathBuf>().ok()
     }
 
     fn immutable(&mut self) -> &Self {
@@ -470,13 +500,6 @@ pub trait Utils {
         Self: Is<Result<T, E>>,
     {
         self.into_self().map_err(E::io_error)
-    }
-
-    async fn join<T: 'static>(&mut self) -> Result<T, JoinError>
-    where
-        Self: BorrowMut<JoinSet<T>>,
-    {
-        Join::new(self.borrow_mut()).await
     }
 
     async fn join_all<T>(self) -> Vec<T>

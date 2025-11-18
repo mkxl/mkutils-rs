@@ -40,7 +40,7 @@ use std::{
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
     iter::Once,
     marker::Unpin,
-    ops::{ControlFlow, Range},
+    ops::{Add, ControlFlow, Range},
     path::{Path, PathBuf},
     pin::Pin,
     str::Utf8Error,
@@ -757,6 +757,16 @@ pub trait Utils {
         let result = tokio::fs::read_to_string(self.as_ref()).await;
 
         ReadValue::new(self, result)
+    }
+
+    fn range_from_len<T: Add<Output = T> + Copy>(self, len: impl Into<T>) -> Range<T>
+    where
+        Self: Into<T>,
+    {
+        let start = self.into();
+        let end = start + len.into();
+
+        start..end
     }
 
     fn ratatui_rect(self) -> Rect

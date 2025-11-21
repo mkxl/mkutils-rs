@@ -37,7 +37,7 @@ use std::{
     future::{Future, Ready},
     hash::Hash,
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
-    iter::Once,
+    iter::{Once, Repeat},
     marker::Unpin,
     ops::{Add, ControlFlow, Range},
     path::{Path, PathBuf},
@@ -591,6 +591,21 @@ pub trait Utils {
         tokio::fs::metadata(self).await
     }
 
+    fn num_lines_and_extended_graphemes<'a>(self) -> PointUsize
+    where
+        Self: Is<RopeSlice<'a>>,
+    {
+        let rope_slice = self.into_self();
+        let y = rope_slice.len_lines();
+        let x = rope_slice
+            .lines()
+            .map(|line_rope| line_rope.chunks().map(str::len_extended_graphemes).sum())
+            .max()
+            .unwrap_or(0);
+
+        PointUsize::new(x, y)
+    }
+
     fn ok<E>(self) -> Result<Self, E>
     where
         Self: Sized,
@@ -796,6 +811,13 @@ pub trait Utils {
         std::future::ready(self)
     }
 
+    fn repeat(self) -> Repeat<Self>
+    where
+        Self: Clone,
+    {
+        std::iter::repeat(self)
+    }
+
     async fn run_for(mut self, duration: Duration) -> Result<Self, Self::Output>
     where
         Self: Future + Sized + Unpin,
@@ -818,21 +840,6 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         std::fs::remove_file(self)
-    }
-
-    fn num_lines_and_extended_graphemes<'a>(self) -> PointUsize
-    where
-        Self: Is<RopeSlice<'a>>,
-    {
-        let rope_slice = self.into_self();
-        let y = rope_slice.len_lines();
-        let x = rope_slice
-            .lines()
-            .map(|line_rope| line_rope.chunks().map(str::len_extended_graphemes).sum())
-            .max()
-            .unwrap_or(0);
-
-        PointUsize::new(x, y)
     }
 
     // TODO-ac2072:

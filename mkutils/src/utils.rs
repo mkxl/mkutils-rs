@@ -48,6 +48,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
     },
     task::Poll,
+    time::Duration,
 };
 use tokio::{
     fs::File as TokioFile,
@@ -793,6 +794,16 @@ pub trait Utils {
         Self: Sized,
     {
         std::future::ready(self)
+    }
+
+    async fn run_for(mut self, duration: Duration) -> Result<Self, Self::Output>
+    where
+        Self: Future + Sized + Unpin,
+    {
+        tokio::select! {
+            output = &mut self => output.err(),
+            () = tokio::time::sleep(duration) => self.ok(),
+        }
     }
 
     async fn run_local(self) -> Self::Output

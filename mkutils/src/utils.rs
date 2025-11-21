@@ -137,6 +137,13 @@ pub trait Utils {
         std::str::from_utf8(self.as_ref())
     }
 
+    fn as_utf8_path(&self) -> &Utf8Path
+    where
+        Self: AsRef<Utf8Path>,
+    {
+        self.as_ref()
+    }
+
     fn as_slice(&self) -> RopeSlice<'_>
     where
         Self: Borrow<Rope>,

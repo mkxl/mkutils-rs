@@ -24,7 +24,7 @@ macro_rules! trace {
     }};
 }
 
-pub struct Tracing<W> {
+pub struct Tracing<W = fn() -> StderrLock<'static>> {
     level_filter: LevelFilter,
     span_events: FmtSpan,
     json_enabled: bool,
@@ -42,7 +42,7 @@ impl Tracing<fn() -> StderrLock<'static>> {
     pub const DEFAULT_TOKIO_CONSOLE_PORT: u16 = ConsoleServer::DEFAULT_PORT;
 }
 
-impl Default for Tracing<fn() -> StderrLock<'static>> {
+impl Default for Tracing {
     fn default() -> Self {
         Self {
             level_filter: Self::DEFAULT_LEVEL_FILTER,

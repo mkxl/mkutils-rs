@@ -152,6 +152,16 @@ pub trait Utils {
         self.borrow().slice(..)
     }
 
+    async fn await_unwrap_or_pending<T>(self) -> T
+    where
+        Self: Future<Output = Option<T>> + Sized,
+    {
+        match self.await {
+            Some(value) => value,
+            None => std::future::pending().await,
+        }
+    }
+
     fn borrowed(&self) -> Cow<'_, Self>
     where
         Self: ToOwned,
@@ -1074,13 +1084,14 @@ pub trait Utils {
 
     fn unit(&self) {}
 
-    async fn unwrap_or_pending<T>(self) -> T
+    async fn unwrap_or_pending<F: Future>(self) -> F::Output
     where
-        Self: Future<Output = Option<T>> + Sized,
+        Self: Is<Option<F>> + Sized,
     {
-        match self.await {
-            Some(value) => value,
-            None => std::future::pending().await,
+        if let Some(future) = self.into_self() {
+            future.await
+        } else {
+            std::future::pending().await
         }
     }
 

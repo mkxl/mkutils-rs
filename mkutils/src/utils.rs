@@ -1090,11 +1090,11 @@ pub trait Utils {
 
     fn unit(&self) {}
 
-    async fn unwrap_or_pending<F: Future>(self) -> F::Output
+    async fn unwrap_or_pending<F: Future + Unpin>(&mut self) -> F::Output
     where
-        Self: Is<Option<F>> + Sized,
+        Self: BorrowMut<Option<F>>,
     {
-        if let Some(future) = self.into_self() {
+        if let Some(future) = self.borrow_mut().as_mut() {
             future.await
         } else {
             std::future::pending().await

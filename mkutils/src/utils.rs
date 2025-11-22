@@ -58,6 +58,7 @@ use tokio::{
     },
     sync::oneshot::Sender as OneshotSender,
     task::{JoinHandle, LocalSet},
+    time::Timeout,
 };
 use tokio_util::{
     codec::{Framed, LengthDelimitedCodec, LinesCodec},
@@ -953,6 +954,13 @@ pub trait Utils {
             .get_mut(index)
             .map_or_default(std::mem::take)
             .into_value_from_json()
+    }
+
+    fn timeout(self, duration: Duration) -> Timeout<Self>
+    where
+        Self: Future + Sized,
+    {
+        tokio::time::timeout(duration, self)
     }
 
     fn to_json(&self) -> Result<Json, SerdeJsonError>

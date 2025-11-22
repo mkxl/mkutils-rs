@@ -50,6 +50,25 @@ impl<T, E> From<T> for Output<T, E> {
     }
 }
 
+impl<T, E> From<Option<T>> for Output<T, E> {
+    fn from(option: Option<T>) -> Self {
+        if let Some(ok) = option {
+            Self::Ok(ok)
+        } else {
+            Self::EndOk
+        }
+    }
+}
+
+impl<T, E> From<Result<T, E>> for Output<T, E> {
+    fn from(result: Result<T, E>) -> Self {
+        match result {
+            Ok(ok) => Self::Ok(ok),
+            Err(err) => Self::EndErr(err),
+        }
+    }
+}
+
 #[cfg(feature = "nightly")]
 mod nightly {
     use super::Output;

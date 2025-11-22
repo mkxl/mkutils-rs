@@ -1,7 +1,9 @@
-use std::error::Error;
 use crate::utils::Utils;
 use derive_more::Constructor;
-use std::fmt::{Debug, Display, Error as FmtError, Formatter};
+use std::{
+    error::Error,
+    fmt::{Debug, Display, Error as FmtError, Formatter},
+};
 
 #[derive(Constructor)]
 pub struct RunForError<T>(T);

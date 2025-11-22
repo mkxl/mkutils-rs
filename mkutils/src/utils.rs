@@ -3,6 +3,7 @@ use crate::{
     geometry::PointUsize,
     is::Is,
     read_value::ReadValue,
+    run_for::RunForError,
     status::Status,
 };
 use anyhow::{Context, Error as AnyhowError};
@@ -219,7 +220,7 @@ pub trait Utils {
             Some(item) => item.ok(),
             None => anyhow::bail!(
                 "sequence of {type_name} items is exhausted",
-                type_name = std::any::type_name::<T>(),
+                type_name = Self::type_name(),
             ),
         }
     }
@@ -828,12 +829,12 @@ pub trait Utils {
         std::iter::repeat(self)
     }
 
-    async fn run_for(mut self, duration: Duration) -> Result<Self, Self::Output>
+    async fn run_for(mut self, duration: Duration) -> Result<Self, RunForError<Self::Output>>
     where
         Self: Future + Sized + Unpin,
     {
         tokio::select! {
-            output = &mut self => output.err(),
+            output = &mut self => RunForError::new(output).err(),
             () = tokio::time::sleep(duration) => self.ok(),
         }
     }
@@ -1080,6 +1081,11 @@ pub trait Utils {
         AnyhowError: From<E>,
     {
         self.into_self().await??.ok()
+    }
+
+    #[must_use]
+    fn type_name() -> &'static str {
+        std::any::type_name::<Self>()
     }
 
     fn unit(&self) {}

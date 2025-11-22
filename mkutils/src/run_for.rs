@@ -1,3 +1,4 @@
+use std::error::Error;
 use crate::utils::Utils;
 use derive_more::Constructor;
 use std::fmt::{Debug, Display, Error as FmtError, Formatter};
@@ -20,3 +21,5 @@ impl<T> Display for RunForError<T> {
         )
     }
 }
+
+impl<T> Error for RunForError<T> {}

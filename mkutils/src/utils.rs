@@ -126,13 +126,13 @@ pub trait Utils {
         Arc::new(self)
     }
 
-    async fn async_with(self, prev: impl Future) -> Self::Output
+    async fn async_with<T>(self, next: impl Future<Output = T>) -> T
     where
         Self: Future + Sized,
     {
-        prev.await;
+        self.await;
 
-        self.await
+        next.await
     }
 
     fn as_borrowed<'a, B: ?Sized + ToOwned>(&'a self) -> &'a B

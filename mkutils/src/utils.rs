@@ -58,7 +58,7 @@ use tokio::{
     },
     sync::oneshot::Sender as OneshotSender,
     task::{JoinHandle, LocalSet},
-    time::Timeout,
+    time::{Sleep, Timeout},
 };
 use tokio_util::{
     codec::{Framed, LengthDelimitedCodec, LinesCodec},
@@ -924,6 +924,13 @@ pub trait Utils {
             .send(self)
             .ok()
             .context("unable to send value over oneshot channel")
+    }
+
+    fn sleep(self) -> Sleep
+    where
+        Self: Is<Duration>,
+    {
+        tokio::time::sleep(self.into_self())
     }
 
     fn some(self) -> Option<Self>

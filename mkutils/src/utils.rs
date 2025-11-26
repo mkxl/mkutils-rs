@@ -49,7 +49,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
     },
     task::Poll,
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tokio::{
     fs::File as TokioFile,
@@ -386,6 +386,13 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         self.as_ref().file_name().context("path has no file_name")
+    }
+
+    fn has_happened(self) -> bool
+    where
+        Self: Is<Instant>,
+    {
+        self.into_self() <= Instant::now()
     }
 
     #[must_use]

@@ -28,6 +28,7 @@ use ropey::{
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Error as SerdeJsonError, Value as Json, value::Index};
+use serde_yaml_ng::Error as SerdeYamlError;
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
@@ -1041,11 +1042,18 @@ pub trait Utils {
         "file://".cat(self.absolute()?.as_os_str().to_str_ok()?).ok()
     }
 
-    fn to_value_from_json_byte_str<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeJsonError>
+    fn to_value_from_json_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeJsonError>
     where
         Self: AsRef<[u8]>,
     {
         serde_json::from_slice(self.as_ref())
+    }
+
+    fn to_value_from_yaml_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeYamlError>
+    where
+        Self: AsRef<[u8]>,
+    {
+        serde_yaml_ng::from_slice(self.as_ref())
     }
 
     fn to_value_from_json_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>

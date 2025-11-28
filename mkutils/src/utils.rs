@@ -987,6 +987,15 @@ pub trait Utils {
         tokio::time::timeout(duration, self)
     }
 
+    fn toggle(&mut self)
+    where
+        Self: BorrowMut<bool>,
+    {
+        let bool_value = self.borrow_mut();
+
+        *bool_value = !*bool_value;
+    }
+
     fn to_json(&self) -> Result<Json, SerdeJsonError>
     where
         Self: Serialize,

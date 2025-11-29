@@ -401,6 +401,13 @@ pub trait Utils {
         home::home_dir()?.try_convert::<Utf8PathBuf>().ok()
     }
 
+    fn if_else<T>(self, true_value: T, false_value: T) -> T
+    where
+        Self: Is<bool>,
+    {
+        if self.into_self() { true_value } else { false_value }
+    }
+
     fn immutable(&mut self) -> &Self {
         self
     }

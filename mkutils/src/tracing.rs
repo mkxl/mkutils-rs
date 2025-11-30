@@ -1,5 +1,8 @@
 use console_subscriber::{ConsoleLayer, Server as ConsoleServer};
-use std::{io::StderrLock, net::IpAddr};
+use std::{
+    io::{StderrLock, StdoutLock},
+    net::IpAddr,
+};
 use tracing_subscriber::{
     filter::LevelFilter,
     fmt::{
@@ -10,6 +13,9 @@ use tracing_subscriber::{
     registry::Registry,
     util::SubscriberInitExt,
 };
+
+type StdoutLockFn = fn() -> StdoutLock<'static>;
+type StderrLockFn = fn() -> StderrLock<'static>;
 
 #[macro_export]
 macro_rules! trace {
@@ -24,7 +30,7 @@ macro_rules! trace {
     }};
 }
 
-pub struct Tracing<W = fn() -> StderrLock<'static>> {
+pub struct Tracing<W = StderrLockFn> {
     level_filter: LevelFilter,
     span_events: FmtSpan,
     json_enabled: bool,
@@ -34,7 +40,7 @@ pub struct Tracing<W = fn() -> StderrLock<'static>> {
     writer: W,
 }
 
-impl Tracing<fn() -> StderrLock<'static>> {
+impl Tracing<StderrLockFn> {
     pub const DEFAULT_JSON_ENABLED: bool = false;
     pub const DEFAULT_LEVEL_FILTER: LevelFilter = LevelFilter::INFO;
     pub const DEFAULT_TOKIO_CONSOLE_ENABLED: bool = false;
@@ -42,7 +48,7 @@ impl Tracing<fn() -> StderrLock<'static>> {
     pub const DEFAULT_TOKIO_CONSOLE_PORT: u16 = ConsoleServer::DEFAULT_PORT;
 }
 
-impl Default for Tracing {
+impl Default for Tracing<StderrLockFn> {
     fn default() -> Self {
         Self {
             level_filter: Self::DEFAULT_LEVEL_FILTER,
@@ -51,7 +57,7 @@ impl Default for Tracing {
             tokio_console_enabled: Self::DEFAULT_TOKIO_CONSOLE_ENABLED,
             tokio_console_ip_addr: Self::DEFAULT_TOKIO_CONSOLE_IP_ADDR,
             tokio_console_port: Self::DEFAULT_TOKIO_CONSOLE_PORT,
-            writer: Self::default_writer,
+            writer: Self::stderr_lock_writer,
         }
     }
 }
@@ -61,7 +67,11 @@ impl<W> Tracing<W> {
         FmtSpan::NEW | FmtSpan::CLOSE
     }
 
-    fn default_writer() -> StderrLock<'static> {
+    fn stdout_lock_writer() -> StdoutLock<'static> {
+        std::io::stdout().lock()
+    }
+
+    fn stderr_lock_writer() -> StderrLock<'static> {
         std::io::stderr().lock()
     }
 
@@ -105,6 +115,14 @@ impl<W> Tracing<W> {
             tokio_console_port: self.tokio_console_port,
             writer,
         }
+    }
+
+    pub fn with_stdout_lock_writer(self) -> Tracing<StdoutLockFn> {
+        self.with_writer(Self::stdout_lock_writer)
+    }
+
+    pub fn with_stderr_lock_writer(self) -> Tracing<StderrLockFn> {
+        self.with_writer(Self::stderr_lock_writer)
     }
 
     fn init_helper<N, F, T, W0>(self, layer: Layer<Registry, N, Format<F, T>, W0>)

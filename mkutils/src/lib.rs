@@ -12,6 +12,7 @@ mod process;
 mod read_value;
 mod rope_builder;
 mod run_for;
+mod socket;
 mod status;
 mod to_value;
 mod tracing;
@@ -27,6 +28,7 @@ pub use crate::{
     process::Process,
     read_value::ReadValue,
     rope_builder::RopeBuilder,
+    socket::Socket,
     to_value::ToValue,
     tracing::Tracing,
     utils::Utils,

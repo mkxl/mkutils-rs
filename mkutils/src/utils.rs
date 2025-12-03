@@ -799,7 +799,7 @@ pub trait Utils {
         request_builder.query(query)
     }
 
-    async fn read_string_async(&mut self) -> Result<String, AnyhowError>
+    async fn read_string_async(&mut self) -> Result<String, IoError>
     where
         Self: AsyncReadExt + Unpin,
     {
@@ -817,6 +817,23 @@ pub trait Utils {
         let result = tokio::fs::read_to_string(self.as_ref()).await;
 
         ReadValue::new(self, result)
+    }
+
+    async fn read_to_string_else_stdin_async<P: AsRef<Path>>(self) -> ReadValue<Option<P>>
+    where
+        Self: Is<Option<P>> + Sized,
+    {
+        if let Some(filepath) = self.into_self() {
+            tokio::fs::read_to_string(filepath.as_ref()).await.pair(filepath.some())
+        } else {
+            tokio::io::stdin()
+                .buf_reader_async()
+                .read_string_async()
+                .await
+                .pair(None)
+        }
+        .reversed()
+        .into()
     }
 
     fn range_from_len<T: Add<Output = T> + Copy>(self, len: impl Into<T>) -> Range<T>
@@ -852,6 +869,15 @@ pub trait Utils {
         Self: Clone,
     {
         std::iter::repeat(self)
+    }
+
+    fn reversed<X, Y>(self) -> (Y, X)
+    where
+        Self: Is<(X, Y)>,
+    {
+        let (x, y) = self.into_self();
+
+        y.pair(x)
     }
 
     async fn run_for(mut self, duration: Duration) -> Result<Self, RunForError<Self::Output>>

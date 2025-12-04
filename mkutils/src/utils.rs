@@ -263,6 +263,22 @@ pub trait Utils {
         self.into()
     }
 
+    fn find_eq<Q, K>(&self, query: Q) -> Option<(usize, &K)>
+    where
+        Self: AsRef<[K]>,
+        for<'a> &'a K: PartialEq<Q>,
+    {
+        self.as_ref().iter().enumerate().find(|(_index, key)| *key == query)
+    }
+
+    fn contains_eq<Q, K>(&self, query: Q) -> bool
+    where
+        Self: AsRef<[K]>,
+        for<'a> &'a K: PartialEq<Q>,
+    {
+        self.find_eq(query).is_some()
+    }
+
     fn context_path<T, E, C: 'static + Display + Send + Sync, P: AsRef<Path>>(
         self,
         context: C,

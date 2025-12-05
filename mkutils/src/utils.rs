@@ -174,16 +174,6 @@ pub trait Utils {
         AsValuable::as_valuable(self)
     }
 
-    async fn await_unwrap_or_pending<T>(self) -> T
-    where
-        Self: Future<Output = Option<T>> + Sized,
-    {
-        match self.await {
-            Some(value) => value,
-            None => std::future::pending().await,
-        }
-    }
-
     fn borrowed(&self) -> Cow<'_, Self>
     where
         Self: ToOwned,
@@ -1206,7 +1196,17 @@ pub trait Utils {
 
     fn unit(&self) {}
 
-    async fn unwrap_or_pending<F: Future + Unpin>(&mut self) -> F::Output
+    async fn wait_then_unwrap_or_pending<T>(self) -> T
+    where
+        Self: Future<Output = Option<T>> + Sized,
+    {
+        match self.await {
+            Some(value) => value,
+            None => std::future::pending().await,
+        }
+    }
+
+    async fn unwrap_or_pending_then_wait<F: Future + Unpin>(&mut self) -> F::Output
     where
         Self: BorrowMut<Option<F>>,
     {

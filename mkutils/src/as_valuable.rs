@@ -76,12 +76,12 @@ impl Mappable for ValuableJsonObject {
     }
 }
 
-pub trait ToValue {
-    fn to_value(&self) -> Value<'_>;
+pub trait AsValuable {
+    fn as_valuable(&self) -> Value<'_>;
 }
 
-impl ToValue for Json {
-    fn to_value(&self) -> Value<'_> {
+impl AsValuable for Json {
+    fn as_valuable(&self) -> Value<'_> {
         self.cast_ref::<ValuableJson>().as_value()
     }
 }

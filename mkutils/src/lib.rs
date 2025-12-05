@@ -1,6 +1,7 @@
 #![cfg_attr(feature = "nightly", feature(result_option_map_or_default, try_trait_v2))]
 
 mod active_vec;
+mod as_valuable;
 mod event;
 mod fmt;
 mod geometry;
@@ -14,22 +15,19 @@ mod rope_builder;
 mod run_for;
 mod socket;
 mod status;
-mod to_value;
 mod tracing;
 mod utils;
 pub use crate::{
     active_vec::ActiveVec,
-    event::{Event, EventReceiver, EventSender},
+    as_valuable::AsValuable,
+    event::Event,
     fmt::{Debugged, OptionalDisplay},
     geometry::{Orientation, Point, PointU16, PointUsize},
-    into_stream::IntoStream,
-    is::Is,
     output::Output,
     process::Process,
     read_value::ReadValue,
     rope_builder::RopeBuilder,
     socket::Socket,
-    to_value::ToValue,
     tracing::Tracing,
     utils::Utils,
 };

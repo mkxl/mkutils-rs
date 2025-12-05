@@ -1,6 +1,8 @@
 use crate::{
+    as_valuable::AsValuable,
     fmt::{Debugged, OptionalDisplay},
     geometry::PointUsize,
+    into_stream::IntoStream,
     is::Is,
     read_value::ReadValue,
     run_for::RunForError,
@@ -67,6 +69,7 @@ use tokio_util::{
 };
 use tracing::Level;
 use unicode_segmentation::{Graphemes, UnicodeSegmentation};
+use valuable::Value;
 
 macro_rules! try_get {
     ($expr:expr, $method:ident, $key:ident) => {{
@@ -164,6 +167,13 @@ pub trait Utils {
         self.borrow().slice(..)
     }
 
+    fn as_valuable(&self) -> Value<'_>
+    where
+        Self: AsValuable,
+    {
+        AsValuable::as_valuable(self)
+    }
+
     async fn await_unwrap_or_pending<T>(self) -> T
     where
         Self: Future<Output = Option<T>> + Sized,
@@ -209,6 +219,8 @@ pub trait Utils {
         TokioBufWriter::new(self)
     }
 
+    // NOTE: requires that [Self] and [T] have the same layout (provided by [#[repr(transparent)]]):
+    // [https://stackoverflow.com/questions/79593399/implement-valuablevaluable-on-serde-jsonvalue]
     fn cast_ref<T>(&self) -> &T {
         let ptr = std::ptr::from_ref(self).cast::<T>();
         let value = unsafe { ptr.as_ref() };
@@ -522,6 +534,13 @@ pub trait Utils {
         Self: Is<Result<T, E>>,
     {
         Status(self.into_self())
+    }
+
+    fn into_stream(self) -> Self::Stream
+    where
+        Self: IntoStream + Sized,
+    {
+        IntoStream::into_stream(self)
     }
 
     fn into_string(self) -> Result<String, AnyhowError>

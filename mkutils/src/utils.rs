@@ -80,16 +80,16 @@ macro_rules! try_get {
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
-    fn absolute(&self) -> Result<Cow<'_, Path>, IoError>
+    fn absolute_utf8(&self) -> Result<Cow<'_, Utf8Path>, IoError>
     where
-        Self: AsRef<Path>,
+        Self: AsRef<Utf8Path>,
     {
         let path = self.as_ref();
 
         if path.is_absolute() {
             path.borrowed().ok()
         } else {
-            std::path::absolute(path)?.owned::<Path>().ok()
+            camino::absolute_utf8(path)?.owned::<Utf8Path>().ok()
         }
     }
 
@@ -1093,11 +1093,11 @@ pub trait Utils {
         }
     }
 
-    fn to_uri(&self) -> Result<String, AnyhowError>
+    fn to_uri(&self) -> Result<String, IoError>
     where
-        Self: AsRef<Path>,
+        Self: AsRef<Utf8Path>,
     {
-        "file://".cat(self.absolute()?.as_os_str().to_str_ok()?).ok()
+        "file://".cat(self.absolute_utf8()?).ok()
     }
 
     fn to_value_from_json_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeJsonError>

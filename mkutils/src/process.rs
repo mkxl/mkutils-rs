@@ -16,11 +16,18 @@ pub struct Process {
 }
 
 impl Process {
-    pub fn new<Cmd: AsRef<OsStr>, Args: IntoIterator, Env: IntoIterator, K: AsRef<OsStr>, V: AsRef<OsStr>>(
+    pub fn new<
+        Cmd: AsRef<OsStr>,
+        Args: IntoIterator,
+        Env: IntoIterator,
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+        Cwd: AsRef<Path>,
+    >(
         cmd: Cmd,
         args: Args,
         env: Env,
-        current_dirpath: Option<&Path>,
+        current_dirpath: Option<Cwd>,
     ) -> Result<Self, AnyhowError>
     where
         Args::Item: AsRef<OsStr>,

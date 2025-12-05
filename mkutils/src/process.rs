@@ -27,7 +27,7 @@ impl Process {
         cmd: Cmd,
         args: Args,
         env: Env,
-        current_dirpath: Option<Cwd>,
+        current_dirpath: impl Into<Option<Cwd>>,
     ) -> Result<Self, AnyhowError>
     where
         Args::Item: AsRef<OsStr>,
@@ -49,7 +49,7 @@ impl Process {
             command.env(env_var_name, env_var_val);
         }
 
-        if let Some(current_dirpath) = current_dirpath {
+        if let Some(current_dirpath) = current_dirpath.into() {
             command.current_dir(current_dirpath);
         }
 

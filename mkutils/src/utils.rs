@@ -35,7 +35,6 @@ use std::{
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
     error::Error as StdError,
-    ffi::OsStr,
     fmt::{Debug, Display},
     fs::{File, Metadata},
     future::{Future, Ready},
@@ -400,11 +399,11 @@ pub trait Utils {
         self.filter(move |x| func(x).ready())
     }
 
-    fn file_name_ok(&self) -> Result<&OsStr, AnyhowError>
+    fn file_name_ok(&self) -> Result<&str, AnyhowError>
     where
-        Self: AsRef<Path>,
+        Self: AsRef<Utf8Path>,
     {
-        self.as_ref().file_name().context("path has no file_name")
+        self.as_ref().file_name().context("path has no file name")
     }
 
     fn has_happened(self) -> bool
@@ -1087,19 +1086,6 @@ pub trait Utils {
         Self: Serialize,
     {
         serde_json::to_string(self)
-    }
-
-    #[allow(clippy::option_if_let_else)]
-    fn to_str_ok(&self) -> Result<&str, AnyhowError>
-    where
-        Self: AsRef<OsStr>,
-    {
-        let path = self.as_ref();
-
-        match path.to_str() {
-            Some(string) => string.ok(),
-            None => path.invalid_utf8_err(),
-        }
     }
 
     fn to_uri(&self) -> Result<String, IoError>

@@ -44,7 +44,7 @@ impl Socket {
         self.recv().await.into_option().check_next()?
     }
 
-    pub async fn respond<T: Request>(&mut self, response: T::Response) -> Result<(), AnyhowError> {
+    pub async fn respond<T: Request>(&mut self, response: &T::Response) -> Result<(), AnyhowError> {
         self.send(response).await
     }
 }

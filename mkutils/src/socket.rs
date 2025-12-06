@@ -13,7 +13,7 @@ use tokio::net::UnixStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
 pub trait Request: Serialize {
-    type Response: DeserializeOwned;
+    type Response: DeserializeOwned + Serialize;
 }
 
 impl<T: Request> Request for &T {
@@ -42,6 +42,10 @@ impl Socket {
         self.send(request).await?;
 
         self.recv().await.into_option().check_next()?
+    }
+
+    pub async fn respond<T: Request>(&mut self, response: T::Response) -> Result<(), AnyhowError> {
+        self.send(response).await
     }
 }
 

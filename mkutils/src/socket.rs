@@ -10,6 +10,10 @@ use std::{
 use tokio::net::UnixStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
+pub trait Request: Serialize {
+    type Response: DeserializeOwned;
+}
+
 #[derive(From)]
 pub struct Socket {
     frames: Framed<UnixStream, LengthDelimitedCodec>,
@@ -22,6 +26,12 @@ impl Socket {
             .await??
             .to_value_from_postcard_byte_str::<T>()?
             .into()
+    }
+
+    pub async fn request<T: Request>(&mut self, request: T) -> Result<T::Response, AnyhowError> {
+        self.send(request).await?;
+
+        self.recv().await.into_option().check_next()?
     }
 }
 

@@ -59,7 +59,7 @@ use tokio::{
         AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader as TokioBufReader, BufWriter as TokioBufWriter,
     },
     sync::oneshot::Sender as OneshotSender,
-    task::{JoinHandle, LocalSet},
+    task::{JoinHandle, JoinSet, LocalSet},
     time::{Sleep, Timeout},
 };
 use tokio_util::{
@@ -82,6 +82,17 @@ macro_rules! try_get {
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
+    async fn abort_all_and_wait<T: 'static>(&mut self)
+    where
+        Self: BorrowMut<JoinSet<T>>,
+    {
+        let join_set = self.borrow_mut();
+
+        join_set.abort_all();
+
+        while join_set.join_next().await.is_some() {}
+    }
+
     fn absolute_utf8(&self) -> Result<Cow<'_, Utf8Path>, IoError>
     where
         Self: AsRef<Utf8Path>,

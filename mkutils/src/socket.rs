@@ -4,6 +4,8 @@ use derive_more::From;
 use futures::{Sink, SinkExt, StreamExt};
 use serde::{Serialize, de::DeserializeOwned};
 use std::{
+    io::Error as IoError,
+    path::Path,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -20,6 +22,10 @@ pub struct Socket {
 }
 
 impl Socket {
+    pub async fn new(filepath: &Path) -> Result<Self, IoError> {
+        UnixStream::connect(filepath).await?.convert::<Self>().ok()
+    }
+
     pub async fn recv<T: DeserializeOwned>(&mut self) -> Output<T, AnyhowError> {
         self.frames
             .next()

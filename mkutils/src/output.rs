@@ -60,6 +60,16 @@ impl<T, E> From<Option<T>> for Output<T, E> {
     }
 }
 
+impl<T, E> From<Option<Result<T, E>>> for Output<T, E> {
+    fn from(opt_res: Option<Result<T, E>>) -> Self {
+        match opt_res {
+            Some(Ok(ok)) => Self::Ok(ok),
+            Some(Err(err)) => Self::EndErr(err),
+            None => Self::EndOk,
+        }
+    }
+}
+
 impl<T, E> From<Result<T, E>> for Output<T, E> {
     fn from(result: Result<T, E>) -> Self {
         match result {

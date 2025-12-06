@@ -940,8 +940,11 @@ pub trait Utils {
         std::fs::remove_file(self)
     }
 
-    async fn respond_to<T: Request<Response = Self>>(&self, socket: &mut Socket) -> Result<(), AnyhowError> {
-        socket.respond::<T>(self).await
+    async fn respond_to<T: Request<Response = Self>>(
+        &self,
+        mut socket: impl BorrowMut<Socket>,
+    ) -> Result<(), AnyhowError> {
+        socket.borrow_mut().respond::<T>(self).await
     }
 
     // TODO-ac2072:

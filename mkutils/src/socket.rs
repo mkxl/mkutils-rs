@@ -16,6 +16,10 @@ pub trait Request: Serialize {
     type Response: DeserializeOwned;
 }
 
+impl<T: Request> Request for &T {
+    type Response = T::Response;
+}
+
 #[derive(From)]
 pub struct Socket {
     frames: Framed<UnixStream, LengthDelimitedCodec>,

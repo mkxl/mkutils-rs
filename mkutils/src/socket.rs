@@ -22,7 +22,7 @@ pub struct Socket {
 }
 
 impl Socket {
-    pub async fn new(filepath: &Path) -> Result<Self, IoError> {
+    pub async fn connect(filepath: &Path) -> Result<Self, IoError> {
         UnixStream::connect(filepath).await?.convert::<Self>().ok()
     }
 

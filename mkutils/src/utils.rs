@@ -6,6 +6,7 @@ use crate::{
     is::Is,
     read_value::ReadValue,
     run_for::RunForError,
+    socket::{Request, Socket},
     status::Status,
 };
 use anyhow::{Context, Error as AnyhowError};
@@ -937,6 +938,10 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         std::fs::remove_file(self)
+    }
+
+    async fn respond_to<T: Request<Response = Self>>(&self, socket: &mut Socket) -> Result<(), AnyhowError> {
+        socket.respond::<T>(self).await
     }
 
     // TODO-ac2072:

@@ -27,7 +27,7 @@ pub use crate::{
     process::Process,
     read_value::ReadValue,
     rope_builder::RopeBuilder,
-    socket::{Request, Socket},
+    socket::Socket,
     tracing::Tracing,
     utils::Utils,
 };

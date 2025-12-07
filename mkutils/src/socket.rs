@@ -12,14 +12,6 @@ use std::{
 use tokio::net::UnixStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
-pub trait Request: Serialize {
-    type Response: DeserializeOwned + Serialize;
-}
-
-impl<T: Request> Request for &T {
-    type Response = T::Response;
-}
-
 #[derive(From)]
 pub struct Socket {
     frames: Framed<UnixStream, LengthDelimitedCodec>,
@@ -38,14 +30,13 @@ impl Socket {
             .into()
     }
 
-    pub async fn request<T: Request>(&mut self, request: T) -> Result<T::Response, AnyhowError> {
-        self.send(request).await?;
+    pub async fn request<X: Serialize, Y: DeserializeOwned>(
+        &mut self,
+        request: impl Into<X>,
+    ) -> Result<Y, AnyhowError> {
+        self.send(request.into()).await?;
 
         self.recv().await.into_option().check_next()?
-    }
-
-    pub async fn respond<T: Request>(&mut self, response: &T::Response) -> Result<(), AnyhowError> {
-        self.send(response).await
     }
 }
 

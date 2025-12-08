@@ -14,7 +14,7 @@ use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
 pub trait Request: Sized {
     type Response: DeserializeOwned + Serialize;
-    type Base: From<Self> + Serialize;
+    type Serialized: From<Self> + Serialize;
 }
 
 #[derive(From)]
@@ -36,9 +36,9 @@ impl Socket {
     }
 
     pub async fn request<T: Request>(&mut self, request: T) -> Result<T::Response, AnyhowError> {
-        let base = request.convert::<T::Base>();
+        let request = request.convert::<T::Serialized>();
 
-        self.send(base).await?;
+        self.send(request).await?;
 
         self.recv().await.into_option().check_next()?
     }

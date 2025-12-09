@@ -28,11 +28,7 @@ impl Socket {
     }
 
     pub async fn recv<T: DeserializeOwned>(&mut self) -> Output<T, AnyhowError> {
-        self.frames
-            .next()
-            .await??
-            .to_value_from_postcard_byte_str::<T>()?
-            .into()
+        self.frames.next().await??.to_value_from_rmp_slice::<T>()?.into()
     }
 
     pub async fn request<T: Request>(&mut self, request: T) -> Result<T::Response, AnyhowError> {
@@ -62,7 +58,7 @@ impl<T: Serialize> Sink<T> for Socket {
     }
 
     fn start_send(mut self: Pin<&mut Self>, item: T) -> Result<(), Self::Error> {
-        self.frames.start_send_unpin(item.to_postcard_byte_str()?.into())?.ok()
+        self.frames.start_send_unpin(item.to_rmp_byte_str()?.into())?.ok()
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, context: &mut Context) -> Poll<Result<(), Self::Error>> {

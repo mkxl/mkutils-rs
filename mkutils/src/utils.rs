@@ -25,6 +25,7 @@ use ratatui::{
     text::{Line, Span},
 };
 use reqwest::{RequestBuilder, Response};
+use rmp_serde::{decode::Error as RmpDecodeError, encode::Error as RmpEncodeError};
 use ropey::{
     Rope, RopeSlice,
     iter::{Chunks, Lines},
@@ -1089,13 +1090,6 @@ pub trait Utils {
         serde_json::to_vec(self)
     }
 
-    fn to_postcard_byte_str(&self) -> Result<Vec<u8>, PostcardError>
-    where
-        Self: Serialize,
-    {
-        postcard::to_stdvec(self)
-    }
-
     fn to_json_object(&self, key: &str) -> Json
     where
         Self: Serialize,
@@ -1108,6 +1102,20 @@ pub trait Utils {
         Self: Serialize,
     {
         serde_json::to_string(self)
+    }
+
+    fn to_postcard_byte_str(&self) -> Result<Vec<u8>, PostcardError>
+    where
+        Self: Serialize,
+    {
+        postcard::to_stdvec(self)
+    }
+
+    fn to_rmp_byte_str(&self) -> Result<Vec<u8>, RmpEncodeError>
+    where
+        Self: Serialize,
+    {
+        rmp_serde::to_vec(self)
     }
 
     fn to_uri(&self) -> Result<String, IoError>
@@ -1143,6 +1151,13 @@ pub trait Utils {
         Self: AsRef<[u8]>,
     {
         postcard::from_bytes(self.as_ref())
+    }
+
+    fn to_value_from_rmp_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, RmpDecodeError>
+    where
+        Self: AsRef<[u8]>,
+    {
+        rmp_serde::from_slice(self.as_ref())
     }
 
     fn to_value_from_value<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>

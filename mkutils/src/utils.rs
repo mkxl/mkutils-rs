@@ -71,16 +71,6 @@ use tracing::Level;
 use unicode_segmentation::{Graphemes, UnicodeSegmentation};
 use valuable::Value;
 
-macro_rules! try_get {
-    ($expr:expr, $method:ident, $key:ident) => {{
-        // NOTE: can't have [$key] in format string
-        match $expr.$method($key) {
-            Some(value) => value.ok(),
-            None => ::anyhow::bail!("key {} is not present in the hashmap", $key),
-        }
-    }};
-}
-
 #[allow(async_fn_in_trait)]
 pub trait Utils {
     async fn abort_all_and_wait<T: 'static>(&mut self)
@@ -244,6 +234,19 @@ pub trait Utils {
             Some(item) => item.ok(),
             None => anyhow::bail!(
                 "sequence of {type_name} items is exhausted",
+                type_name = Self::type_name(),
+            ),
+        }
+    }
+
+    fn check_present<T>(self) -> Result<T, AnyhowError>
+    where
+        Self: Is<Option<T>>,
+    {
+        match self.into_self() {
+            Some(item) => item.ok(),
+            None => anyhow::bail!(
+                "keyed entry of type {type_name} is not present in the collection",
                 type_name = Self::type_name(),
             ),
         }
@@ -1164,26 +1167,6 @@ pub trait Utils {
         Self::Item: TryFuture<Ok = T, Error = E>,
     {
         futures::future::try_join_all(self).await
-    }
-
-    fn try_get<'a, V, Q: Display + Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash>(
-        &'a self,
-        key: &Q,
-    ) -> Result<&'a V, AnyhowError>
-    where
-        Self: Borrow<HashMap<K, V>>,
-    {
-        try_get!(self.borrow(), get, key)
-    }
-
-    fn try_get_mut<'a, V, Q: Display + Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash>(
-        &'a mut self,
-        key: &Q,
-    ) -> Result<&'a mut V, AnyhowError>
-    where
-        Self: BorrowMut<HashMap<K, V>>,
-    {
-        try_get!(self.borrow_mut(), get_mut, key)
     }
 
     async fn try_wait<T, E: 'static + Send + Sync>(self) -> Result<T, AnyhowError>

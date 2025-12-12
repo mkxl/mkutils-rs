@@ -17,7 +17,7 @@ console-subscriber = "0.4.1"
 derive_more = { version = "2.0.1", features = ["constructor", "from", "is_variant"] }
 futures = "0.3.31"
 home = "0.5.12"
-mkutils-macros = { version = "0.1.0", path = "../mkutils-macros" }
+mkutils-macros = { path = "../mkutils-macros" }
 num = "0.4.3"
 poem = { git = "https://github.com/poem-web/poem", version = "3.1.12", features = ["anyhow", "websocket"], branch = "master" }
 poem-openapi = { git = "https://github.com/poem-web/poem", version = "5.1.16", features = ["ulid", "websocket"], branch = "master" }

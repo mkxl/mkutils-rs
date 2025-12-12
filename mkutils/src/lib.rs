@@ -31,4 +31,4 @@ pub use crate::{
     tracing::Tracing,
     utils::Utils,
 };
-pub use mkutils_macros::context;
+pub use mkutils_macros::{TypeAssoc, context};

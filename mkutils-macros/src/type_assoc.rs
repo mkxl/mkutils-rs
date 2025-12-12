@@ -14,7 +14,7 @@ pub struct TypeAssoc {
 
 impl TypeAssoc {
     const TYPE_ASSOC_ATTRIBUTE_NAME: &str = "type_assoc";
-    const TRAIT_IDENT_NAME: &str = "trait";
+    const TRAIT_PATH_KEY: &str = "impl_trait";
 
     fn missing_type_assoc_attribute_error_message(span: Span) -> SynError {
         let message = std::format!(
@@ -25,10 +25,10 @@ impl TypeAssoc {
         SynError::new(span, message)
     }
 
-    fn unexpected_ident(span: Span) -> SynError {
+    fn unexpected_trait_path_key(span: Span) -> SynError {
         let message = std::format!(
-            "expected `{trait_ident_name}` here",
-            trait_ident_name = Self::TRAIT_IDENT_NAME
+            "expected `{trait_path_key}` here",
+            trait_path_key = Self::TRAIT_PATH_KEY
         );
 
         SynError::new(span, message)
@@ -79,10 +79,10 @@ impl Parse for TypeAssoc {
     // NOTE: would ideally use [Cat3<IdentAssignment<Path>, Comma, CommaPunctuated<IdentAssignment<Type>>>]
     // but [Punctuated] does not implement [Parse]
     fn parse(parse_stream: ParseStream) -> Result<Self, SynError> {
-        let (trait_ident, _equals, trait_path) = parse_stream.parse::<IdentAssignment<Path>>()?.into_tuple();
+        let (trait_path_key, _equals, trait_path) = parse_stream.parse::<IdentAssignment<Path>>()?.into_tuple();
 
-        if trait_ident != Self::TRAIT_IDENT_NAME {
-            return Err(Self::unexpected_ident(trait_ident.span()));
+        if trait_path_key != Self::TRAIT_PATH_KEY {
+            return Err(Self::unexpected_trait_path_key(trait_path_key.span()));
         }
 
         parse_stream.parse::<Comma>()?;

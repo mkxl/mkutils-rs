@@ -57,13 +57,13 @@ impl TypeAssoc {
             assoc_type_token_streams,
         } = Self::from_derive_input(derive_input)?;
         let (impl_generics, input_generics, input_where_clause) = derive_input.generics.split_for_impl();
-        let impl_block_tokens = quote::quote! {
+        let impl_block_token_stream = quote::quote! {
             impl #impl_generics #trait_path for #derive_input_ident #input_generics #input_where_clause {
                 #(#assoc_type_token_streams)*
             }
         };
 
-        Ok(impl_block_tokens)
+        Ok(impl_block_token_stream)
     }
 
     pub fn derive(input_token_stream: TokenStream) -> TokenStream {

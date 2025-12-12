@@ -19,7 +19,6 @@ mod tracing;
 mod utils;
 pub use crate::{
     active_vec::ActiveVec,
-    as_valuable::AsValuable,
     event::Event,
     fmt::{Debugged, OptionalDisplay},
     geometry::{Orientation, Point, PointU16, PointUsize},
@@ -31,4 +30,4 @@ pub use crate::{
     tracing::Tracing,
     utils::Utils,
 };
-pub use mkutils_macros::{TypeAssoc, context};
+pub use mkutils_macros::{FromChain, TypeAssoc, context};

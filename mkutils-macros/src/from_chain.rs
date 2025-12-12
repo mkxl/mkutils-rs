@@ -33,7 +33,7 @@ impl FromChain {
         }
 
         let from_impl_block_token_stream = quote::quote! {
-            impl From<#head_type> for #input_ident {
+            impl ::std::convert::From<#head_type> for #input_ident {
                 fn from(#head_ident: #head_type) -> Self {
                     Self::from(#from_chain)
                 }

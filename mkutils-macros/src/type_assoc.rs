@@ -76,6 +76,8 @@ impl TypeAssoc {
 }
 
 impl Parse for TypeAssoc {
+    // NOTE: would ideally use [Cat3<IdentAssignment<Path>, Comma, CommaPunctuated<IdentAssignment<Type>>>]
+    // but [Punctuated] does not implement [Parse]
     fn parse(parse_stream: ParseStream) -> Result<Self, SynError> {
         let (trait_ident, _equals, trait_path) = parse_stream.parse::<IdentAssignment<Path>>()?.into_tuple();
 

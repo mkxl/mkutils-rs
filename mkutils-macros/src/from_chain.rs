@@ -24,7 +24,7 @@ impl FromChain {
         let mut type_chain_pairs = type_chain.pairs();
         let Some(head_type) = type_chain_pairs.next() else { Err(Self::empty_chain(type_chain.span()))? };
         let head_ident = quote::quote! { value };
-        let mut from_chain = quote::quote! { head_ident };
+        let mut from_chain = quote::quote! { #head_ident };
 
         while let Some(type_pair) = type_chain_pairs.next_back() {
             let type_ = type_pair.into_value();

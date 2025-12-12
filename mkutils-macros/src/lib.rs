@@ -1,26 +1,37 @@
+mod context;
+mod type_assoc;
+mod utils;
+
+use crate::type_assoc::TypeAssoc;
 use proc_macro::TokenStream;
-use syn::{ItemFn, LitStr};
 
+// TODO: add documentation
 #[proc_macro_attribute]
-pub fn context(args_tokens: TokenStream, input_tokens: TokenStream) -> TokenStream {
-    let context = syn::parse_macro_input!(args_tokens as LitStr);
-    let ItemFn { attrs, vis, sig, block } = syn::parse_macro_input!(input_tokens);
-    let output = &sig.output;
-    let block_tokens = if sig.asyncness.is_some() {
-        quote::quote! {
-            ::anyhow::Context::context((async move #block).await, #context)
-        }
-    } else {
-        quote::quote! {
-            ::anyhow::Context::context((move || #output #block)(), #context)
-        }
-    };
-    let item_fn_tokens = quote::quote! {
-        #(#attrs)*
-        #vis #sig {
-            #block_tokens
-        }
-    };
+pub fn context(args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
+    crate::context::context(args_token_stream, input_token_stream)
+}
 
-    item_fn_tokens.into()
+/// Implements traits that only have associated types.
+///
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(TypeAssoc)]
+/// #[type_assoc(trait = Foo, Item = Vec<u8>)]
+/// struct MyStruct;
+/// ```
+///
+/// expands to
+///
+/// ```rust
+/// struct MyStruct;
+///
+/// impl Foo for MyStruct {
+///     type Item = Vec<u8>;
+/// }
+/// ```
+#[proc_macro_derive(TypeAssoc, attributes(type_assoc))]
+pub fn type_assoc(input_token_stream: TokenStream) -> TokenStream {
+    TypeAssoc::derive(input_token_stream)
 }

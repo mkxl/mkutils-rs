@@ -40,25 +40,25 @@ impl TypeAssoc {
         }
     }
 
-    fn from_derive_input(derive_input: &DeriveInput) -> Result<Self, SynError> {
-        for attribute in &derive_input.attrs {
+    fn from_derive_input(input: &DeriveInput) -> Result<Self, SynError> {
+        for attribute in &input.attrs {
             if attribute.path().is_ident(Self::TYPE_ASSOC_ATTRIBUTE_NAME) {
                 return attribute.parse_args();
             }
         }
 
-        Err(Self::missing_type_assoc_attribute_error_message(derive_input.span()))
+        Err(Self::missing_type_assoc_attribute_error_message(input.span()))
     }
 
-    pub fn derive_impl(derive_input: &DeriveInput) -> Result<TokenStream2, SynError> {
-        let derive_input_ident = &derive_input.ident;
+    pub fn derive_impl(input: &DeriveInput) -> Result<TokenStream2, SynError> {
+        let input_ident = &input.ident;
         let Self {
             trait_path,
             assoc_type_token_streams,
-        } = Self::from_derive_input(derive_input)?;
-        let (impl_generics, input_generics, input_where_clause) = derive_input.generics.split_for_impl();
+        } = Self::from_derive_input(input)?;
+        let (impl_generics, input_generics, input_where_clause) = input.generics.split_for_impl();
         let impl_block_token_stream = quote::quote! {
-            impl #impl_generics #trait_path for #derive_input_ident #input_generics #input_where_clause {
+            impl #impl_generics #trait_path for #input_ident #input_generics #input_where_clause {
                 #(#assoc_type_token_streams)*
             }
         };
@@ -67,9 +67,9 @@ impl TypeAssoc {
     }
 
     pub fn derive(input_token_stream: TokenStream) -> TokenStream {
-        let derive_input = syn::parse_macro_input!(input_token_stream);
+        let input = syn::parse_macro_input!(input_token_stream);
 
-        Self::derive_impl(&derive_input)
+        Self::derive_impl(&input)
             .unwrap_or_else(SynError::into_compile_error)
             .into()
     }

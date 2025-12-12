@@ -1,7 +1,7 @@
 use crate::utils::CommaPunctuated;
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
-use syn::{DeriveInput, Error as SynError, Ident, Type, spanned::Spanned};
+use syn::{DeriveInput, Error as SynError, Type, spanned::Spanned};
 
 pub struct FromChain;
 
@@ -18,9 +18,11 @@ impl FromChain {
     }
 
     fn from_impl_block_token_stream(
-        input_ident: &Ident,
+        input: &DeriveInput,
         type_chain: &CommaPunctuated<Type>,
     ) -> Result<TokenStream2, SynError> {
+        let input_ident = &input.ident;
+        let (impl_generics, input_generics, input_where_clause) = input.generics.split_for_impl();
         let mut type_chain_pairs = type_chain.pairs();
         let Some(head_type) = type_chain_pairs.next() else { Err(Self::empty_chain(type_chain.span()))? };
         let head_ident = quote::quote! { value };
@@ -33,7 +35,7 @@ impl FromChain {
         }
 
         let from_impl_block_token_stream = quote::quote! {
-            impl ::std::convert::From<#head_type> for #input_ident {
+            impl #impl_generics ::std::convert::From<#head_type> for #input_ident #input_generics #input_where_clause {
                 fn from(#head_ident: #head_type) -> Self {
                     Self::from(#from_chain)
                 }
@@ -44,14 +46,13 @@ impl FromChain {
     }
 
     #[allow(clippy::similar_names)]
-    pub fn derive_impl(derive_input: &DeriveInput) -> Result<TokenStream2, SynError> {
+    pub fn derive_impl(input: &DeriveInput) -> Result<TokenStream2, SynError> {
         let mut from_impl_blocks_token_stream = TokenStream2::new();
 
-        for attribute in &derive_input.attrs {
+        for attribute in &input.attrs {
             if attribute.path().is_ident(Self::ATTRIBUTE_NAME) {
                 let type_chain = attribute.parse_args_with(CommaPunctuated::<Type>::parse_terminated)?;
-                let from_impl_block_token_stream =
-                    Self::from_impl_block_token_stream(&derive_input.ident, &type_chain)?;
+                let from_impl_block_token_stream = Self::from_impl_block_token_stream(input, &type_chain)?;
                 let from_impl_block_token_stream_iter = Some(from_impl_block_token_stream);
 
                 from_impl_blocks_token_stream.extend(from_impl_block_token_stream_iter);
@@ -62,9 +63,9 @@ impl FromChain {
     }
 
     pub fn derive(input_token_stream: TokenStream) -> TokenStream {
-        let derive_input = syn::parse_macro_input!(input_token_stream);
+        let input = syn::parse_macro_input!(input_token_stream);
 
-        Self::derive_impl(&derive_input)
+        Self::derive_impl(&input)
             .unwrap_or_else(SynError::into_compile_error)
             .into()
     }

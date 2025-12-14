@@ -26,7 +26,7 @@ mod process;
 #[cfg(feature = "ropey")]
 mod rope_builder;
 
-#[cfg(feature = "async")]
+#[cfg(all(feature = "async", feature = "derive_more"))]
 mod run_for;
 
 #[cfg(feature = "socket")]
@@ -53,9 +53,9 @@ pub use crate::tracing::Tracing;
 pub use crate::{
     active_vec::ActiveVec,
     fmt::{Debugged, OptionalDisplay},
-    geometry::{Orientation, Point, PointU16, PointUsize},
     read_value::ReadValue,
     utils::Utils,
 };
+pub use geometry::{Orientation, Point, PointU16, PointUsize};
 #[cfg(feature = "mkutils-macros")]
 pub use mkutils_macros::{FromChain, TypeAssoc, context};

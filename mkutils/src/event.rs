@@ -1,17 +1,21 @@
 use crate::utils::Utils;
+#[cfg(feature = "derive_more")]
 use derive_more::From;
 use tokio::sync::watch::{Receiver as WatchReceiver, Sender as WatchSender};
 
-#[derive(Clone, From)]
+#[derive(Clone)]
+#[cfg_attr(feature = "derive_more", derive(From))]
 pub struct Event {
     sender: WatchSender<bool>,
     receiver: WatchReceiver<bool>,
 }
 
 impl Event {
+    #[cfg(feature = "derive_more")]
     const INITIAL_VALUE: bool = false;
     const SET_VALUE: bool = true;
 
+    #[cfg(feature = "derive_more")]
     #[must_use]
     pub fn new() -> Self {
         tokio::sync::watch::channel(Self::INITIAL_VALUE).into()
@@ -45,6 +49,7 @@ impl Event {
     }
 }
 
+#[cfg(feature = "derive_more")]
 impl Default for Event {
     fn default() -> Self {
         Self::new()

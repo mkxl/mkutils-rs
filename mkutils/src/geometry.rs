@@ -1,10 +1,12 @@
+#[cfg(feature = "derive_more")]
 use derive_more::IsVariant;
 #[cfg(feature = "num")]
 use num::traits::{ConstZero, SaturatingSub};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, IsVariant)]
+#[derive(Clone, Copy)]
+#[cfg_attr(feature = "derive_more", derive(IsVariant))]
 pub enum Orientation {
     Horizontal,
     Vertical,

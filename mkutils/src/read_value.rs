@@ -1,7 +1,8 @@
+#[cfg(feature = "derive_more")]
 use derive_more::{Constructor, From};
 use std::io::Error as IoError;
 
-#[derive(Constructor, From)]
+#[cfg_attr(feature = "derive_more", derive(Constructor, From))]
 pub struct ReadValue<P> {
     pub filepath: P,
     pub result: Result<String, IoError>,

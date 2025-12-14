@@ -1,7 +1,8 @@
+#[cfg(feature = "derive_more")]
 use derive_more::Constructor;
 use std::fmt::{Debug, Display, Error as FmtError, Formatter};
 
-#[derive(Constructor)]
+#[cfg_attr(feature = "derive_more", derive(Constructor))]
 pub struct Debugged<'a, T: ?Sized>(&'a T);
 
 impl<T: Debug + ?Sized> Display for Debugged<'_, T> {
@@ -10,7 +11,7 @@ impl<T: Debug + ?Sized> Display for Debugged<'_, T> {
     }
 }
 
-#[derive(Constructor)]
+#[cfg_attr(feature = "derive_more", derive(Constructor))]
 pub struct OptionalDisplay<'a, T: ?Sized>(&'a T);
 
 impl<T: Display> Display for OptionalDisplay<'_, Option<T>> {

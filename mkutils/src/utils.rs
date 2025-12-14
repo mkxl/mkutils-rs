@@ -1,18 +1,17 @@
 #[cfg(feature = "serde")]
 use crate::as_valuable::AsValuable;
+#[cfg(feature = "derive_more")]
+use crate::fmt::{Debugged, OptionalDisplay};
 #[cfg(feature = "ropey")]
 use crate::geometry::PointUsize;
 #[cfg(feature = "async")]
 use crate::into_stream::IntoStream;
+use crate::is::Is;
 #[cfg(feature = "socket")]
 use crate::socket::{Request, Socket};
 #[cfg(feature = "tracing")]
 use crate::status::Status;
-use crate::{
-    fmt::{Debugged, OptionalDisplay},
-    is::Is,
-};
-#[cfg(feature = "async")]
+#[cfg(all(feature = "async", feature = "derive_more"))]
 use crate::{read_value::ReadValue, run_for::RunForError};
 #[cfg(feature = "anyhow")]
 use anyhow::{Context, Error as AnyhowError};
@@ -372,6 +371,7 @@ pub trait Utils {
         std::fs::create_dir_all(self)
     }
 
+    #[cfg(feature = "derive_more")]
     fn debug(&self) -> Debugged<'_, Self> {
         Debugged::new(self)
     }
@@ -787,6 +787,7 @@ pub trait Utils {
         TokioFile::open(self).await
     }
 
+    #[cfg(feature = "derive_more")]
     fn optional_display(&self) -> OptionalDisplay<'_, Self> {
         OptionalDisplay::new(self)
     }
@@ -935,7 +936,7 @@ pub trait Utils {
         string.ok()
     }
 
-    #[cfg(feature = "async")]
+    #[cfg(all(feature = "async", feature = "derive_more"))]
     async fn read_to_string_async(self) -> ReadValue<Self>
     where
         Self: AsRef<Path> + Sized,
@@ -945,7 +946,7 @@ pub trait Utils {
         ReadValue::new(self, result)
     }
 
-    #[cfg(feature = "async")]
+    #[cfg(all(feature = "async", feature = "derive_more"))]
     async fn read_to_string_else_stdin_async<P: AsRef<Path>>(self) -> ReadValue<Option<P>>
     where
         Self: Is<Option<P>> + Sized,
@@ -1008,7 +1009,7 @@ pub trait Utils {
         y.pair(x)
     }
 
-    #[cfg(feature = "async")]
+    #[cfg(all(feature = "async", feature = "derive_more"))]
     async fn run_for(mut self, duration: Duration) -> Result<Self, RunForError<Self::Output>>
     where
         Self: Future + Sized + Unpin,

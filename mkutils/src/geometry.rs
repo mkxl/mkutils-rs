@@ -1,6 +1,7 @@
 use derive_more::IsVariant;
+#[cfg(feature = "num")]
 use num::traits::{ConstZero, SaturatingSub};
-use ratatui::layout::Size;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, IsVariant)]
@@ -9,7 +10,8 @@ pub enum Orientation {
     Vertical,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Point<T> {
     pub x: T,
     pub y: T,
@@ -45,10 +47,12 @@ impl<T> Point<T> {
     }
 }
 
+#[cfg(feature = "num")]
 impl<T: ConstZero> Point<T> {
     pub const ORIGIN: Self = Self { x: T::ZERO, y: T::ZERO };
 }
 
+#[cfg(feature = "num")]
 impl<T: Clone + SaturatingSub> Point<T> {
     #[must_use]
     pub fn saturating_sub(&self, diff: &T, orientation: Orientation) -> Self {
@@ -70,12 +74,6 @@ impl<T, X: Into<T>, Y: Into<T>> From<(X, Y)> for Point<T> {
 impl<T, X: From<T>, Y: From<T>> From<Point<T>> for (X, Y) {
     fn from(point: Point<T>) -> Self {
         (point.x.into(), point.y.into())
-    }
-}
-
-impl<T: From<u16>> From<Size> for Point<T> {
-    fn from(Size { width, height }: Size) -> Self {
-        Self::new(width, height)
     }
 }
 

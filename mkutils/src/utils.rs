@@ -1,51 +1,77 @@
+#[cfg(feature = "serde")]
+use crate::as_valuable::AsValuable;
+#[cfg(feature = "ropey")]
+use crate::geometry::PointUsize;
+#[cfg(feature = "async")]
+use crate::into_stream::IntoStream;
+#[cfg(feature = "socket")]
+use crate::socket::{Request, Socket};
+#[cfg(feature = "tracing")]
+use crate::status::Status;
 use crate::{
-    as_valuable::AsValuable,
     fmt::{Debugged, OptionalDisplay},
-    geometry::PointUsize,
-    into_stream::IntoStream,
     is::Is,
-    read_value::ReadValue,
-    run_for::RunForError,
-    socket::{Request, Socket},
-    status::Status,
 };
+#[cfg(feature = "async")]
+use crate::{read_value::ReadValue, run_for::RunForError};
+#[cfg(feature = "anyhow")]
 use anyhow::{Context, Error as AnyhowError};
-use bytes::{Buf, Bytes};
+#[cfg(feature = "async")]
+use bytes::Buf;
+#[cfg(feature = "poem")]
+use bytes::Bytes;
+#[cfg(feature = "path")]
 use camino::{Utf8Path, Utf8PathBuf};
-use futures::{Sink, SinkExt, Stream, StreamExt, TryFuture, stream::Filter};
+#[cfg(any(feature = "async", feature = "poem"))]
+use futures::Stream;
+#[cfg(feature = "async")]
+use futures::{Sink, SinkExt, StreamExt, TryFuture, stream::Filter};
+#[cfg(feature = "num")]
 use num::traits::{SaturatingAdd, SaturatingSub};
+#[cfg(feature = "poem")]
 use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
+#[cfg(feature = "poem")]
 use poem_openapi::{
     error::ParseRequestPayloadError,
     payload::{Binary as PoemBinary, Json as PoemJson},
 };
-use postcard::Error as PostcardError;
+#[cfg(feature = "ratatui")]
 use ratatui::{
     layout::Rect,
     text::{Line, Span},
 };
+#[cfg(feature = "reqwest")]
 use reqwest::{RequestBuilder, Response};
+#[cfg(feature = "rmp")]
 use rmp_serde::{decode::Error as RmpDecodeError, encode::Error as RmpEncodeError};
+#[cfg(feature = "ropey")]
 use ropey::{
     Rope, RopeSlice,
     iter::{Chunks, Lines},
 };
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use serde_json::{Error as SerdeJsonError, Value as Json, value::Index};
+#[cfg(feature = "serde")]
+use serde::de::DeserializeOwned;
+#[cfg(any(feature = "rmp", feature = "serde"))]
+use serde::{Deserialize, Serialize};
+#[cfg(any(feature = "poem", feature = "serde"))]
+use serde_json::Error as SerdeJsonError;
+#[cfg(feature = "serde")]
+use serde_json::{Value as Json, value::Index};
+#[cfg(feature = "serde")]
 use serde_yaml_ng::Error as SerdeYamlError;
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
     error::Error as StdError,
-    fmt::{Debug, Display},
-    fs::{File, Metadata},
+    fmt::Display,
+    fs::File,
     future::{Future, Ready},
     hash::Hash,
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
     iter::{Once, Repeat},
     marker::Unpin,
     ops::{Add, ControlFlow, Range},
-    path::{Path, PathBuf},
+    path::Path,
     pin::Pin,
     str::Utf8Error,
     sync::{
@@ -53,27 +79,38 @@ use std::{
         atomic::{AtomicUsize, Ordering},
     },
     task::Poll,
-    time::{Duration, Instant},
+    time::Instant,
 };
+#[cfg(feature = "anyhow")]
+use std::{fmt::Debug, path::PathBuf};
+#[cfg(feature = "async")]
+use std::{fs::Metadata, time::Duration};
+#[cfg(all(feature = "anyhow", feature = "async"))]
+use tokio::sync::oneshot::Sender as OneshotSender;
+#[cfg(feature = "async")]
 use tokio::{
     fs::File as TokioFile,
     io::{
         AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader as TokioBufReader, BufWriter as TokioBufWriter,
     },
-    sync::oneshot::Sender as OneshotSender,
     task::{JoinHandle, JoinSet, LocalSet},
     time::{Sleep, Timeout},
 };
+#[cfg(feature = "async")]
 use tokio_util::{
     codec::{Framed, LengthDelimitedCodec, LinesCodec},
     io::StreamReader,
 };
+#[cfg(feature = "tracing")]
 use tracing::Level;
+#[cfg(feature = "unicode-segmentation")]
 use unicode_segmentation::{Graphemes, UnicodeSegmentation};
+#[cfg(feature = "serde")]
 use valuable::Value;
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
+    #[cfg(feature = "async")]
     async fn abort_all_and_wait<T: 'static>(&mut self)
     where
         Self: BorrowMut<JoinSet<T>>,
@@ -85,6 +122,7 @@ pub trait Utils {
         while join_set.join_next().await.is_some() {}
     }
 
+    #[cfg(feature = "path")]
     fn absolute_utf8(&self) -> Result<Cow<'_, Utf8Path>, IoError>
     where
         Self: AsRef<Utf8Path>,
@@ -107,6 +145,7 @@ pub trait Utils {
         rhs.await
     }
 
+    #[cfg(feature = "ratatui")]
     fn add_span<'a, T: Into<Span<'a>>>(self, span: T) -> Line<'a>
     where
         Self: Into<Line<'a>>,
@@ -118,6 +157,7 @@ pub trait Utils {
         line
     }
 
+    #[cfg(feature = "anyhow")]
     fn anyhow_result<T, E: Into<AnyhowError>>(self) -> Result<T, AnyhowError>
     where
         Self: Is<Result<T, E>>,
@@ -155,6 +195,7 @@ pub trait Utils {
         std::str::from_utf8(self.as_ref())
     }
 
+    #[cfg(feature = "path")]
     fn as_utf8_path(&self) -> &Utf8Path
     where
         Self: AsRef<Utf8Path>,
@@ -162,6 +203,7 @@ pub trait Utils {
         self.as_ref()
     }
 
+    #[cfg(feature = "ropey")]
     fn as_slice(&self) -> RopeSlice<'_>
     where
         Self: Borrow<Rope>,
@@ -169,6 +211,7 @@ pub trait Utils {
         self.borrow().slice(..)
     }
 
+    #[cfg(feature = "serde")]
     fn as_valuable(&self) -> Value<'_>
     where
         Self: AsValuable,
@@ -190,6 +233,7 @@ pub trait Utils {
         BufReader::new(self)
     }
 
+    #[cfg(feature = "async")]
     fn buf_reader_async(self) -> TokioBufReader<Self>
     where
         Self: AsyncRead + Sized,
@@ -204,6 +248,7 @@ pub trait Utils {
         BufWriter::new(self)
     }
 
+    #[cfg(feature = "async")]
     fn buf_writer_async(self) -> TokioBufWriter<Self>
     where
         Self: AsyncWrite + Sized,
@@ -227,6 +272,7 @@ pub trait Utils {
         std::format!("{self}{rhs}")
     }
 
+    #[cfg(feature = "anyhow")]
     fn check_next<T>(self) -> Result<T, AnyhowError>
     where
         Self: Is<Option<T>>,
@@ -240,6 +286,7 @@ pub trait Utils {
         }
     }
 
+    #[cfg(feature = "anyhow")]
     fn check_present<T>(self) -> Result<T, AnyhowError>
     where
         Self: Is<Option<T>>,
@@ -254,6 +301,7 @@ pub trait Utils {
     }
 
     // NOTE: [https://docs.rs/reqwest/latest/reqwest/struct.Response.html#method.error_for_status]
+    #[cfg(feature = "reqwest")]
     async fn check_status(self) -> Result<Response, AnyhowError>
     where
         Self: Is<Response>,
@@ -296,6 +344,7 @@ pub trait Utils {
         self.find_eq(query).is_some()
     }
 
+    #[cfg(feature = "anyhow")]
     fn context_path<T, E, C: 'static + Display + Send + Sync, P: AsRef<Path>>(
         self,
         context: C,
@@ -334,6 +383,7 @@ pub trait Utils {
         Err(self)
     }
 
+    #[cfg(feature = "path")]
     fn expand_user(&self) -> Cow<'_, Utf8Path>
     where
         Self: AsRef<str>,
@@ -345,10 +395,11 @@ pub trait Utils {
         {
             home_dirpath.join(relative_path_str).owned()
         } else {
-            path_str.convert::<&Utf8Path>().borrowed()
+            path_str.as_utf8_path().borrowed()
         }
     }
 
+    #[cfg(feature = "path")]
     fn unexpand_user(&self) -> Cow<'_, Utf8Path>
     where
         Self: AsRef<str>,
@@ -360,16 +411,17 @@ pub trait Utils {
         {
             if relative_path_str.is_empty() {
                 "~".convert::<Utf8PathBuf>().owned()
-            } else if relative_path_str.convert::<&Utf8Path>().is_absolute() {
+            } else if relative_path_str.as_utf8_path().is_absolute() {
                 "~".cat(relative_path_str).convert::<Utf8PathBuf>().owned()
             } else {
-                path_str.convert::<&Utf8Path>().borrowed()
+                path_str.as_utf8_path().borrowed()
             }
         } else {
-            path_str.convert::<&Utf8Path>().borrowed()
+            path_str.as_utf8_path().borrowed()
         }
     }
 
+    #[cfg(feature = "unicode-segmentation")]
     fn extended_graphemes(&self) -> Graphemes<'_>
     where
         Self: AsRef<str>,
@@ -377,6 +429,7 @@ pub trait Utils {
         self.as_ref().graphemes(true)
     }
 
+    #[cfg(feature = "ropey")]
     fn extended_graphemes_at<'a>(self, extended_graphemes_index_range: Range<usize>) -> impl Iterator<Item = &'a str>
     where
         Self: Is<RopeSlice<'a>>,
@@ -390,6 +443,7 @@ pub trait Utils {
             .take(extended_graphemes_index_range.len())
     }
 
+    #[cfg(feature = "ropey")]
     fn extended_graphemes_at_rect<'a>(
         self,
         lines_index_range: Range<usize>,
@@ -404,6 +458,7 @@ pub trait Utils {
             .map(move |line_rope_slice| line_rope_slice.extended_graphemes_at(extended_graphemes_index_range.clone()))
     }
 
+    #[cfg(feature = "async")]
     fn filter_sync(
         self,
         mut func: impl FnMut(&Self::Item) -> bool,
@@ -415,6 +470,7 @@ pub trait Utils {
         self.filter(move |x| func(x).ready())
     }
 
+    #[cfg(all(feature = "anyhow", feature = "path"))]
     fn file_name_ok(&self) -> Result<&str, AnyhowError>
     where
         Self: AsRef<Utf8Path>,
@@ -429,6 +485,7 @@ pub trait Utils {
         self.into_self() <= Instant::now()
     }
 
+    #[cfg(feature = "path")]
     #[must_use]
     fn home_dirpath() -> Option<Utf8PathBuf> {
         home::home_dir()?.try_convert::<Utf8PathBuf>().ok()
@@ -473,6 +530,7 @@ pub trait Utils {
         ControlFlow::Continue(self)
     }
 
+    #[cfg(feature = "poem")]
     fn into_endpoint(self) -> impl Endpoint<Output = Self>
     where
         Self: Clone + IntoResponse + Sync,
@@ -482,6 +540,7 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
+    #[cfg(feature = "ratatui")]
     fn into_line<'a>(self) -> Line<'a>
     where
         Self: Into<Cow<'a, str>>,
@@ -489,6 +548,7 @@ pub trait Utils {
         self.into().into()
     }
 
+    #[cfg(feature = "async")]
     fn into_stream_reader<B: Buf, E: Into<IoError>>(self) -> StreamReader<Self, B>
     where
         Self: Sized + Stream<Item = Result<B, E>>,
@@ -496,6 +556,7 @@ pub trait Utils {
         StreamReader::new(self)
     }
 
+    #[cfg(feature = "async")]
     fn into_length_delimited_frames(self) -> Framed<Self, LengthDelimitedCodec>
     where
         Self: Sized,
@@ -503,6 +564,7 @@ pub trait Utils {
         Framed::new(self, LengthDelimitedCodec::new())
     }
 
+    #[cfg(feature = "async")]
     fn into_line_frames(self) -> Framed<Self, LinesCodec>
     where
         Self: Sized,
@@ -511,6 +573,7 @@ pub trait Utils {
     }
 
     // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]
+    #[cfg(feature = "poem")]
     fn into_parse_request_payload_result<T>(self) -> Result<T, ParseRequestPayloadError>
     where
         Self: Is<Result<T, SerdeJsonError>>,
@@ -524,6 +587,7 @@ pub trait Utils {
         }
     }
 
+    #[cfg(feature = "async")]
     async fn into_select<T: Future<Output = Self::Output>>(self, rhs: T) -> Self::Output
     where
         Self: Future + Sized,
@@ -534,6 +598,7 @@ pub trait Utils {
         }
     }
 
+    #[cfg(feature = "tracing")]
     fn into_status<T, E>(self) -> Status<T, E>
     where
         Self: Is<Result<T, E>>,
@@ -541,6 +606,7 @@ pub trait Utils {
         Status(self.into_self())
     }
 
+    #[cfg(feature = "async")]
     fn into_stream(self) -> Self::Stream
     where
         Self: IntoStream + Sized,
@@ -548,6 +614,7 @@ pub trait Utils {
         IntoStream::into_stream(self)
     }
 
+    #[cfg(feature = "anyhow")]
     fn into_string(self) -> Result<String, AnyhowError>
     where
         Self: Is<PathBuf>,
@@ -558,6 +625,7 @@ pub trait Utils {
         }
     }
 
+    #[cfg(feature = "serde")]
     fn into_value_from_json<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
     where
         Self: Is<Json>,
@@ -565,6 +633,7 @@ pub trait Utils {
         serde_json::from_value(self.into_self())
     }
 
+    #[cfg(feature = "anyhow")]
     fn invalid_utf8_err<T>(&self) -> Result<T, AnyhowError>
     where
         Self: Debug,
@@ -586,6 +655,7 @@ pub trait Utils {
         self.into_self().map_err(E::io_error)
     }
 
+    #[cfg(feature = "async")]
     async fn join_all<T>(self) -> Vec<T>
     where
         Self: IntoIterator<Item: Future> + Sized,
@@ -594,6 +664,7 @@ pub trait Utils {
         futures::future::join_all(self).await
     }
 
+    #[cfg(feature = "unicode-segmentation")]
     fn len_extended_graphemes(&self) -> usize
     where
         Self: AsRef<str>,
@@ -601,6 +672,7 @@ pub trait Utils {
         self.as_ref().extended_graphemes().count()
     }
 
+    #[cfg(feature = "tracing")]
     fn level<T, E>(&self) -> Level
     where
         Self: Borrow<Result<T, E>>,
@@ -612,6 +684,7 @@ pub trait Utils {
         }
     }
 
+    #[cfg(feature = "tracing")]
     fn log_error(&self)
     where
         Self: Display,
@@ -619,6 +692,7 @@ pub trait Utils {
         tracing::warn!(error = %self, "error: {self:#}");
     }
 
+    #[cfg(feature = "tracing")]
     #[must_use]
     fn log_if_error<T, E: Display>(self) -> Self
     where
@@ -660,6 +734,7 @@ pub trait Utils {
         std::mem::take(self)
     }
 
+    #[cfg(feature = "async")]
     async fn metadata_async(&self) -> Result<Metadata, IoError>
     where
         Self: AsRef<Path>,
@@ -667,6 +742,7 @@ pub trait Utils {
         tokio::fs::metadata(self).await
     }
 
+    #[cfg(feature = "ropey")]
     fn num_lines_and_extended_graphemes<'a>(self) -> PointUsize
     where
         Self: Is<RopeSlice<'a>>,
@@ -703,6 +779,7 @@ pub trait Utils {
         File::open(self)
     }
 
+    #[cfg(feature = "async")]
     async fn open_async(&self) -> Result<TokioFile, IoError>
     where
         Self: AsRef<Path>,
@@ -756,6 +833,7 @@ pub trait Utils {
         func(self)
     }
 
+    #[cfg(feature = "poem")]
     fn poem_binary(self) -> PoemBinary<Self>
     where
         Self: Sized,
@@ -763,6 +841,7 @@ pub trait Utils {
         PoemBinary(self)
     }
 
+    #[cfg(feature = "poem")]
     fn poem_binary_message(self) -> PoemMessage
     where
         Self: Is<Vec<u8>>,
@@ -770,6 +849,7 @@ pub trait Utils {
         PoemMessage::Binary(self.into_self())
     }
 
+    #[cfg(feature = "poem")]
     fn poem_json(self) -> PoemJson<Self>
     where
         Self: Sized,
@@ -777,6 +857,7 @@ pub trait Utils {
         PoemJson(self)
     }
 
+    #[cfg(feature = "poem")]
     fn poem_stream_body<O: 'static + Into<Bytes>, E: 'static + Into<IoError>>(self) -> PoemBinary<PoemBody>
     where
         Self: 'static + Send + Sized + Stream<Item = Result<O, E>>,
@@ -784,6 +865,7 @@ pub trait Utils {
         PoemBody::from_bytes_stream(self).poem_binary()
     }
 
+    #[cfg(feature = "poem")]
     fn poem_text_message(self) -> PoemMessage
     where
         Self: Is<String>,
@@ -812,6 +894,7 @@ pub trait Utils {
         values.push(self);
     }
 
+    #[cfg(feature = "reqwest")]
     fn query_all<T: Serialize>(self, name: &str, values: impl IntoIterator<Item = T>) -> RequestBuilder
     where
         Self: Is<RequestBuilder>,
@@ -825,6 +908,7 @@ pub trait Utils {
         request_builder
     }
 
+    #[cfg(feature = "reqwest")]
     fn query_one<T: Serialize>(self, name: &str, value: impl Into<Option<T>>) -> RequestBuilder
     where
         Self: Is<RequestBuilder>,
@@ -839,6 +923,7 @@ pub trait Utils {
         request_builder.query(query)
     }
 
+    #[cfg(feature = "async")]
     async fn read_string_async(&mut self) -> Result<String, IoError>
     where
         Self: AsyncReadExt + Unpin,
@@ -850,6 +935,7 @@ pub trait Utils {
         string.ok()
     }
 
+    #[cfg(feature = "async")]
     async fn read_to_string_async(self) -> ReadValue<Self>
     where
         Self: AsRef<Path> + Sized,
@@ -859,6 +945,7 @@ pub trait Utils {
         ReadValue::new(self, result)
     }
 
+    #[cfg(feature = "async")]
     async fn read_to_string_else_stdin_async<P: AsRef<Path>>(self) -> ReadValue<Option<P>>
     where
         Self: Is<Option<P>> + Sized,
@@ -886,6 +973,7 @@ pub trait Utils {
         start..end
     }
 
+    #[cfg(feature = "ratatui")]
     fn ratatui_rect(self) -> Rect
     where
         Self: Into<(u16, u16)>,
@@ -920,6 +1008,7 @@ pub trait Utils {
         y.pair(x)
     }
 
+    #[cfg(feature = "async")]
     async fn run_for(mut self, duration: Duration) -> Result<Self, RunForError<Self::Output>>
     where
         Self: Future + Sized + Unpin,
@@ -930,6 +1019,7 @@ pub trait Utils {
         }
     }
 
+    #[cfg(feature = "async")]
     async fn run_local(self) -> Self::Output
     where
         Self: Future + Sized,
@@ -944,6 +1034,7 @@ pub trait Utils {
         std::fs::remove_file(self)
     }
 
+    #[cfg(feature = "socket")]
     async fn respond_to<T: Request<Response = Self>>(
         &self,
         mut socket: impl BorrowMut<Socket>,
@@ -954,6 +1045,7 @@ pub trait Utils {
     // TODO-ac2072:
     // - add [AsRopeSlice] trait that both [Rope] and [RopeSlice<'_>] implement
     // - i was doing this, but it didn't work due to some use of tempoarary variables error
+    #[cfg(feature = "ropey")]
     fn saturating_chunks_at_extended_grapheme<'a>(self, extended_grapheme_index: usize) -> Chunks<'a>
     where
         Self: Is<RopeSlice<'a>>,
@@ -962,6 +1054,7 @@ pub trait Utils {
     }
 
     // TODO-ac2072
+    #[cfg(feature = "ropey")]
     fn saturating_chunks_at_char<'a>(self, char_index: usize) -> Chunks<'a>
     where
         Self: Is<RopeSlice<'a>>,
@@ -973,6 +1066,7 @@ pub trait Utils {
     }
 
     // TODO-ac2072
+    #[cfg(feature = "ropey")]
     fn saturating_lines_at<'a>(self, line_index: usize) -> Lines<'a>
     where
         Self: Is<RopeSlice<'a>>,
@@ -983,6 +1077,7 @@ pub trait Utils {
         rope_slice.lines_at(line_index)
     }
 
+    #[cfg(feature = "num")]
     fn saturating_add_or_sub_in_place_with_max(&mut self, rhs: Self, max_value: Self, add: bool)
     where
         Self: Ord + SaturatingAdd + SaturatingSub + Sized,
@@ -996,6 +1091,7 @@ pub trait Utils {
         *self = value.min(max_value);
     }
 
+    #[cfg(feature = "async")]
     async fn send_to<T: Sink<Self> + Unpin>(self, mut sink: T) -> Result<(), T::Error>
     where
         Self: Sized,
@@ -1003,6 +1099,7 @@ pub trait Utils {
         sink.send(self).await
     }
 
+    #[cfg(all(feature = "anyhow", feature = "async"))]
     fn send_to_oneshot(self, sender: OneshotSender<Self>) -> Result<(), AnyhowError>
     where
         Self: Sized,
@@ -1014,6 +1111,7 @@ pub trait Utils {
             .context("unable to send value over oneshot channel")
     }
 
+    #[cfg(feature = "async")]
     fn sleep(self) -> Sleep
     where
         Self: Is<Duration>,
@@ -1028,6 +1126,7 @@ pub trait Utils {
         Some(self)
     }
 
+    #[cfg(feature = "async")]
     fn spawn_task(self) -> JoinHandle<Self::Output>
     where
         Self: 'static + Future + Sized + Send,
@@ -1050,16 +1149,19 @@ pub trait Utils {
         (begin, end).some()
     }
 
+    #[cfg(feature = "serde")]
     fn take_json<T: DeserializeOwned>(&mut self, index: impl Index) -> Result<T, SerdeJsonError>
     where
         Self: BorrowMut<Json>,
     {
         self.borrow_mut()
             .get_mut(index)
-            .map_or_default(std::mem::take)
+            .unwrap_or(&mut Json::Null)
+            .mem_take()
             .into_value_from_json()
     }
 
+    #[cfg(feature = "async")]
     fn timeout(self, duration: Duration) -> Timeout<Self>
     where
         Self: Future + Sized,
@@ -1076,6 +1178,7 @@ pub trait Utils {
         *bool_value = !*bool_value;
     }
 
+    #[cfg(feature = "serde")]
     fn to_json(&self) -> Result<Json, SerdeJsonError>
     where
         Self: Serialize,
@@ -1083,6 +1186,7 @@ pub trait Utils {
         serde_json::to_value(self)
     }
 
+    #[cfg(feature = "serde")]
     fn to_json_byte_str(&self) -> Result<Vec<u8>, SerdeJsonError>
     where
         Self: Serialize,
@@ -1090,6 +1194,7 @@ pub trait Utils {
         serde_json::to_vec(self)
     }
 
+    #[cfg(feature = "serde")]
     fn to_json_object(&self, key: &str) -> Json
     where
         Self: Serialize,
@@ -1097,6 +1202,7 @@ pub trait Utils {
         serde_json::json!({key: self})
     }
 
+    #[cfg(feature = "serde")]
     fn to_json_str(&self) -> Result<String, SerdeJsonError>
     where
         Self: Serialize,
@@ -1104,13 +1210,7 @@ pub trait Utils {
         serde_json::to_string(self)
     }
 
-    fn to_postcard_byte_str(&self) -> Result<Vec<u8>, PostcardError>
-    where
-        Self: Serialize,
-    {
-        postcard::to_stdvec(self)
-    }
-
+    #[cfg(feature = "rmp")]
     fn to_rmp_byte_str(&self) -> Result<Vec<u8>, RmpEncodeError>
     where
         Self: Serialize,
@@ -1118,6 +1218,7 @@ pub trait Utils {
         rmp_serde::to_vec(self)
     }
 
+    #[cfg(feature = "path")]
     fn to_uri(&self) -> Result<String, IoError>
     where
         Self: AsRef<Utf8Path>,
@@ -1125,6 +1226,7 @@ pub trait Utils {
         "file://".cat(self.absolute_utf8()?).ok()
     }
 
+    #[cfg(feature = "serde")]
     fn to_value_from_json_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeJsonError>
     where
         Self: AsRef<[u8]>,
@@ -1132,6 +1234,7 @@ pub trait Utils {
         serde_json::from_slice(self.as_ref())
     }
 
+    #[cfg(feature = "serde")]
     fn to_value_from_yaml_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeYamlError>
     where
         Self: AsRef<[u8]>,
@@ -1139,6 +1242,7 @@ pub trait Utils {
         serde_yaml_ng::from_slice(self.as_ref())
     }
 
+    #[cfg(feature = "serde")]
     fn to_value_from_json_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
     where
         Self: Read + Sized,
@@ -1146,13 +1250,7 @@ pub trait Utils {
         serde_json::from_reader(self)
     }
 
-    fn to_value_from_postcard_byte_str<'a, T: Deserialize<'a>>(&'a self) -> Result<T, PostcardError>
-    where
-        Self: AsRef<[u8]>,
-    {
-        postcard::from_bytes(self.as_ref())
-    }
-
+    #[cfg(feature = "rmp")]
     fn to_value_from_rmp_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, RmpDecodeError>
     where
         Self: AsRef<[u8]>,
@@ -1160,6 +1258,7 @@ pub trait Utils {
         rmp_serde::from_slice(self.as_ref())
     }
 
+    #[cfg(feature = "serde")]
     fn to_value_from_value<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>
     where
         Self: Serialize,
@@ -1176,6 +1275,7 @@ pub trait Utils {
 
     // NOTE: would prefer to do [Result<Vec<Self::Item::Ok>, Self::Item::Error>] but getting
     // [error[E0223]: ambiguous associated type]
+    #[cfg(feature = "async")]
     async fn try_join_all<T, E>(self) -> Result<Vec<T>, E>
     where
         Self: IntoIterator + Sized,
@@ -1184,6 +1284,7 @@ pub trait Utils {
         futures::future::try_join_all(self).await
     }
 
+    #[cfg(all(feature = "anyhow", feature = "async"))]
     async fn try_wait<T, E: 'static + Send + Sync>(self) -> Result<T, AnyhowError>
     where
         Self: Is<JoinHandle<Result<T, E>>>,
@@ -1246,6 +1347,7 @@ pub trait Utils {
         string
     }
 
+    #[cfg(feature = "serde")]
     fn write_as_json_to<T: Write>(&self, writer: T) -> Result<(), SerdeJsonError>
     where
         Self: Serialize,
@@ -1262,6 +1364,7 @@ pub trait Utils {
         self.flush()
     }
 
+    #[cfg(feature = "async")]
     async fn write_all_and_flush_async<T: AsRef<[u8]>>(&mut self, byte_str: T) -> Result<(), IoError>
     where
         Self: AsyncWriteExt + Unpin,

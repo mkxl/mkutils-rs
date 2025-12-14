@@ -12,7 +12,7 @@ pub fn context(args_token_stream: TokenStream, input_token_stream: TokenStream) 
     crate::context::context(args_token_stream, input_token_stream)
 }
 
-/// Implements traits that only have associated types.
+/// Implement `::std::convert::From` through a chain of intermediate types.
 ///
 ///
 /// # Example
@@ -30,7 +30,7 @@ pub fn context(args_token_stream: TokenStream, input_token_stream: TokenStream) 
 ///
 /// impl From<Foo> for MyStruct {
 ///     fn from(foo: Foo) -> Self {
-///         Baz::from(Bar::from(foo))
+///         Self::from(Baz::from(Bar::from(foo)))
 ///     }
 /// }
 /// ```

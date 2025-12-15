@@ -1,4 +1,4 @@
-use crate::utils::Utils;
+use crate::{geometry::PointU16, utils::Utils};
 use anyhow::Error as AnyhowError;
 use crossterm::{
     QueueableCommand,
@@ -51,6 +51,13 @@ impl Screen {
 
     pub const fn writer(&mut self) -> &mut BufWriter<StdoutLock<'static>> {
         &mut self.stdout
+    }
+
+    pub fn size() -> Result<PointU16, IoError> {
+        crossterm::terminal::size()?
+            .convert::<(u16, u16)>()
+            .convert::<PointU16>()
+            .ok()
     }
 }
 

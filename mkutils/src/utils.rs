@@ -1,6 +1,6 @@
 #[cfg(feature = "serde")]
 use crate::as_valuable::AsValuable;
-#[cfg(feature = "derive_more")]
+#[cfg(feature = "fmt")]
 use crate::fmt::{Debugged, OptionalDisplay};
 #[cfg(feature = "ropey")]
 use crate::geometry::PointUsize;
@@ -11,7 +11,7 @@ use crate::is::Is;
 use crate::socket::{Request, Socket};
 #[cfg(feature = "tracing")]
 use crate::status::Status;
-#[cfg(all(feature = "async", feature = "derive_more"))]
+#[cfg(feature = "async")]
 use crate::{read_value::ReadValue, run_for::RunForError};
 #[cfg(feature = "anyhow")]
 use anyhow::{Context, Error as AnyhowError};
@@ -19,7 +19,7 @@ use anyhow::{Context, Error as AnyhowError};
 use bytes::Buf;
 #[cfg(feature = "poem")]
 use bytes::Bytes;
-#[cfg(feature = "path")]
+#[cfg(feature = "fs")]
 use camino::{Utf8Path, Utf8PathBuf};
 #[cfg(any(feature = "async", feature = "poem"))]
 use futures::Stream;
@@ -34,7 +34,7 @@ use poem_openapi::{
     error::ParseRequestPayloadError,
     payload::{Binary as PoemBinary, Json as PoemJson},
 };
-#[cfg(feature = "ratatui")]
+#[cfg(feature = "tui")]
 use ratatui::{
     layout::Rect,
     text::{Line, Span},
@@ -121,7 +121,7 @@ pub trait Utils {
         while join_set.join_next().await.is_some() {}
     }
 
-    #[cfg(feature = "path")]
+    #[cfg(feature = "fs")]
     fn absolute_utf8(&self) -> Result<Cow<'_, Utf8Path>, IoError>
     where
         Self: AsRef<Utf8Path>,
@@ -144,7 +144,7 @@ pub trait Utils {
         rhs.await
     }
 
-    #[cfg(feature = "ratatui")]
+    #[cfg(feature = "tui")]
     fn add_span<'a, T: Into<Span<'a>>>(self, span: T) -> Line<'a>
     where
         Self: Into<Line<'a>>,
@@ -194,7 +194,7 @@ pub trait Utils {
         std::str::from_utf8(self.as_ref())
     }
 
-    #[cfg(feature = "path")]
+    #[cfg(feature = "fs")]
     fn as_utf8_path(&self) -> &Utf8Path
     where
         Self: AsRef<Utf8Path>,
@@ -371,7 +371,7 @@ pub trait Utils {
         std::fs::create_dir_all(self)
     }
 
-    #[cfg(feature = "derive_more")]
+    #[cfg(feature = "fmt")]
     fn debug(&self) -> Debugged<'_, Self> {
         Debugged::new(self)
     }
@@ -383,7 +383,7 @@ pub trait Utils {
         Err(self)
     }
 
-    #[cfg(feature = "path")]
+    #[cfg(feature = "fs")]
     fn expand_user(&self) -> Cow<'_, Utf8Path>
     where
         Self: AsRef<str>,
@@ -399,7 +399,7 @@ pub trait Utils {
         }
     }
 
-    #[cfg(feature = "path")]
+    #[cfg(feature = "fs")]
     fn unexpand_user(&self) -> Cow<'_, Utf8Path>
     where
         Self: AsRef<str>,
@@ -470,7 +470,7 @@ pub trait Utils {
         self.filter(move |x| func(x).ready())
     }
 
-    #[cfg(all(feature = "anyhow", feature = "path"))]
+    #[cfg(all(feature = "anyhow", feature = "fs"))]
     fn file_name_ok(&self) -> Result<&str, AnyhowError>
     where
         Self: AsRef<Utf8Path>,
@@ -485,7 +485,7 @@ pub trait Utils {
         self.into_self() <= Instant::now()
     }
 
-    #[cfg(feature = "path")]
+    #[cfg(feature = "fs")]
     #[must_use]
     fn home_dirpath() -> Option<Utf8PathBuf> {
         home::home_dir()?.try_convert::<Utf8PathBuf>().ok()
@@ -548,7 +548,7 @@ pub trait Utils {
         Either::Left(self)
     }
 
-    #[cfg(feature = "ratatui")]
+    #[cfg(feature = "tui")]
     fn into_line<'a>(self) -> Line<'a>
     where
         Self: Into<Cow<'a, str>>,
@@ -803,7 +803,7 @@ pub trait Utils {
         TokioFile::open(self).await
     }
 
-    #[cfg(feature = "derive_more")]
+    #[cfg(feature = "fmt")]
     fn optional_display(&self) -> OptionalDisplay<'_, Self> {
         OptionalDisplay::new(self)
     }
@@ -952,7 +952,7 @@ pub trait Utils {
         string.ok()
     }
 
-    #[cfg(all(feature = "async", feature = "derive_more"))]
+    #[cfg(feature = "async")]
     async fn read_to_string_async(self) -> ReadValue<Self>
     where
         Self: AsRef<Path> + Sized,
@@ -962,7 +962,7 @@ pub trait Utils {
         ReadValue::new(self, result)
     }
 
-    #[cfg(all(feature = "async", feature = "derive_more"))]
+    #[cfg(feature = "async")]
     async fn read_to_string_else_stdin_async<P: AsRef<Path>>(self) -> ReadValue<Option<P>>
     where
         Self: Is<Option<P>> + Sized,
@@ -990,7 +990,7 @@ pub trait Utils {
         start..end
     }
 
-    #[cfg(feature = "ratatui")]
+    #[cfg(feature = "tui")]
     fn ratatui_rect(self) -> Rect
     where
         Self: Into<(u16, u16)>,
@@ -1025,7 +1025,7 @@ pub trait Utils {
         y.pair(x)
     }
 
-    #[cfg(all(feature = "async", feature = "derive_more"))]
+    #[cfg(feature = "async")]
     async fn run_for(mut self, duration: Duration) -> Result<Self, RunForError<Self::Output>>
     where
         Self: Future + Sized + Unpin,
@@ -1235,7 +1235,7 @@ pub trait Utils {
         rmp_serde::to_vec(self)
     }
 
-    #[cfg(feature = "path")]
+    #[cfg(feature = "fs")]
     fn to_uri(&self) -> Result<String, IoError>
     where
         Self: AsRef<Utf8Path>,

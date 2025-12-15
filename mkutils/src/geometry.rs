@@ -1,19 +1,14 @@
-#[cfg(feature = "derive_more")]
 use derive_more::IsVariant;
-#[cfg(feature = "num")]
 use num::traits::{ConstZero, SaturatingSub};
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy)]
-#[cfg_attr(feature = "derive_more", derive(IsVariant))]
+#[derive(Clone, Copy, IsVariant)]
 pub enum Orientation {
     Horizontal,
     Vertical,
 }
 
-#[derive(Clone, Copy, Debug, Default)]
-#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub struct Point<T> {
     pub x: T,
     pub y: T,
@@ -49,12 +44,10 @@ impl<T> Point<T> {
     }
 }
 
-#[cfg(feature = "num")]
 impl<T: ConstZero> Point<T> {
     pub const ORIGIN: Self = Self { x: T::ZERO, y: T::ZERO };
 }
 
-#[cfg(feature = "num")]
 impl<T: Clone + SaturatingSub> Point<T> {
     #[must_use]
     pub fn saturating_sub(&self, diff: &T, orientation: Orientation) -> Self {

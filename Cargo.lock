@@ -168,6 +168,9 @@ name = "bitflags"
 version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
+dependencies = [
+ "serde_core",
+]
 
 [[package]]
 name = "block-buffer"
@@ -360,9 +363,13 @@ dependencies = [
  "crossterm_winapi",
  "derive_more",
  "document-features",
+ "filedescriptor",
+ "futures-core",
+ "libc",
  "mio",
  "parking_lot",
  "rustix",
+ "serde",
  "signal-hook",
  "signal-hook-mio",
  "winapi",
@@ -1397,6 +1404,7 @@ dependencies = [
  "bytes",
  "camino",
  "console-subscriber",
+ "crossterm",
  "derive_more",
  "futures",
  "home",
@@ -1607,6 +1615,12 @@ checksum = "5c7398b9c8b70908f6371f47ed36737907c87c52af34c268fed0bf0ceb92ead9"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "numtoa"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6aa2c4e539b869820a2b82e1aef6ff40aa85e65decdd5185e83fb4b1249cd00f"
 
 [[package]]
 name = "once_cell"
@@ -2108,6 +2122,7 @@ dependencies = [
  "ratatui-core",
  "ratatui-crossterm",
  "ratatui-macros",
+ "ratatui-termion",
  "ratatui-termwiz",
  "ratatui-widgets",
 ]
@@ -2149,6 +2164,16 @@ source = "git+https://github.com/ratatui/ratatui?branch=main#bf84c6229bad99366c0
 dependencies = [
  "ratatui-core",
  "ratatui-widgets",
+]
+
+[[package]]
+name = "ratatui-termion"
+version = "0.1.0-beta.0"
+source = "git+https://github.com/ratatui/ratatui?branch=main#bf84c6229bad99366c0b1305171aebaf4b957adb"
+dependencies = [
+ "instability",
+ "ratatui-core",
+ "termion",
 ]
 
 [[package]]
@@ -2762,6 +2787,16 @@ dependencies = [
  "nom",
  "phf",
  "phf_codegen",
+]
+
+[[package]]
+name = "termion"
+version = "4.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f44138a9ae08f0f502f24104d82517ef4da7330c35acd638f1f29d3cd5475ecb"
+dependencies = [
+ "libc",
+ "numtoa",
 ]
 
 [[package]]

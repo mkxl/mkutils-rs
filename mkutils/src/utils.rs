@@ -656,12 +656,12 @@ pub trait Utils {
     }
 
     #[cfg(feature = "async")]
-    async fn join_all<T>(self) -> Vec<T>
+    async fn join_all<T>(self) -> T
     where
         Self: IntoIterator<Item: Future> + Sized,
-        Self::Item: Future<Output = T>,
+        T: FromIterator<<Self::Item as Future>::Output>,
     {
-        futures::future::join_all(self).await
+        futures::future::join_all(self).await.into_iter().collect()
     }
 
     #[cfg(feature = "unicode-segmentation")]
@@ -1274,15 +1274,17 @@ pub trait Utils {
         self.try_into()
     }
 
-    // NOTE: would prefer to do [Result<Vec<Self::Item::Ok>, Self::Item::Error>] but getting
-    // [error[E0223]: ambiguous associated type]
     #[cfg(feature = "async")]
-    async fn try_join_all<T, E>(self) -> Result<Vec<T>, E>
+    async fn try_join_all<T, E>(self) -> Result<T, E>
     where
-        Self: IntoIterator + Sized,
-        Self::Item: TryFuture<Ok = T, Error = E>,
+        Self: IntoIterator<Item: TryFuture<Error = E>> + Sized,
+        T: FromIterator<<Self::Item as TryFuture>::Ok>,
     {
-        futures::future::try_join_all(self).await
+        futures::future::try_join_all(self)
+            .await?
+            .into_iter()
+            .collect::<T>()
+            .ok()
     }
 
     #[cfg(all(feature = "anyhow", feature = "async"))]

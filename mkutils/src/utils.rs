@@ -1277,8 +1277,9 @@ pub trait Utils {
     #[cfg(feature = "async")]
     async fn try_join_all<T, E>(self) -> Result<T, E>
     where
-        Self: IntoIterator<Item: TryFuture<Error = E>> + Sized,
+        Self: IntoIterator<Item: TryFuture> + Sized,
         T: FromIterator<<Self::Item as TryFuture>::Ok>,
+        E: From<<Self::Item as TryFuture>::Error>,
     {
         futures::future::try_join_all(self)
             .await?

@@ -13,7 +13,7 @@ use tokio::net::UnixStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
 pub trait Request: Sized {
-    type Response: DeserializeOwned + Serialize;
+    type Response: DeserializeOwned + Serialize = ();
     type Serialized: From<Self> + Serialize;
 }
 
@@ -32,15 +32,19 @@ impl Socket {
     }
 
     pub async fn request<T: Request>(&mut self, request: T) -> Result<T::Response, AnyhowError> {
-        let request = request.convert::<T::Serialized>();
-
-        self.send(request).await?;
+        self.notify(request).await?;
 
         self.recv().await.into_option().check_next()?
     }
 
     pub async fn respond<T: Request>(&mut self, response: &T::Response) -> Result<(), AnyhowError> {
         self.send(response).await
+    }
+
+    pub async fn notify<T: Request>(&mut self, notification: T) -> Result<(), AnyhowError> {
+        let notification = notification.convert::<T::Serialized>();
+
+        self.send(notification).await
     }
 }
 

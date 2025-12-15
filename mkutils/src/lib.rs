@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "output", feature(try_trait_v2))]
+#![cfg_attr(feature = "socket", feature(associated_type_defaults))]
 
 mod active_vec;
 mod fmt;

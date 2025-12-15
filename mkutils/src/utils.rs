@@ -24,7 +24,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 #[cfg(any(feature = "async", feature = "poem"))]
 use futures::Stream;
 #[cfg(feature = "async")]
-use futures::{Sink, SinkExt, StreamExt, TryFuture, stream::Filter};
+use futures::{Sink, SinkExt, StreamExt, TryFuture, future::Either, stream::Filter};
 #[cfg(feature = "num")]
 use num::traits::{SaturatingAdd, SaturatingSub};
 #[cfg(feature = "poem")]
@@ -540,6 +540,14 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
+    #[cfg(feature = "async")]
+    fn into_left<R>(self) -> Either<Self, R>
+    where
+        Self: Sized,
+    {
+        Either::Left(self)
+    }
+
     #[cfg(feature = "ratatui")]
     fn into_line<'a>(self) -> Line<'a>
     where
@@ -572,6 +580,14 @@ pub trait Utils {
         Framed::new(self, LinesCodec::new())
     }
 
+    #[cfg(feature = "async")]
+    fn into_right<L>(self) -> Either<L, Self>
+    where
+        Self: Sized,
+    {
+        Either::Right(self)
+    }
+
     // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]
     #[cfg(feature = "poem")]
     fn into_parse_request_payload_result<T>(self) -> Result<T, ParseRequestPayloadError>
@@ -588,13 +604,13 @@ pub trait Utils {
     }
 
     #[cfg(feature = "async")]
-    async fn into_select<T: Future<Output = Self::Output>>(self, rhs: T) -> Self::Output
+    async fn into_select<T: Future>(self, rhs: T) -> Either<Self::Output, T::Output>
     where
         Self: Future + Sized,
     {
         tokio::select! {
-            value = self => value,
-            value = rhs => value,
+            value = self => value.into_left(),
+            value = rhs => value.into_right(),
         }
     }
 

@@ -84,7 +84,7 @@ use std::{
 use std::{fmt::Debug, path::PathBuf};
 #[cfg(feature = "async")]
 use std::{fs::Metadata, time::Duration};
-#[cfg(all(feature = "anyhow", feature = "async"))]
+#[cfg(feature = "async")]
 use tokio::sync::oneshot::Sender as OneshotSender;
 #[cfg(feature = "async")]
 use tokio::{
@@ -470,7 +470,7 @@ pub trait Utils {
         self.filter(move |x| func(x).ready())
     }
 
-    #[cfg(all(feature = "anyhow", feature = "fs"))]
+    #[cfg(feature = "fs")]
     fn file_name_ok(&self) -> Result<&str, AnyhowError>
     where
         Self: AsRef<Utf8Path>,
@@ -1116,7 +1116,7 @@ pub trait Utils {
         sink.send(self).await
     }
 
-    #[cfg(all(feature = "anyhow", feature = "async"))]
+    #[cfg(feature = "async")]
     fn send_to_oneshot(self, sender: OneshotSender<Self>) -> Result<(), AnyhowError>
     where
         Self: Sized,
@@ -1304,7 +1304,7 @@ pub trait Utils {
             .ok()
     }
 
-    #[cfg(all(feature = "anyhow", feature = "async"))]
+    #[cfg(feature = "async")]
     async fn try_wait<T, E: 'static + Send + Sync>(self) -> Result<T, AnyhowError>
     where
         Self: Is<JoinHandle<Result<T, E>>>,

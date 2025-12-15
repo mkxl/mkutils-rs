@@ -45,10 +45,10 @@ impl Socket {
         self.send(response).await
     }
 
-    pub async fn notify<T: Request>(&mut self, notification: T) -> Result<(), AnyhowError> {
-        let notification = notification.convert::<T::Serialized>();
+    pub async fn serialize<T: Request>(&mut self, request: T) -> Result<(), AnyhowError> {
+        let request = request.convert::<T::Serialized>();
 
-        self.send(notification).await
+        self.send(request).await
     }
 }
 

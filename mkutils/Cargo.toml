@@ -49,7 +49,7 @@ rmp = ["dep:rmp-serde", "dep:serde"]
 serde = ["dep:serde", "dep:serde_json", "dep:serde_yaml_ng", "dep:valuable"]
 socket = ["anyhow", "async", "dep:derive_more", "rmp", "output"]
 tracing = ["dep:console-subscriber", "dep:tracing", "dep:tracing-subscriber"]
-tui = ["dep:crossterm", "dep:derive_more", "num", "dep:ratatui", "dep:serde"]
+tui = ["anyhow", "dep:crossterm", "dep:derive_more", "num", "dep:ratatui", "dep:serde", "tracing"]
 
 [lints]
 workspace = true

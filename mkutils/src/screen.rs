@@ -49,8 +49,8 @@ impl Screen {
             .ok()
     }
 
-    pub fn write_all_and_flush(&mut self, byte_str: &[u8]) -> Result<(), IoError> {
-        self.stdout.write_all_and_flush(byte_str)
+    pub const fn writer(&mut self) -> &mut BufWriter<StdoutLock<'static>> {
+        &mut self.stdout
     }
 }
 

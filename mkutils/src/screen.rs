@@ -3,13 +3,17 @@ use anyhow::Error as AnyhowError;
 use crossterm::{
     QueueableCommand,
     cursor::{Hide, Show},
-    event::{KeyboardEnhancementFlags, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags},
+    event::{
+        DisableMouseCapture, EnableMouseCapture, KeyboardEnhancementFlags, PopKeyboardEnhancementFlags,
+        PushKeyboardEnhancementFlags,
+    },
     terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::io::{BufWriter, Error as IoError, StdoutLock, Write};
 
 pub struct Screen {
     stdout: BufWriter<StdoutLock<'static>>,
+    with_mouse_capture: bool,
 }
 
 impl Screen {
@@ -17,9 +21,12 @@ impl Screen {
     const PUSH_KEYBOARD_ENHANCEMENT_FLAGS: PushKeyboardEnhancementFlags =
         PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES);
 
-    pub fn new() -> Result<Self, AnyhowError> {
+    pub fn new(with_mouse_capture: bool) -> Result<Self, AnyhowError> {
         let stdout = std::io::stdout().lock().buf_writer();
-        let mut screen = Self { stdout };
+        let mut screen = Self {
+            stdout,
+            with_mouse_capture,
+        };
 
         screen.on_new()?;
 
@@ -28,6 +35,10 @@ impl Screen {
 
     fn on_new(&mut self) -> Result<(), IoError> {
         crossterm::terminal::enable_raw_mode()?;
+
+        if self.with_mouse_capture {
+            self.stdout.queue(EnableMouseCapture)?;
+        }
 
         self.stdout
             .queue(EnterAlternateScreen)?
@@ -40,6 +51,10 @@ impl Screen {
 
     fn on_drop(&mut self) -> Result<(), IoError> {
         crossterm::terminal::disable_raw_mode()?;
+
+        if self.with_mouse_capture {
+            self.stdout.queue(DisableMouseCapture)?;
+        }
 
         self.stdout
             .queue(LeaveAlternateScreen)?

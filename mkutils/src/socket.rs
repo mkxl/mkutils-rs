@@ -31,14 +31,14 @@ impl Socket {
         self.frames.next().await??.to_value_from_rmp_slice::<T>()?.into()
     }
 
-    pub async fn exchange<X: Serialize, Y: DeserializeOwned>(&mut self, input: X) -> Result<Y, AnyhowError> {
-        self.send(input).await?;
+    pub async fn exchange<X: Serialize, Y: DeserializeOwned>(&mut self, input: impl Into<X>) -> Result<Y, AnyhowError> {
+        self.send(input.into()).await?;
 
         self.recv().await.into_option().check_next()?
     }
 
     pub async fn request<T: Request>(&mut self, request: T) -> Result<T::Response, AnyhowError> {
-        self.exchange::<T::Serialized, T::Response>(request.into()).await
+        self.exchange::<T::Serialized, T::Response>(request).await
     }
 
     pub async fn respond<T: Request>(&mut self, response: &T::Response) -> Result<(), AnyhowError> {

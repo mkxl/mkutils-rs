@@ -8,6 +8,35 @@ use std::{
 };
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command};
 
+/// A wrapper around a tokio child process with convenient access to stdio streams.
+///
+/// `Process` spawns a child process with piped stdin, stdout, and stderr, providing
+/// direct access to these streams for communication with the process.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use mkutils::{Process, Utils};
+/// use tokio::io::AsyncWriteExt;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), anyhow::Error> {
+///     let mut process = Process::new(
+///         "cat",
+///         vec![],
+///         vec![],
+///         None::<&str>,
+///     )?;
+///
+///     // Write to stdin
+///     process.stdin_mut().write_all(b"hello\n").await?;
+///
+///     // Read from stdout and wait for completion
+///     let status = process.run().await?;
+///     println!("Exit status: {}", status);
+///     Ok(())
+/// }
+/// ```
 pub struct Process {
     child: Child,
     stdin: ChildStdin,
@@ -16,6 +45,18 @@ pub struct Process {
 }
 
 impl Process {
+    /// Creates a new `Process` by spawning a command.
+    ///
+    /// # Parameters
+    ///
+    /// - `cmd`: The command to execute
+    /// - `args`: Iterator of command arguments
+    /// - `env`: Iterator of environment variables as `(key, value)` pairs
+    /// - `current_dirpath`: Optional working directory for the process
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the process fails to spawn or stdio streams cannot be captured.
     pub fn new<
         Cmd: AsRef<OsStr>,
         Args: IntoIterator,
@@ -71,23 +112,35 @@ impl Process {
         stdio.take().context("unable to set up stdio for process")
     }
 
+    /// Returns a mutable reference to the process's stdin stream.
     pub const fn stdin_mut(&mut self) -> &mut ChildStdin {
         &mut self.stdin
     }
 
+    /// Returns a mutable reference to the process's stdout stream.
     pub const fn stdout_mut(&mut self) -> &mut ChildStdout {
         &mut self.stdout
     }
 
+    /// Returns a mutable reference to the process's stderr stream.
     pub const fn stderr_mut(&mut self) -> &mut ChildStderr {
         &mut self.stderr
     }
 
+    /// Consumes the `Process` and returns its constituent parts.
+    ///
+    /// Returns a tuple of `(Child, ChildStdin, ChildStdout, ChildStderr)`,
+    /// allowing for manual management of the process and its streams.
     #[must_use]
     pub fn into_parts(self) -> (Child, ChildStdin, ChildStdout, ChildStderr) {
         (self.child, self.stdin, self.stdout, self.stderr)
     }
 
+    /// Waits for the process to complete and returns its exit status.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if waiting for the process fails.
     pub async fn run(&mut self) -> Result<ExitStatus, AnyhowError> {
         self.child.wait().await?.ok()
     }

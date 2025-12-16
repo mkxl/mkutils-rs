@@ -11,6 +11,36 @@ use crossterm::{
 };
 use std::io::{BufWriter, Error as IoError, StdoutLock, Write};
 
+/// A full-screen terminal interface manager using crossterm.
+///
+/// `Screen` sets up and manages a raw-mode terminal with an alternate screen buffer.
+/// It handles:
+/// - Entering/exiting raw mode
+/// - Alternate screen buffer management
+/// - Cursor visibility (hidden by default)
+/// - Keyboard enhancement flags for better key event handling
+/// - Optional mouse capture
+///
+/// When dropped, it automatically restores the terminal to its original state.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use mkutils::Screen;
+///
+/// fn main() -> Result<(), anyhow::Error> {
+///     // Create a screen with mouse capture enabled
+///     let mut screen = Screen::new(true)?;
+///
+///     // Write to the screen
+///     use std::io::Write;
+///     writeln!(screen.writer(), "Hello, terminal!")?;
+///     screen.writer().flush()?;
+///
+///     // Screen is automatically cleaned up on drop
+///     Ok(())
+/// }
+/// ```
 pub struct Screen {
     stdout: BufWriter<StdoutLock<'static>>,
     with_mouse_capture: bool,
@@ -21,6 +51,23 @@ impl Screen {
     const PUSH_KEYBOARD_ENHANCEMENT_FLAGS: PushKeyboardEnhancementFlags =
         PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES);
 
+    /// Creates a new `Screen`, entering raw mode and setting up the terminal.
+    ///
+    /// This method:
+    /// - Enters raw mode (disables line buffering and echo)
+    /// - Switches to the alternate screen buffer
+    /// - Hides the cursor
+    /// - Clears the screen
+    /// - Enables keyboard enhancement flags for better key detection
+    /// - Optionally enables mouse capture
+    ///
+    /// # Parameters
+    ///
+    /// - `with_mouse_capture`: If `true`, enables mouse event capture
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if terminal setup fails.
     pub fn new(with_mouse_capture: bool) -> Result<Self, AnyhowError> {
         let stdout = std::io::stdout().lock().buf_writer();
         let mut screen = Self {
@@ -64,10 +111,19 @@ impl Screen {
             .ok()
     }
 
+    /// Returns a mutable reference to the buffered stdout writer.
+    ///
+    /// Use this to write content to the terminal. Remember to call `flush()`
+    /// to ensure the content is displayed.
     pub const fn writer(&mut self) -> &mut BufWriter<StdoutLock<'static>> {
         &mut self.stdout
     }
 
+    /// Returns the current terminal size in columns and rows.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the terminal size cannot be determined.
     pub fn size() -> Result<PointU16, IoError> {
         crossterm::terminal::size()?
             .convert::<(u16, u16)>()

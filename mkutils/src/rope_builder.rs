@@ -11,6 +11,32 @@ use tokio::{
     io::{AsyncReadExt, BufReader as TokioBufReader},
 };
 
+/// An async builder for constructing `Rope` text structures from async readers.
+///
+/// `RopeBuilder` reads UTF-8 text asynchronously from a reader and builds a `Rope`
+/// data structure. It handles UTF-8 validation and buffering internally, with a
+/// configurable buffer size (default 8192 bytes).
+///
+/// # Type Parameters
+///
+/// - `R`: The async reader type
+/// - `N`: Buffer size in bytes (default: 8192)
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use mkutils::RopeBuilder;
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), std::io::Error> {
+///     // Build from a file path
+///     let builder = RopeBuilder::from_filepath("/path/to/file.txt").await?;
+///     let rope = builder.build().await?;
+///
+///     println!("Loaded {} lines", rope.len_lines());
+///     Ok(())
+/// }
+/// ```
 pub struct RopeBuilder<R, const N: usize = 8192> {
     reader: R,
     builder: RopeyBuilder,
@@ -24,6 +50,9 @@ impl<R: AsyncReadExt + Unpin, const N: usize> RopeBuilder<R, N> {
     const INITIAL_SEEN_EOF: bool = false;
     const INITIAL_UNPROCESSED_BYTE_INDICES: Range<usize> = 0..0;
 
+    /// Creates a new `RopeBuilder` from an async reader.
+    ///
+    /// The reader will be consumed to build the rope when `build()` is called.
     pub fn new(reader: R) -> Self {
         let builder = RopeyBuilder::new();
         let buffer = Self::INITIAL_BUFFER;
@@ -86,6 +115,17 @@ impl<R: AsyncReadExt + Unpin, const N: usize> RopeBuilder<R, N> {
         ().ok()
     }
 
+    /// Consumes the builder and asynchronously constructs the final `Rope`.
+    ///
+    /// Reads all remaining data from the reader, validates UTF-8, and returns
+    /// the completed rope.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Reading from the underlying reader fails
+    /// - The input contains invalid UTF-8
+    /// - The input ends in the middle of a UTF-8 code point
     pub async fn build(mut self) -> Result<Rope, IoError> {
         loop {
             if self.unprocessed_byte_indices.is_empty() {
@@ -121,6 +161,14 @@ impl<R: AsyncReadExt + Unpin, const N: usize> RopeBuilder<R, N> {
 }
 
 impl<const N: usize> RopeBuilder<TokioBufReader<TokioFile>, N> {
+    /// Creates a new `RopeBuilder` that will read from the file at the given path.
+    ///
+    /// This is a convenience method that opens the file asynchronously and wraps
+    /// it in a buffered reader.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be opened.
     pub async fn from_filepath<T: AsRef<Path>>(filepath: T) -> Result<Self, IoError> {
         filepath
             .open_async()

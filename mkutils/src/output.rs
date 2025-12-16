@@ -4,14 +4,51 @@ use std::{
     ops::{ControlFlow, FromResidual, Try},
 };
 
+/// A tri-state result type for operations that can succeed, end successfully, or fail.
+///
+/// `Output<T, E>` is similar to `Option<Result<T, E>>` but with better ergonomics and
+/// `?` operator support. It's particularly useful for streaming operations where you need
+/// to distinguish between:
+///
+/// - `Ok(T)`: A successful value that should be processed
+/// - `EndOk`: The stream/operation ended successfully (like `None` but signaling completion)
+/// - `EndErr(E)`: The stream/operation ended with an error
+///
+/// # Examples
+///
+/// ```rust
+/// use mkutils::Output;
+///
+/// fn process_stream_item(data: Output<i32, String>) -> Result<(), String> {
+///     match data {
+///         Output::Ok(value) => {
+///             println!("Processing: {}", value);
+///             Ok(())
+///         }
+///         Output::EndOk => {
+///             println!("Stream ended successfully");
+///             Ok(())
+///         }
+///         Output::EndErr(err) => Err(err),
+///     }
+/// }
+/// ```
 #[derive(Debug)]
 pub enum Output<T, E> {
+    /// A successful value.
     Ok(T),
+    /// The operation ended successfully without a value.
     EndOk,
+    /// The operation ended with an error.
     EndErr(E),
 }
 
 impl<T, E> Output<T, E> {
+    /// Converts `Output<T, E>` to `Option<Result<T, E>>`.
+    ///
+    /// - `Ok(T)` becomes `Some(Ok(T))`
+    /// - `EndOk` becomes `None`
+    /// - `EndErr(E)` becomes `Some(Err(E))`
     pub fn into_option(self) -> Option<Result<T, E>> {
         match self {
             Self::Ok(ok) => ok.ok().some(),
@@ -20,6 +57,11 @@ impl<T, E> Output<T, E> {
         }
     }
 
+    /// Converts to a `ControlFlow` for use in loops and control flow operations.
+    ///
+    /// - `Ok(T)` becomes `Continue(T)`
+    /// - `EndOk` becomes `Break(Ok(()))`
+    /// - `EndErr(E)` becomes `Break(Err(E))`
     pub fn into_control_flow(self) -> ControlFlow<Result<(), E>, T> {
         match self {
             Self::Ok(ok) => ok.into_continue(),
@@ -28,6 +70,10 @@ impl<T, E> Output<T, E> {
         }
     }
 
+    /// Extracts the end state as a `Result<(), E>`.
+    ///
+    /// Returns `Ok(())` for both `Ok(_)` and `EndOk`, and `Err(e)` for `EndErr(e)`.
+    /// Useful when you only care about whether the operation ended with an error.
     pub fn into_end(self) -> Result<(), E> {
         if let Self::EndErr(err) = self {
             err.err()
@@ -38,6 +84,11 @@ impl<T, E> Output<T, E> {
 }
 
 impl<T: Default, E> Output<T, E> {
+    /// Converts to a `Result<T, E>`, using `T::default()` for the `EndOk` case.
+    ///
+    /// - `Ok(T)` becomes `Ok(T)`
+    /// - `EndOk` becomes `Ok(T::default())`
+    /// - `EndErr(E)` becomes `Err(E)`
     pub fn into_result(self) -> Result<T, E> {
         match self {
             Self::Ok(ok) => ok.ok(),

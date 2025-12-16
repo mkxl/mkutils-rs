@@ -1,8 +1,8 @@
 use crate::{geometry::PointU16, utils::Utils};
-use crossterm::terminal::SetTitle;
 use ratatui::{
-    Frame, Terminal as BaseRatatuiTerminal, TerminalOptions, Viewport, backend::CrosstermBackend,
-    crossterm::QueueableCommand,
+    Frame, Terminal as BaseRatatuiTerminal, TerminalOptions, Viewport,
+    backend::CrosstermBackend,
+    crossterm::{QueueableCommand, terminal::SetTitle},
 };
 use std::{
     fmt::Display,
@@ -41,11 +41,7 @@ impl Terminal {
     }
 
     pub fn size(&self) -> Result<PointU16, IoError> {
-        self.ratatui_terminal
-            .size()?
-            .convert::<(u16, u16)>()
-            .convert::<PointU16>()
-            .ok()
+        self.ratatui_terminal.size()?.convert::<PointU16>().ok()
     }
 
     pub fn resize(&mut self, num_cols: u16, num_rows: u16) -> Result<(), IoError> {

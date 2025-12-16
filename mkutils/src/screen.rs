@@ -1,6 +1,6 @@
 use crate::{geometry::PointU16, utils::Utils};
 use anyhow::Error as AnyhowError;
-use crossterm::{
+use ratatui::crossterm::{
     QueueableCommand,
     cursor::{Hide, Show},
     event::{
@@ -34,7 +34,7 @@ impl Screen {
     }
 
     fn on_new(&mut self) -> Result<(), IoError> {
-        crossterm::terminal::enable_raw_mode()?;
+        ratatui::crossterm::terminal::enable_raw_mode()?;
 
         if self.with_mouse_capture {
             self.stdout.queue(EnableMouseCapture)?;
@@ -50,7 +50,7 @@ impl Screen {
     }
 
     fn on_drop(&mut self) -> Result<(), IoError> {
-        crossterm::terminal::disable_raw_mode()?;
+        ratatui::crossterm::terminal::disable_raw_mode()?;
 
         if self.with_mouse_capture {
             self.stdout.queue(DisableMouseCapture)?;
@@ -69,10 +69,7 @@ impl Screen {
     }
 
     pub fn size() -> Result<PointU16, IoError> {
-        crossterm::terminal::size()?
-            .convert::<(u16, u16)>()
-            .convert::<PointU16>()
-            .ok()
+        ratatui::crossterm::terminal::size()?.convert::<PointU16>().ok()
     }
 }
 

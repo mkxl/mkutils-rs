@@ -1,5 +1,4 @@
 use crate::{geometry::PointU16, utils::Utils};
-use anyhow::Error as AnyhowError;
 use ratatui::crossterm::{
     QueueableCommand,
     cursor::{Hide, Show},
@@ -21,7 +20,7 @@ impl Screen {
     const PUSH_KEYBOARD_ENHANCEMENT_FLAGS: PushKeyboardEnhancementFlags =
         PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES);
 
-    pub fn new(with_mouse_capture: bool) -> Result<Self, AnyhowError> {
+    pub fn new(with_mouse_capture: bool) -> Result<Self, IoError> {
         let stdout = std::io::stdout().lock().buf_writer();
         let mut screen = Self {
             stdout,

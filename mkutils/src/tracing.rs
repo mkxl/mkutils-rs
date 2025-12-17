@@ -21,11 +21,11 @@ type StderrLockFn = fn() -> StderrLock<'static>;
 macro_rules! trace {
     (level = $level:expr, $($rest:tt)*) => {{
         match $level {
-            ::tracing::Level::TRACE => tracing::trace!($($rest)*),
-            ::tracing::Level::DEBUG => tracing::debug!($($rest)*),
-            ::tracing::Level::INFO  => tracing::info!($($rest)*),
-            ::tracing::Level::WARN  => tracing::warn!($($rest)*),
-            ::tracing::Level::ERROR => tracing::error!($($rest)*),
+            ::tracing::Level::TRACE => ::tracing::trace!($($rest)*),
+            ::tracing::Level::DEBUG => ::tracing::debug!($($rest)*),
+            ::tracing::Level::INFO  => ::tracing::info!($($rest)*),
+            ::tracing::Level::WARN  => ::tracing::warn!($($rest)*),
+            ::tracing::Level::ERROR => ::tracing::error!($($rest)*),
         }
     }};
 }

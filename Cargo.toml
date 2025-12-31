@@ -3,7 +3,7 @@ resolver = "3"
 members = ["mkutils", "mkutils-macros"]
 
 [workspace.package]
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "Utility methods, traits, and types."
 readme = "README.md"
@@ -19,5 +19,6 @@ nursery = "deny"
 pedantic = "deny"
 future_not_send = { level = "allow", priority = 1 }
 missing_errors_doc = { level = "allow", priority = 1 }
+module_inception = { level = "allow", priority = 1 }
 multiple_crate_versions = { level = "allow", priority = 1 }
 option_if_let_else = { level = "allow", priority = 1 }

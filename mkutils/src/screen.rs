@@ -1,5 +1,5 @@
 use crate::{geometry::PointU16, utils::Utils};
-use ratatui::crossterm::{
+use crossterm::{
     QueueableCommand,
     cursor::{Hide, Show},
     event::{

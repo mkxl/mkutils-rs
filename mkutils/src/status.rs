@@ -1,7 +1,9 @@
+use derive_more::Constructor;
 use std::fmt::{Display, Error as FmtError, Formatter};
 use tracing::Level;
 
-pub struct Status<T, E>(pub Result<T, E>);
+#[derive(Constructor)]
+pub struct Status<T, E>(Result<T, E>);
 
 impl<T, E> Status<T, E> {
     #[must_use]

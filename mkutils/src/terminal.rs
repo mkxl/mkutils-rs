@@ -1,9 +1,6 @@
 use crate::{geometry::PointU16, utils::Utils};
-use ratatui::{
-    Frame, Terminal as BaseRatatuiTerminal, TerminalOptions, Viewport,
-    backend::CrosstermBackend,
-    crossterm::{QueueableCommand, terminal::SetTitle},
-};
+use crossterm::{QueueableCommand, terminal::SetTitle};
+use ratatui::{Frame, Terminal as BaseRatatuiTerminal, TerminalOptions, Viewport, backend::CrosstermBackend};
 use std::{
     fmt::Display,
     io::{Error as IoError, Write},

@@ -14,9 +14,11 @@ anyhow = { version = "1.0.100", optional = true }
 bytes = { version = "1.10.1", optional = true }
 camino = { version = "1.2.1", optional = true }
 console-subscriber = { version = "0.4.1", optional = true }
-derive_more = { version = "2.0.1", features = ["constructor", "from", "is_variant"], optional = true }
+crossterm = { git = "https://github.com/crossterm-rs/crossterm", version = "0.29.0", features = ["event-stream", "libc", "serde", "use-dev-tty"] }
+derive_more = { version = "2.0.1", features = ["constructor", "from", "into", "is_variant"], optional = true }
 futures = { version = "0.3.31", optional = true }
 home = { version = "0.5.12", optional = true }
+itertools = "0.14.0"
 mkutils-macros = { version = "0.1.0", path = "../mkutils-macros", optional = true }
 num = { version = "0.4.3", optional = true }
 poem = { version = "3.1.12", features = ["anyhow", "websocket"], optional = true }
@@ -29,26 +31,29 @@ serde = { version = "1.0.226", features = ["derive"], optional = true }
 serde_json = { version = "1.0.145", optional = true }
 serde_yaml_ng = { version = "0.10.0", optional = true }
 shellexpand = { version = "3.1.1", optional = true }
-tokio = { version = "1.47.1", features = ["fs", "io-std", "macros", "net", "process", "rt"], optional = true }
+tokio = { version = "1.47.1", features = ["fs", "io-std", "io-util", "macros", "net", "process", "rt"], optional = true }
 tokio-stream = { version = "0.1.17", features = ["io-util", "sync"], optional = true }
 tokio-util = { version = "0.7.16", features = ["codec", "io"], optional = true }
 tracing = { version = "0.1.41", features = ["valuable"], optional = true }
 tracing-subscriber = { version = "0.3.20", features = ["json", "valuable"], optional = true }
+trie-rs = { version = "0.4.2", optional = true }
 unicode-segmentation = { version = "1.12.0", optional = true }
 valuable = { version = "0.1.1", optional = true }
 
 [features]
-async = ["anyhow", "dep:bytes", "dep:derive_more", "dep:futures", "dep:tokio", "dep:tokio-stream", "dep:tokio-util"]
+async = ["dep:anyhow", "dep:bytes", "dep:derive_more", "dep:futures", "dep:tokio", "dep:tokio-stream", "dep:tokio-util"]
 fmt = ["dep:derive_more"]
 output = []
-fs = ["anyhow", "dep:camino", "dep:derive_more", "dep:home", "dep:shellexpand"]
+fs = ["dep:anyhow", "dep:camino", "dep:derive_more", "dep:home", "dep:shellexpand"]
 poem = ["dep:bytes", "dep:futures", "dep:poem", "dep:poem-openapi", "dep:serde_json"]
-process = ["anyhow", "dep:tokio"]
+process = ["dep:anyhow", "dep:tokio"]
 rmp = ["dep:rmp-serde", "dep:serde"]
+ropey = ["dep:derive_more", "dep:num", "dep:ropey", "dep:serde", "dep:tokio", "dep:unicode-segmentation"]
+reqwest = ["dep:anyhow", "dep:reqwest", "dep:serde"]
 serde = ["dep:serde", "dep:serde_json", "dep:serde_yaml_ng", "dep:valuable"]
-socket = ["anyhow", "async", "dep:derive_more", "rmp", "output"]
-tracing = ["dep:console-subscriber", "dep:tracing", "dep:tracing-subscriber"]
-tui = ["anyhow", "dep:derive_more", "num", "dep:serde", "tracing"]
+socket = ["dep:anyhow", "async", "dep:derive_more", "rmp", "output"]
+tracing = ["dep:console-subscriber", "dep:derive_more", "dep:tracing", "dep:tracing-subscriber"]
+tui = ["dep:anyhow", "dep:derive_more", "dep:num", "dep:serde", "dep:tracing", "dep:trie-rs", "dep:unicode-segmentation"]
 
 [lints]
 workspace = true

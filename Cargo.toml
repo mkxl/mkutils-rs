@@ -3,7 +3,7 @@ resolver = "3"
 members = ["mkutils", "mkutils-macros"]
 
 [workspace.package]
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 description = "Utility methods, traits, and types."
 readme = "README.md"
@@ -11,6 +11,9 @@ repository = "https://github.com/mkxl/mkutils-rs"
 license = "Apache-2.0"
 keywords = ["utilities"]
 categories = ["development-tools"]
+
+[workspace.lints.rust]
+warnings = "deny"
 
 [workspace.lints.clippy]
 all = "deny"

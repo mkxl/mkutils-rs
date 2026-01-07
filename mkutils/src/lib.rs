@@ -80,7 +80,7 @@ pub use crate::read_value::ReadValue;
 #[cfg(feature = "ropey")]
 pub use crate::rope_builder::RopeBuilder;
 #[cfg(feature = "tui")]
-pub use crate::screen::Screen;
+pub use crate::screen::{Screen, ScreenConfig, Stdout};
 #[cfg(feature = "socket")]
 pub use crate::socket::{Request, Socket};
 #[cfg(feature = "tui")]

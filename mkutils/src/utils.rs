@@ -73,6 +73,7 @@ use std::{
     hash::Hash,
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
     iter::{Once, Repeat},
+    mem::ManuallyDrop,
     ops::{Add, ControlFlow, Range},
     path::Path,
     pin::Pin,
@@ -99,7 +100,7 @@ use tokio::{
     sync::oneshot::Sender as OneshotSender,
     task::JoinHandle,
     task::{JoinSet, LocalSet},
-    time::{Sleep, Timeout},
+    time::{Interval, Sleep, Timeout},
 };
 #[cfg(feature = "async")]
 use tokio_util::{
@@ -115,6 +116,8 @@ use valuable::Value;
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
+    const NEWLINE: &str = "\n";
+
     #[cfg(feature = "async")]
     async fn abort_all_and_wait<T: 'static>(&mut self)
     where
@@ -198,6 +201,14 @@ pub trait Utils {
         Self: Borrow<Cow<'a, B>>,
     {
         self.borrow().borrow()
+    }
+
+    fn as_ptr(&self) -> *const Self {
+        std::ptr::from_ref(self)
+    }
+
+    fn as_ptr_mut(&mut self) -> *mut Self {
+        std::ptr::from_mut(self)
     }
 
     fn as_utf8(&self) -> Result<&str, Utf8Error>
@@ -588,6 +599,14 @@ pub trait Utils {
     }
 
     #[cfg(feature = "async")]
+    fn into_interval(self) -> Interval
+    where
+        Self: Is<Duration>,
+    {
+        tokio::time::interval(self.into_self())
+    }
+
+    #[cfg(feature = "async")]
     fn into_left<R>(self) -> Either<Self, R>
     where
         Self: Sized,
@@ -601,6 +620,13 @@ pub trait Utils {
         Self: Into<Cow<'a, str>>,
     {
         self.into().into()
+    }
+
+    fn into_manually_drop(self) -> ManuallyDrop<Self>
+    where
+        Self: Sized,
+    {
+        ManuallyDrop::new(self)
     }
 
     #[cfg(feature = "async")]
@@ -787,6 +813,13 @@ pub trait Utils {
         Self: Borrow<Option<X>>,
     {
         self.borrow().as_ref().map(X::as_ref)
+    }
+
+    fn mem_drop(self)
+    where
+        Self: Sized,
+    {
+        std::mem::drop(self);
     }
 
     #[must_use]
@@ -987,6 +1020,28 @@ pub trait Utils {
         request_builder.query(query)
     }
 
+    fn range_from_len<T: Add<Output = T> + Copy>(self, len: impl Into<T>) -> Range<T>
+    where
+        Self: Into<T>,
+    {
+        let start = self.into();
+        let end = start + len.into();
+
+        start..end
+    }
+
+    #[cfg(feature = "tui")]
+    fn ratatui_rect(self) -> Rect
+    where
+        Self: Into<(u16, u16)>,
+    {
+        let (width, height) = self.into();
+        let x = 0;
+        let y = 0;
+
+        Rect { x, y, width, height }
+    }
+
     #[cfg(feature = "async")]
     async fn read_string_async(&mut self) -> Result<String, IoError>
     where
@@ -1025,28 +1080,6 @@ pub trait Utils {
         }
         .reversed()
         .into()
-    }
-
-    fn range_from_len<T: Add<Output = T> + Copy>(self, len: impl Into<T>) -> Range<T>
-    where
-        Self: Into<T>,
-    {
-        let start = self.into();
-        let end = start + len.into();
-
-        start..end
-    }
-
-    #[cfg(feature = "tui")]
-    fn ratatui_rect(self) -> Rect
-    where
-        Self: Into<(u16, u16)>,
-    {
-        let (width, height) = self.into();
-        let x = 0;
-        let y = 0;
-
-        Rect { x, y, width, height }
     }
 
     fn ready(self) -> Ready<Self>

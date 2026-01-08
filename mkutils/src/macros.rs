@@ -12,5 +12,5 @@ macro_rules! loop_select {
         loop {
             ::tokio::select! { $($tt)* }
         }
-    };
+    }
 }

@@ -1,10 +1,11 @@
 use crate::utils::Utils;
+use derive_more::IsVariant;
 use std::{
     convert::Infallible,
     ops::{ControlFlow, FromResidual, Try},
 };
 
-#[derive(Debug)]
+#[derive(Debug, IsVariant)]
 pub enum Output<T, E> {
     Ok(T),
     EndOk,

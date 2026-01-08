@@ -43,7 +43,7 @@ valuable = { version = "0.1.1", optional = true }
 [features]
 async = ["dep:anyhow", "dep:bytes", "dep:derive_more", "dep:futures", "dep:tokio", "dep:tokio-stream", "dep:tokio-util"]
 fmt = ["dep:derive_more"]
-output = []
+output = ["dep:derive_more"]
 fs = ["dep:anyhow", "dep:camino", "dep:derive_more", "dep:home", "dep:shellexpand"]
 poem = ["dep:bytes", "dep:futures", "dep:poem", "dep:poem-openapi", "dep:serde_json"]
 process = ["dep:anyhow", "dep:tokio"]

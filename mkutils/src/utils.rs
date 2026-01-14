@@ -574,6 +574,13 @@ pub trait Utils {
         self.borrow_mut().entry(key).insert_entry(value).into_mut()
     }
 
+    fn into_box(self) -> Box<Self>
+    where
+        Self: Sized,
+    {
+        Box::new(self)
+    }
+
     fn into_break<C>(self) -> ControlFlow<Self, C>
     where
         Self: Sized,

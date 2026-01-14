@@ -16,6 +16,8 @@ pub struct Process {
 }
 
 impl Process {
+    pub const STDIO_ERROR_MESSAGE: &str = "unable to set up stdio for process";
+
     pub fn new<
         Cmd: AsRef<OsStr>,
         Args: IntoIterator,
@@ -68,7 +70,7 @@ impl Process {
     }
 
     fn take_stdio<T>(stdio: &mut Option<T>) -> Result<T, AnyhowError> {
-        stdio.take().context("unable to set up stdio for process")
+        stdio.take().context(Self::STDIO_ERROR_MESSAGE)
     }
 
     pub const fn stdin_mut(&mut self) -> &mut ChildStdin {

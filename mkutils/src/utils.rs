@@ -1480,6 +1480,13 @@ pub trait Utils {
 
         self.flush().await
     }
+
+    fn write_all_then(&mut self, byte_str: &[u8]) -> Result<&mut Self, IoError>
+    where
+        Self: Write,
+    {
+        self.write_all(byte_str)?.with(self).ok()
+    }
 }
 
 impl<T: ?Sized> Utils for T {}

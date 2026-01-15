@@ -19,12 +19,21 @@ impl<T> ActiveVec<T> {
     }
 
     #[must_use]
+    pub fn get(&self, index: usize) -> Option<&T> {
+        self.vec.get(index)
+    }
+
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        self.vec.get_mut(index)
+    }
+
+    #[must_use]
     pub fn active(&self) -> Option<&T> {
-        self.vec.get(self.active_index)
+        self.get(self.active_index)
     }
 
     pub fn active_mut(&mut self) -> Option<&mut T> {
-        self.vec.get_mut(self.active_index)
+        self.get_mut(self.active_index)
     }
 
     pub fn push(&mut self, item: T) {

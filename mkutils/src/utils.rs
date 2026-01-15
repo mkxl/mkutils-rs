@@ -88,7 +88,11 @@ use std::{
 #[cfg(feature = "fs")]
 use std::{fmt::Debug, path::PathBuf};
 #[cfg(feature = "async")]
-use std::{fs::Metadata, time::Duration};
+use std::{
+    fs::Metadata,
+    process::{ExitStatus, Stdio},
+    time::Duration,
+};
 #[cfg(any(feature = "async", feature = "ropey"))]
 use tokio::{
     fs::File as TokioFile,
@@ -97,6 +101,7 @@ use tokio::{
 #[cfg(feature = "async")]
 use tokio::{
     io::{AsyncReadExt, AsyncWrite, AsyncWriteExt, BufWriter as TokioBufWriter},
+    process::Command,
     sync::oneshot::Sender as OneshotSender,
     task::JoinHandle,
     task::{JoinSet, LocalSet},
@@ -117,6 +122,7 @@ use valuable::Value;
 #[allow(async_fn_in_trait)]
 pub trait Utils {
     const NEWLINE: &str = "\n";
+    const COPY_COMMAND_STR: &str = "pbpaste";
 
     #[cfg(feature = "async")]
     async fn abort_all_and_wait<T: 'static>(&mut self)
@@ -378,6 +384,25 @@ pub trait Utils {
         Self: Sized,
     {
         self.into()
+    }
+
+    #[cfg(feature = "async")]
+    async fn copy_to_clipboard(&self) -> Result<ExitStatus, IoError>
+    where
+        Self: AsRef<[u8]>,
+    {
+        let (pipe_reader, mut pipe_writer) = std::io::pipe()?;
+        let mut command = Command::new(Self::COPY_COMMAND_STR);
+
+        pipe_writer.write_all_then(self.as_ref())?.flush()?;
+
+        command
+            .stdin(pipe_reader)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .await?
+            .ok()
     }
 
     fn find_eq<Q, K>(&self, query: Q) -> Option<(usize, &K)>
@@ -1490,30 +1515,19 @@ pub trait Utils {
         serde_json::to_writer(writer, self)
     }
 
-    fn write_all_and_flush<T: AsRef<[u8]>>(&mut self, byte_str: T) -> Result<(), IoError>
-    where
-        Self: Write + Unpin,
-    {
-        self.write_all(byte_str.as_ref())?;
-
-        self.flush()
-    }
-
-    #[cfg(feature = "async")]
-    async fn write_all_and_flush_async<T: AsRef<[u8]>>(&mut self, byte_str: T) -> Result<(), IoError>
-    where
-        Self: AsyncWriteExt + Unpin,
-    {
-        self.write_all(byte_str.as_ref()).await?;
-
-        self.flush().await
-    }
-
     fn write_all_then(&mut self, byte_str: &[u8]) -> Result<&mut Self, IoError>
     where
         Self: Write,
     {
         self.write_all(byte_str)?.with(self).ok()
+    }
+
+    #[cfg(feature = "async")]
+    async fn write_all_then_async(&mut self, byte_str: &[u8]) -> Result<&mut Self, IoError>
+    where
+        Self: AsyncWriteExt + Unpin,
+    {
+        self.write_all(byte_str).await?.with(self).ok()
     }
 }
 

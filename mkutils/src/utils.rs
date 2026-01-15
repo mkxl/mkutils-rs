@@ -173,6 +173,21 @@ pub trait Utils {
         feature = "socket",
         feature = "tui",
     ))]
+    fn anyhow_error(self) -> AnyhowError
+    where
+        Self: Into<AnyhowError>,
+    {
+        self.into()
+    }
+
+    #[cfg(any(
+        feature = "async",
+        feature = "fs",
+        feature = "process",
+        feature = "reqwest",
+        feature = "socket",
+        feature = "tui",
+    ))]
     fn anyhow_result<T, E: Into<AnyhowError>>(self) -> Result<T, AnyhowError>
     where
         Self: Is<Result<T, E>>,

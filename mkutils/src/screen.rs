@@ -12,6 +12,7 @@ use ratatui::{Terminal, backend::CrosstermBackend};
 use std::io::{BufWriter, Error as IoError, StdoutLock, Write};
 
 pub type Stdout = BufWriter<StdoutLock<'static>>;
+pub type ScreenTerminal<'a> = Terminal<CrosstermBackend<&'a mut Stdout>>;
 
 #[derive(Default)]
 pub struct ScreenConfig {
@@ -97,7 +98,7 @@ impl Screen {
         ratatui::crossterm::terminal::size()?.convert::<PointU16>().ok()
     }
 
-    pub fn terminal(&mut self) -> Result<Terminal<CrosstermBackend<&mut Stdout>>, IoError> {
+    pub fn terminal(&mut self) -> Result<ScreenTerminal<'_>, IoError> {
         let backend = CrosstermBackend::new(&mut self.stdout);
         let terminal = Terminal::new(backend)?;
 

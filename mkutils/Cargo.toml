@@ -54,7 +54,7 @@ serde = ["dep:serde", "dep:serde_json", "dep:serde_yaml_ng", "dep:valuable"]
 socket = ["dep:anyhow", "async", "dep:derive_more", "rmp", "output"]
 tracing = ["dep:console-subscriber", "dep:derive_more", "dep:tracing", "dep:tracing-subscriber"]
 tui = ["dep:anyhow", "dep:derive_more", "dep:num", "dep:serde", "dep:tracing", "dep:trie-rs", "dep:unicode-segmentation"]
-wrappers = ["dep:derive_more"]
+misc = ["dep:derive_more"]
 
 [lints]
 workspace = true

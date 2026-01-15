@@ -1,10 +1,12 @@
 #![cfg_attr(feature = "output", feature(try_trait_v2))]
 #![cfg_attr(feature = "socket", feature(associated_type_defaults))]
 
-mod active_vec;
 mod is;
 mod macros;
 mod utils;
+
+#[cfg(feature = "misc")]
+mod active_vec;
 
 #[cfg(feature = "fmt")]
 mod fmt;
@@ -17,6 +19,9 @@ mod event;
 
 #[cfg(any(feature = "ropey", feature = "tui"))]
 mod geometry;
+
+#[cfg(feature = "misc")]
+mod indexed;
 
 #[cfg(feature = "async")]
 mod into_stream;
@@ -54,18 +59,22 @@ mod status;
 #[cfg(feature = "tui")]
 mod terminal;
 
+#[cfg(feature = "misc")]
+mod timestamped;
+
 #[cfg(feature = "tracing")]
 mod tracing;
 
-#[cfg(feature = "wrappers")]
-mod wrappers;
-
+#[cfg(feature = "misc")]
+pub use crate::active_vec::ActiveVec;
 #[cfg(feature = "async")]
 pub use crate::event::Event;
 #[cfg(feature = "fmt")]
 pub use crate::fmt::{Debugged, OptionalDisplay};
 #[cfg(any(feature = "ropey", feature = "tui"))]
 pub use crate::geometry::{Orientation, Point, PointU16, PointUsize};
+#[cfg(feature = "misc")]
+pub use crate::indexed::Indexed;
 #[cfg(feature = "tui")]
 pub use crate::key_map::key_binding::KeyBinding;
 #[cfg(feature = "tui")]
@@ -88,10 +97,10 @@ pub use crate::screen::{Screen, ScreenConfig, Stdout};
 pub use crate::socket::{Request, Socket};
 #[cfg(feature = "tui")]
 pub use crate::terminal::Terminal;
+#[cfg(feature = "misc")]
+pub use crate::timestamped::Timestamped;
 #[cfg(feature = "tracing")]
 pub use crate::tracing::Tracing;
-#[cfg(feature = "wrappers")]
-pub use crate::wrappers::{Indexed, Timestamped};
-pub use crate::{active_vec::ActiveVec, utils::Utils};
+pub use crate::utils::Utils;
 #[cfg(feature = "mkutils-macros")]
 pub use mkutils_macros::{FromChain, TypeAssoc, context};

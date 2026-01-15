@@ -1,3 +1,6 @@
+use derive_more::Constructor;
+
+#[derive(Constructor)]
 pub struct ActiveVec<T> {
     active_index: usize,
     vec: Vec<T>,
@@ -7,11 +10,8 @@ impl<T> ActiveVec<T> {
     const INITIAL_ACTIVE_INDEX: usize = 0;
 
     #[must_use]
-    pub const fn new() -> Self {
-        let active_index = Self::INITIAL_ACTIVE_INDEX;
-        let vec = Vec::new();
-
-        Self { active_index, vec }
+    pub fn empty() -> Self {
+        Vec::new().into()
     }
 
     pub fn as_slice_mut(&mut self) -> &mut [T] {
@@ -43,6 +43,18 @@ impl<T> ActiveVec<T> {
 
 impl<T> Default for ActiveVec<T> {
     fn default() -> Self {
-        Self::new()
+        Self::empty()
+    }
+}
+
+impl<T> From<Vec<T>> for ActiveVec<T> {
+    fn from(vec: Vec<T>) -> Self {
+        Self::new(Self::INITIAL_ACTIVE_INDEX, vec)
+    }
+}
+
+impl<T> FromIterator<T> for ActiveVec<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(values: I) -> Self {
+        values.into_iter().collect::<Vec<T>>().into()
     }
 }

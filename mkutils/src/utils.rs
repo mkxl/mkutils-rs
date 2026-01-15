@@ -31,7 +31,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 #[cfg(any(feature = "async", feature = "poem"))]
 use futures::Stream;
 #[cfg(feature = "async")]
-use futures::{Sink, SinkExt, StreamExt, TryFuture, future::Either, stream::Filter};
+use futures::{Sink, SinkExt, StreamExt, TryFuture, future::Either, stream::Filter, stream::FuturesUnordered};
 #[cfg(feature = "tui")]
 use num::traits::{SaturatingAdd, SaturatingSub};
 #[cfg(feature = "poem")]
@@ -1193,6 +1193,19 @@ pub trait Utils {
         };
 
         *self = value.min(max_value);
+    }
+
+    #[cfg(feature = "async")]
+    async fn select_all(self) -> <<Self as IntoIterator>::Item as Future>::Output
+    where
+        Self: IntoIterator + Sized,
+        <Self as IntoIterator>::Item: Future,
+    {
+        self.into_iter()
+            .collect::<FuturesUnordered<_>>()
+            .next()
+            .wait_then_unwrap_or_pending()
+            .await
     }
 
     #[cfg(feature = "async")]

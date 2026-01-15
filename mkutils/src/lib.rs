@@ -57,6 +57,9 @@ mod terminal;
 #[cfg(feature = "tracing")]
 mod tracing;
 
+#[cfg(feature = "wrappers")]
+mod wrappers;
+
 #[cfg(feature = "async")]
 pub use crate::event::Event;
 #[cfg(feature = "fmt")]
@@ -87,6 +90,8 @@ pub use crate::socket::{Request, Socket};
 pub use crate::terminal::Terminal;
 #[cfg(feature = "tracing")]
 pub use crate::tracing::Tracing;
+#[cfg(feature = "wrappers")]
+pub use crate::wrappers::{Indexed, Timestamped};
 pub use crate::{active_vec::ActiveVec, utils::Utils};
 #[cfg(feature = "mkutils-macros")]
 pub use mkutils_macros::{FromChain, TypeAssoc, context};

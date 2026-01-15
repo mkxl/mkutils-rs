@@ -14,6 +14,10 @@ impl<T> ActiveVec<T> {
         Self { active_index, vec }
     }
 
+    pub fn as_slice_mut(&mut self) -> &mut [T] {
+        &mut self.vec
+    }
+
     #[must_use]
     pub fn active(&self) -> Option<&T> {
         self.vec.get(self.active_index)

@@ -635,6 +635,16 @@ pub trait Utils {
         ControlFlow::Continue(self)
     }
 
+    fn into_control_flow<T, E>(self) -> ControlFlow<Result<T, E>>
+    where
+        Self: Is<Result<(), E>>,
+    {
+        match self.into_self() {
+            Ok(()) => ControlFlow::Continue(()),
+            Err(error) => ControlFlow::Break(error.err()),
+        }
+    }
+
     #[cfg(feature = "poem")]
     fn into_endpoint(self) -> impl Endpoint<Output = Self>
     where

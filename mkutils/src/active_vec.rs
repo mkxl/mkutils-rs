@@ -30,12 +30,12 @@ impl<T> ActiveVec<T> {
     }
 
     #[must_use]
-    pub fn active(&self) -> Option<&T> {
-        self.vec.get(self.active_index)
+    pub fn active(&self) -> &T {
+        &self.vec[self.active_index]
     }
 
-    pub fn active_mut(&mut self) -> Option<&mut T> {
-        self.vec.get_mut(self.active_index)
+    pub fn active_mut(&mut self) -> &mut T {
+        &mut self.vec[self.active_index]
     }
 
     pub fn remove_active(&mut self) -> Option<T> {
@@ -58,5 +58,13 @@ impl<T> ActiveVec<T> {
         self.active_index.cycle_in_place(amount, self.vec.len());
 
         self
+    }
+
+    pub fn cycle_next(&mut self) -> &mut Self {
+        self.cycle(1)
+    }
+
+    pub fn cycle_prev(&mut self) -> &mut Self {
+        self.cycle(-1)
     }
 }

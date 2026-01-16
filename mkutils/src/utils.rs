@@ -34,6 +34,8 @@ use futures::Stream;
 use futures::{Sink, SinkExt, StreamExt, TryFuture, future::Either, stream::Filter, stream::FuturesUnordered};
 #[cfg(feature = "tui")]
 use num::traits::{SaturatingAdd, SaturatingSub};
+#[cfg(feature = "misc")]
+use num::{Bounded, NumCast, ToPrimitive};
 #[cfg(feature = "poem")]
 use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
 #[cfg(feature = "poem")]
@@ -300,6 +302,17 @@ pub trait Utils {
         TokioBufWriter::new(self)
     }
 
+    #[cfg(feature = "misc")]
+    fn cast_or_max<T: Bounded + NumCast>(self) -> T
+    where
+        Self: Sized + ToPrimitive,
+    {
+        match T::from(self) {
+            Some(value) => value,
+            None => T::max_value(),
+        }
+    }
+
     // NOTE: requires that [Self] and [T] have the same layout (provided by [#[repr(transparent)]]):
     // [https://stackoverflow.com/questions/79593399/implement-valuablevaluable-on-serde-jsonvalue]
     fn cast_ref<T>(&self) -> &T {
@@ -405,14 +418,6 @@ pub trait Utils {
             .ok()
     }
 
-    fn find_eq<Q, K>(&self, query: Q) -> Option<(usize, &K)>
-    where
-        Self: AsRef<[K]>,
-        for<'a> &'a K: PartialEq<Q>,
-    {
-        self.as_ref().iter().enumerate().find(|(_index, key)| *key == query)
-    }
-
     fn contains_eq<Q, K>(&self, query: Q) -> bool
     where
         Self: AsRef<[K]>,
@@ -454,6 +459,22 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         std::fs::create_dir_all(self)
+    }
+
+    #[cfg(feature = "misc")]
+    fn cycle_in_place(&mut self, amount: isize, total: usize)
+    where
+        Self: BorrowMut<usize>,
+    {
+        let current = self.borrow_mut();
+
+        // NOTE: [isize::rem_euclid()] returns a nonnegative integer
+        // [https://doc.rust-lang.org/stable/std/primitive.isize.html#method.rem_euclid] so casting as a [usize] is
+        // fine
+        *current = amount
+            .saturating_add_unsigned(*current)
+            .rem_euclid(total.cast_or_max())
+            .cast_or_max();
     }
 
     #[cfg(feature = "fmt")]
@@ -574,6 +595,14 @@ pub trait Utils {
         Self: AsRef<Utf8Path>,
     {
         self.as_ref().file_name().context("path has no file name")
+    }
+
+    fn find_eq<Q, K>(&self, query: Q) -> Option<(usize, &K)>
+    where
+        Self: AsRef<[K]>,
+        for<'a> &'a K: PartialEq<Q>,
+    {
+        self.as_ref().iter().enumerate().find(|(_index, key)| *key == query)
     }
 
     fn has_happened(self) -> bool

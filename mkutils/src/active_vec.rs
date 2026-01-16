@@ -1,6 +1,5 @@
-use derive_more::Constructor;
+use crate::utils::Utils;
 
-#[derive(Constructor)]
 pub struct ActiveVec<T> {
     active_index: usize,
     vec: Vec<T>,
@@ -9,9 +8,21 @@ pub struct ActiveVec<T> {
 impl<T> ActiveVec<T> {
     const INITIAL_ACTIVE_INDEX: usize = 0;
 
+    pub fn new(item: T) -> Self {
+        let active_index = Self::INITIAL_ACTIVE_INDEX;
+        let vec = std::vec![item];
+
+        Self { active_index, vec }
+    }
+
     #[must_use]
-    pub fn empty() -> Self {
-        Vec::new().into()
+    pub const fn active_index(&self) -> usize {
+        self.active_index
+    }
+
+    #[must_use]
+    pub fn as_slice(&self) -> &[T] {
+        &self.vec
     }
 
     pub fn as_slice_mut(&mut self) -> &mut [T] {
@@ -19,42 +30,33 @@ impl<T> ActiveVec<T> {
     }
 
     #[must_use]
-    pub fn get(&self, index: usize) -> Option<&T> {
-        self.vec.get(index)
-    }
-
-    pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
-        self.vec.get_mut(index)
-    }
-
-    #[must_use]
     pub fn active(&self) -> Option<&T> {
-        self.get(self.active_index)
+        self.vec.get(self.active_index)
     }
 
     pub fn active_mut(&mut self) -> Option<&mut T> {
-        self.get_mut(self.active_index)
+        self.vec.get_mut(self.active_index)
+    }
+
+    pub fn remove_active(&mut self) -> Option<T> {
+        if self.vec.len() < 2 {
+            return None;
+        }
+
+        let element = self.vec.remove(self.active_index);
+
+        self.active_index = self.active_index.saturating_sub(1);
+
+        element.some()
     }
 
     pub fn push(&mut self, item: T) {
         self.vec.push(item);
     }
-}
 
-impl<T> Default for ActiveVec<T> {
-    fn default() -> Self {
-        Self::empty()
-    }
-}
+    pub fn cycle(&mut self, amount: isize) -> &mut Self {
+        self.active_index.cycle_in_place(amount, self.vec.len());
 
-impl<T> From<Vec<T>> for ActiveVec<T> {
-    fn from(vec: Vec<T>) -> Self {
-        Self::new(Self::INITIAL_ACTIVE_INDEX, vec)
-    }
-}
-
-impl<T> FromIterator<T> for ActiveVec<T> {
-    fn from_iter<I: IntoIterator<Item = T>>(values: I) -> Self {
-        values.into_iter().collect::<Vec<T>>().into()
+        self
     }
 }

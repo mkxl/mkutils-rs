@@ -69,7 +69,7 @@ impl Process {
         process.ok()
     }
 
-    fn take_stdio<T>(stdio: &mut Option<T>) -> Result<T, AnyhowError> {
+    pub fn take_stdio<T>(stdio: &mut Option<T>) -> Result<T, AnyhowError> {
         stdio.take().context(Self::STDIO_ERROR_MESSAGE)
     }
 

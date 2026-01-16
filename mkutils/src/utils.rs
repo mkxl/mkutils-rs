@@ -5,6 +5,8 @@ use crate::fmt::{Debugged, OptionalDisplay};
 #[cfg(feature = "ropey")]
 use crate::geometry::PointUsize;
 use crate::is::Is;
+#[cfg(feature = "output")]
+use crate::output::Output;
 #[cfg(any(feature = "serde", feature = "tui"))]
 use crate::seq_visitor::SeqVisitor;
 #[cfg(feature = "socket")]
@@ -493,6 +495,11 @@ pub trait Utils {
         let seq_visitor = SeqVisitor::new(func);
 
         deserializer.deserialize_seq(seq_visitor)
+    }
+
+    #[cfg(feature = "output")]
+    fn end_ok<T, E>(&self) -> Output<T, E> {
+        Output::EndOk
     }
 
     fn err<T>(self) -> Result<T, Self>

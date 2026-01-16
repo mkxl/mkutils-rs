@@ -930,6 +930,14 @@ pub trait Utils {
     }
 
     #[must_use]
+    fn mem_replace(&mut self, value: Self) -> Self
+    where
+        Self: Sized,
+    {
+        std::mem::replace(self, value)
+    }
+
+    #[must_use]
     fn mem_take(&mut self) -> Self
     where
         Self: Default,
@@ -1328,25 +1336,18 @@ pub trait Utils {
             .context("unable to send value over oneshot channel")
     }
 
-    fn set_value<T>(&mut self, value: T)
-    where
-        Self: BorrowMut<T>,
-    {
-        *self.borrow_mut() = value;
-    }
-
-    fn set_true(&mut self)
+    fn set_true(&mut self) -> bool
     where
         Self: BorrowMut<bool>,
     {
-        self.set_value(true);
+        self.borrow_mut().mem_replace(true)
     }
 
-    fn set_false(&mut self)
+    fn set_false(&mut self) -> bool
     where
         Self: BorrowMut<bool>,
     {
-        self.set_value(false);
+        self.borrow_mut().mem_replace(false)
     }
 
     #[cfg(feature = "async")]

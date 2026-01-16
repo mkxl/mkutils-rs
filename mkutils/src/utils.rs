@@ -695,16 +695,6 @@ pub trait Utils {
         ControlFlow::Continue(self)
     }
 
-    fn into_control_flow<T, E>(self) -> ControlFlow<Result<T, E>>
-    where
-        Self: Is<Result<(), E>>,
-    {
-        match self.into_self() {
-            Ok(()) => ControlFlow::Continue(()),
-            Err(error) => ControlFlow::Break(error.err()),
-        }
-    }
-
     #[cfg(feature = "poem")]
     fn into_endpoint(self) -> impl Endpoint<Output = Self>
     where
@@ -1338,6 +1328,27 @@ pub trait Utils {
             .context("unable to send value over oneshot channel")
     }
 
+    fn set_value<T>(&mut self, value: T)
+    where
+        Self: BorrowMut<T>,
+    {
+        *self.borrow_mut() = value;
+    }
+
+    fn set_true(&mut self)
+    where
+        Self: BorrowMut<bool>,
+    {
+        self.set_value(true);
+    }
+
+    fn set_false(&mut self)
+    where
+        Self: BorrowMut<bool>,
+    {
+        self.set_value(false);
+    }
+
     #[cfg(feature = "async")]
     fn sleep(self) -> Sleep
     where
@@ -1530,6 +1541,7 @@ pub trait Utils {
 
     fn unit(&self) {}
 
+    // Future<Option<T>>(). wait_for_some
     async fn wait_then_unwrap_or_pending<T>(self) -> T
     where
         Self: Future<Output = Option<T>> + Sized,
@@ -1540,6 +1552,7 @@ pub trait Utils {
         }
     }
 
+    // wait_if_some
     async fn unwrap_or_pending_then_wait<F: Future + Unpin>(&mut self) -> F::Output
     where
         Self: BorrowMut<Option<F>>,

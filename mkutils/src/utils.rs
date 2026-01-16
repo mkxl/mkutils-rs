@@ -67,6 +67,17 @@ use serde_json::Error as SerdeJsonError;
 use serde_json::{Value as Json, value::Index};
 #[cfg(feature = "serde")]
 use serde_yaml_ng::Error as SerdeYamlError;
+#[cfg(any(
+    feature = "async",
+    feature = "fs",
+    feature = "process",
+    feature = "reqwest",
+    feature = "socket",
+    feature = "tui",
+))]
+use std::fmt::Debug;
+#[cfg(feature = "fs")]
+use std::path::PathBuf;
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
@@ -89,8 +100,6 @@ use std::{
     task::Poll,
     time::Instant,
 };
-#[cfg(feature = "fs")]
-use std::{fmt::Debug, path::PathBuf};
 #[cfg(feature = "async")]
 use std::{
     fs::Metadata,
@@ -173,6 +182,21 @@ pub trait Utils {
         line.spans.push(span.into());
 
         line
+    }
+
+    #[cfg(any(
+        feature = "async",
+        feature = "fs",
+        feature = "process",
+        feature = "reqwest",
+        feature = "socket",
+        feature = "tui",
+    ))]
+    fn anyhow_msg_error(self) -> AnyhowError
+    where
+        Self: 'static + Debug + Display + Send + Sized + Sync,
+    {
+        AnyhowError::msg(self)
     }
 
     #[cfg(any(

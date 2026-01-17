@@ -1204,6 +1204,14 @@ pub trait Utils {
         std::future::ready(self)
     }
 
+    fn ref_immut(&self) -> &Self {
+        self
+    }
+
+    fn ref_mut(&mut self) -> &mut Self {
+        self
+    }
+
     fn repeat(self) -> Repeat<Self>
     where
         Self: Clone,

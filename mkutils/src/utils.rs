@@ -46,6 +46,7 @@ use poem_openapi::{error::ParseRequestPayloadError, payload::Binary as PoemBinar
 use ratatui::{
     layout::Rect,
     text::{Line, Span},
+    widgets::block::{Block, Title},
 };
 #[cfg(feature = "reqwest")]
 use reqwest::{RequestBuilder, Response};
@@ -289,6 +290,14 @@ pub trait Utils {
         Self: AsValuable,
     {
         AsValuable::as_valuable(self)
+    }
+
+    #[cfg(feature = "tui")]
+    fn bordered_block<'a>(self) -> Block<'a>
+    where
+        Self: Into<Title<'a>> + Sized,
+    {
+        Block::bordered().title(self)
     }
 
     fn borrowed(&self) -> Cow<'_, Self>

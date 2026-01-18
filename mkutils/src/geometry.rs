@@ -1,6 +1,7 @@
+use crate::utils::Utils;
 use derive_more::IsVariant;
 use num::traits::{ConstZero, SaturatingSub};
-use ratatui::layout::Size;
+use ratatui::layout::{Constraint, Layout, Size};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, IsVariant)]
@@ -20,6 +21,10 @@ impl Orientation {
 
     pub const fn toggle(&mut self) {
         *self = self.toggled();
+    }
+
+    pub fn layout<I: IntoIterator<Item: Into<Constraint>>>(&self) -> fn(I) -> Layout {
+        self.is_horizontal().if_else(Layout::horizontal, Layout::vertical)
     }
 }
 

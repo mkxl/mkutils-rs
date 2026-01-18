@@ -23,8 +23,9 @@ impl Orientation {
         *self = self.toggled();
     }
 
-    pub fn layout<I: IntoIterator<Item: Into<Constraint>>>(&self) -> fn(I) -> Layout {
-        self.is_horizontal().if_else(Layout::horizontal, Layout::vertical)
+    pub fn layout<I: IntoIterator<Item: Into<Constraint>>>(&self, constraints: I) -> Layout {
+        self.is_horizontal()
+            .if_else::<fn(I) -> Layout>(Layout::horizontal, Layout::vertical)(constraints)
     }
 }
 

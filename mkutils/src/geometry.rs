@@ -9,6 +9,20 @@ pub enum Orientation {
     Vertical,
 }
 
+impl Orientation {
+    #[must_use]
+    pub const fn toggled(&self) -> Self {
+        match self {
+            Self::Horizontal => Self::Vertical,
+            Self::Vertical => Self::Horizontal,
+        }
+    }
+
+    pub const fn toggle(&mut self) {
+        *self = self.toggled();
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub struct Point<T> {
     pub x: T,

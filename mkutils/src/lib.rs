@@ -103,4 +103,4 @@ pub use crate::timestamped::Timestamped;
 pub use crate::tracing::Tracing;
 pub use crate::utils::Utils;
 #[cfg(feature = "mkutils-macros")]
-pub use mkutils_macros::{FromChain, TypeAssoc, context};
+pub use mkutils_macros::{Default, FromChain, TypeAssoc, context};

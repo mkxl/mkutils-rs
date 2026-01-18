@@ -44,9 +44,13 @@ use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as 
 use poem_openapi::{error::ParseRequestPayloadError, payload::Binary as PoemBinary, payload::Json as PoemJson};
 #[cfg(feature = "tui")]
 use ratatui::{
+    Frame,
     layout::Rect,
     text::{Line, Span},
-    widgets::block::{Block, Title},
+    widgets::{
+        Widget,
+        block::{Block, Title},
+    },
 };
 #[cfg(feature = "reqwest")]
 use reqwest::{RequestBuilder, Response};
@@ -1219,6 +1223,14 @@ pub trait Utils {
 
     fn ref_mut(&mut self) -> &mut Self {
         self
+    }
+
+    #[cfg(feature = "tui")]
+    fn render_to(self, frame: &mut Frame, rect: Rect)
+    where
+        Self: Widget + Sized,
+    {
+        frame.render_widget(self, rect);
     }
 
     fn repeat(self) -> Repeat<Self>

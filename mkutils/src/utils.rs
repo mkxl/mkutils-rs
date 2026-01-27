@@ -133,14 +133,15 @@ use tokio_util::{
 #[cfg(feature = "tracing")]
 use tracing::Level;
 #[cfg(any(feature = "ropey", feature = "tui"))]
-use unicode_segmentation::{Graphemes, UnicodeSegmentation};
+use unicode_segmentation::{GraphemeIndices, Graphemes, UnicodeSegmentation};
 #[cfg(feature = "serde")]
 use valuable::Value;
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
-    const NEWLINE: &str = "\n";
     const COPY_COMMAND_STR: &str = "pbpaste";
+    const IS_EXTENDED: bool = true;
+    const NEWLINE: &str = "\n";
 
     #[cfg(feature = "async")]
     async fn abort_all_and_wait<T: 'static>(&mut self)
@@ -589,7 +590,15 @@ pub trait Utils {
     where
         Self: AsRef<str>,
     {
-        self.as_ref().graphemes(true)
+        self.as_ref().graphemes(Self::IS_EXTENDED)
+    }
+
+    #[cfg(any(feature = "ropey", feature = "tui"))]
+    fn extended_grapheme_indices(&self) -> GraphemeIndices<'_>
+    where
+        Self: AsRef<str>,
+    {
+        self.as_ref().grapheme_indices(Self::IS_EXTENDED)
     }
 
     #[cfg(feature = "ropey")]
@@ -619,6 +628,27 @@ pub trait Utils {
             .saturating_lines_at(lines_index_range.start)
             .take(lines_index_range.len())
             .map(move |line_rope_slice| line_rope_slice.extended_graphemes_at(extended_graphemes_index_range.clone()))
+    }
+
+    #[cfg(any(feature = "ropey", feature = "tui"))]
+    fn extended_grapheme_substring(&self, range: Range<usize>) -> &str
+    where
+        Self: AsRef<str>,
+    {
+        let string = self.as_ref();
+        let mut extended_grapheme_indices = string.extended_grapheme_indices().skip(range.start);
+        let Some((begin_byte_offset, _begin_extended_grapheme)) = extended_grapheme_indices.next() else {
+            return "";
+        };
+        let mut extended_grapheme_indices = extended_grapheme_indices.skip(range.len());
+        let end_byte_offset = if let Some((end_byte_offset, _end_extended_grapheme)) = extended_grapheme_indices.next()
+        {
+            end_byte_offset
+        } else {
+            string.len()
+        };
+
+        &string[begin_byte_offset..end_byte_offset]
     }
 
     #[cfg(feature = "async")]

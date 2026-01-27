@@ -1178,14 +1178,13 @@ pub trait Utils {
         request_builder.query(query)
     }
 
-    fn range_from_len<T: Add<Output = T> + Copy>(self, len: impl Into<T>) -> Range<T>
+    fn range_from_len(self, len: Self) -> Range<Self>
     where
-        Self: Into<T>,
+        Self: Add<Output = Self> + Copy,
     {
-        let start = self.into();
-        let end = start + len.into();
+        let end = self + len;
 
-        start..end
+        self..end
     }
 
     #[cfg(feature = "tui")]

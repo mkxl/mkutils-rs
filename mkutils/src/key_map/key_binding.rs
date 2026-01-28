@@ -8,8 +8,7 @@ pub struct KeyBinding<T> {
     #[serde(deserialize_with = "KeyBinding::<T>::deserialize_keys")]
     pub keys: Vec<KeyEvent>,
 
-    #[serde(flatten)]
-    pub command: T,
+    pub value: T,
 }
 
 impl<T> KeyBinding<T> {

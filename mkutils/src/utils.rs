@@ -47,10 +47,7 @@ use ratatui::{
     Frame,
     layout::Rect,
     text::{Line, Span},
-    widgets::{
-        Widget,
-        block::{Block, Title},
-    },
+    widgets::{Block, Widget},
 };
 #[cfg(feature = "reqwest")]
 use reqwest::{RequestBuilder, Response};
@@ -300,7 +297,7 @@ pub trait Utils {
     #[cfg(feature = "tui")]
     fn bordered_block<'a>(self) -> Block<'a>
     where
-        Self: Into<Title<'a>> + Sized,
+        Self: Into<Line<'a>> + Sized,
     {
         Block::bordered().title(self)
     }

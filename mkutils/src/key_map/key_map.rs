@@ -1,10 +1,9 @@
 use crate::{key_map::key_binding::KeyBinding, utils::Utils};
 use crossterm::event::KeyEvent;
-use itertools::Itertools;
 use serde::{Deserialize, Deserializer};
 use trie_rs::map::Trie;
 
-pub type KeyBindingTrie<T> = Trie<KeyEvent, Vec<T>>;
+pub type KeyBindingTrie<T> = Trie<KeyEvent, T>;
 
 pub struct KeyMap<T> {
     bindings: Vec<KeyBinding<T>>,
@@ -20,12 +19,7 @@ impl<T: Clone> KeyMap<T> {
     }
 
     fn new_trie(key_bindings: Vec<KeyBinding<T>>) -> KeyBindingTrie<T> {
-        key_bindings
-            .into_iter()
-            .map(KeyBinding::into)
-            .into_group_map()
-            .into_iter()
-            .collect()
+        key_bindings.into_iter().map(KeyBinding::into).collect()
     }
 
     #[must_use]

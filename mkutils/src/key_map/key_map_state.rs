@@ -6,7 +6,7 @@ use std::{
 };
 use trie_rs::inc_search::{Answer, IncSearch, Position};
 
-pub type KeyMapIncSearch<'a, T> = IncSearch<'a, KeyEvent, Vec<T>>;
+pub type KeyMapIncSearch<'a, T> = IncSearch<'a, KeyEvent, T>;
 
 pub struct KeyMapState<T> {
     reset_time: Instant,
@@ -67,47 +67,43 @@ impl<T: Clone> KeyMapState<T> {
         self.set_position_to_key_map_trie_root(key_map);
     }
 
-    fn get_commands_from_inc_search_and_reset<'a>(
+    fn get_value_from_inc_search_and_reset<'a>(
         &mut self,
         inc_search: &KeyMapIncSearch<'a, T>,
         key_map: &'a KeyMap<T>,
-    ) -> &'a [T] {
-        let commands = if let Some(commands) = inc_search.value() {
-            commands.as_slice()
-        } else {
-            &[]
-        };
+    ) -> Option<&'a T> {
+        let value_opt = inc_search.value();
 
         self.reset(key_map);
 
-        commands
+        value_opt
     }
 
-    fn get_commands_from_key_map_and_reset<'a>(&mut self, key_map: &'a KeyMap<T>) -> &'a [T] {
+    fn get_value_from_key_map_and_reset<'a>(&mut self, key_map: &'a KeyMap<T>) -> Option<&'a T> {
         let inc_search = self.resume_inc_search(key_map);
 
-        self.get_commands_from_inc_search_and_reset(&inc_search, key_map)
+        self.get_value_from_inc_search_and_reset(&inc_search, key_map)
     }
 
-    pub fn on_key_event<'a>(&mut self, key_map: &'a KeyMap<T>, key_event: KeyEvent) -> &'a [T] {
+    pub fn on_key_event<'a>(&mut self, key_map: &'a KeyMap<T>, key_event: KeyEvent) -> Option<&'a T> {
         self.defer_reset_time();
 
         let mut inc_search = self.resume_inc_search(key_map);
 
         match inc_search.query(&key_event) {
-            Some(Answer::Match) => return self.get_commands_from_inc_search_and_reset(&inc_search, key_map),
+            Some(Answer::Match) => return self.get_value_from_inc_search_and_reset(&inc_search, key_map),
             Some(Answer::PrefixAndMatch | Answer::Prefix) => self.set_position(inc_search),
             None => self.set_position_to_key_map_trie_root(key_map),
         }
 
-        &[]
+        None
     }
 
-    pub fn on_tick<'a>(&mut self, key_map: &'a KeyMap<T>) -> &'a [T] {
+    pub fn on_tick<'a>(&mut self, key_map: &'a KeyMap<T>) -> Option<&'a T> {
         if self.reset_time.has_happened() {
-            self.get_commands_from_key_map_and_reset(key_map)
+            self.get_value_from_key_map_and_reset(key_map)
         } else {
-            &[]
+            None
         }
     }
 

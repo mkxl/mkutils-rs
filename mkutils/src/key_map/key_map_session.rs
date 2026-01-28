@@ -26,11 +26,11 @@ impl<T: Clone> KeyMapSession<T> {
         Self { key_map, key_map_state }
     }
 
-    pub fn on_key_event(&mut self, key_event: KeyEvent) -> &[T] {
+    pub fn on_key_event(&mut self, key_event: KeyEvent) -> Option<&T> {
         self.key_map_state.on_key_event(&self.key_map, key_event)
     }
 
-    pub fn on_tick(&mut self) -> &[T] {
+    pub fn on_tick(&mut self) -> Option<&T> {
         self.key_map_state.on_tick(&self.key_map)
     }
 }

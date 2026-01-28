@@ -1532,14 +1532,6 @@ pub trait Utils {
     }
 
     #[cfg(feature = "serde")]
-    fn to_value_from_yaml_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeYamlError>
-    where
-        Self: AsRef<[u8]>,
-    {
-        serde_yaml_ng::from_slice(self.as_ref())
-    }
-
-    #[cfg(feature = "serde")]
     fn to_value_from_json_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
     where
         Self: Read + Sized,
@@ -1561,6 +1553,22 @@ pub trait Utils {
         Self: Serialize,
     {
         self.to_json()?.into_value_from_json()
+    }
+
+    #[cfg(feature = "serde")]
+    fn to_value_from_yaml_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeYamlError>
+    where
+        Self: AsRef<[u8]>,
+    {
+        serde_yaml_ng::from_slice(self.as_ref())
+    }
+
+    #[cfg(feature = "serde")]
+    fn to_value_from_yaml_reader<T: DeserializeOwned>(self) -> Result<T, SerdeYamlError>
+    where
+        Self: Read + Sized,
+    {
+        serde_yaml_ng::from_reader(self)
     }
 
     fn try_convert<T: TryFrom<Self>>(self) -> Result<T, T::Error>

@@ -25,3 +25,6 @@ missing_errors_doc = { level = "allow", priority = 1 }
 module_inception = { level = "allow", priority = 1 }
 multiple_crate_versions = { level = "allow", priority = 1 }
 option_if_let_else = { level = "allow", priority = 1 }
+
+[patch.crates-io]
+crossterm = { git = 'https://github.com/crossterm-rs/crossterm', rev = "4f08595" }

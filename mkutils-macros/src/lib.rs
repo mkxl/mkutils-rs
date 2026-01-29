@@ -1,10 +1,11 @@
 mod context;
 mod default;
 mod from_chain;
+mod set_variant;
 mod type_assoc;
 mod utils;
 
-use crate::{default::Default, from_chain::FromChain, type_assoc::TypeAssoc};
+use crate::{default::Default, from_chain::FromChain, set_variant::SetVariant, type_assoc::TypeAssoc};
 use proc_macro::TokenStream;
 
 // TODO: add documentation
@@ -24,11 +25,9 @@ pub fn context(args_token_stream: TokenStream, input_token_stream: TokenStream) 
 /// struct MyStruct;
 /// ```
 ///
-/// expands to
+/// adds
 ///
 /// ```rust
-/// struct MyStruct;
-///
 /// impl From<Foo> for MyStruct {
 ///     fn from(foo: Foo) -> Self {
 ///         Self::from(Baz::from(Bar::from(foo)))
@@ -51,11 +50,9 @@ pub fn from_chain(input_token_stream: TokenStream) -> TokenStream {
 /// struct MyStruct;
 /// ```
 ///
-/// expands to
+/// adds
 ///
 /// ```rust
-/// struct MyStruct;
-///
 /// impl Foo for MyStruct {
 ///     type Item = Vec<u8>;
 /// }
@@ -82,15 +79,9 @@ pub fn type_assoc(input_token_stream: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// expands to
+/// adds
 ///
 /// ```rust
-/// struct MyStruct {
-///     name: String,
-///     count: i32,
-///     items: Vec<i32>,
-/// }
-///
 /// impl Default for MyStruct {
 ///     fn default() -> Self {
 ///         Self {
@@ -104,4 +95,35 @@ pub fn type_assoc(input_token_stream: TokenStream) -> TokenStream {
 #[proc_macro_derive(Default, attributes(default))]
 pub fn default(input_token_stream: TokenStream) -> TokenStream {
     Default::derive(input_token_stream)
+}
+
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(SetVariant)]
+/// enum MyEnum {
+///   Foo,
+///   Bar,
+///   Baz(String),
+/// }
+/// ```
+///
+/// adds
+///
+/// ```rust
+/// impl MyEnum {
+///   pub fn set_foo(&mut self) -> &mut Self {
+///     *self = Self::Foo;
+///   }
+///
+///   pub fn set_bar(&mut self) -> &mut Self {
+///     *self = Self::Bar;
+///   }
+/// }
+///
+/// ```
+#[proc_macro_derive(SetVariant)]
+pub fn set_variant(input_token_stream: TokenStream) -> TokenStream {
+    SetVariant::derive(input_token_stream)
 }

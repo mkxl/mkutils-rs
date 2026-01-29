@@ -891,6 +891,14 @@ pub trait Utils {
         self.into_self().map_err(E::io_error)
     }
 
+    #[allow(clippy::wrong_self_convention)]
+    fn is_less_than<T: PartialOrd>(self, rhs: T) -> bool
+    where
+        Self: Into<T>,
+    {
+        self.into() < rhs
+    }
+
     #[cfg(feature = "async")]
     async fn join_all<T>(self) -> T
     where

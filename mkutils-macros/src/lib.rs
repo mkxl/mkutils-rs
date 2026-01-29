@@ -115,10 +115,14 @@ pub fn default(input_token_stream: TokenStream) -> TokenStream {
 /// impl MyEnum {
 ///   pub fn set_foo(&mut self) -> &mut Self {
 ///     *self = Self::Foo;
+///
+///     self
 ///   }
 ///
 ///   pub fn set_bar(&mut self) -> &mut Self {
 ///     *self = Self::Bar;
+///
+///     self
 ///   }
 /// }
 ///

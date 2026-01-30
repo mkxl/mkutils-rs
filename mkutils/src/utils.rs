@@ -727,7 +727,13 @@ pub trait Utils {
 
     #[cfg(any(feature = "ropey", feature = "tui", feature = "misc"))]
     #[must_use]
-    fn interpolate(self, old_min: Self, old_max: Self, new_min: Self, new_max: Self) -> Self
+    fn interpolate(
+        self,
+        old_min: impl Into<Self>,
+        old_max: impl Into<Self>,
+        new_min: impl Into<Self>,
+        new_max: impl Into<Self>,
+    ) -> Self
     where
         Self: Add<Output = Self>
             + Copy
@@ -737,6 +743,10 @@ pub trait Utils {
             + Sized
             + Sub<Output = Self>,
     {
+        let old_min = old_min.into();
+        let old_max = old_max.into();
+        let new_min = new_min.into();
+        let new_max = new_max.into();
         let old_value = self.clamped(old_min, old_max);
         let new_value = new_min + (new_max - new_min) * (old_value - old_min) / (old_max - old_min);
 

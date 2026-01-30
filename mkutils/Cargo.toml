@@ -19,7 +19,7 @@ derive_more = { version = "2.0.1", features = ["constructor", "from", "into", "i
 futures = { version = "0.3.31", optional = true }
 home = { version = "0.5.12", optional = true }
 itertools = "0.14.0"
-mkutils-macros = { version = "0.1.15", path = "../mkutils-macros", optional = true }
+mkutils-macros = { version = "0.1.16", path = "../mkutils-macros", optional = true }
 num = { version = "0.4.3", optional = true }
 poem = { version = "3.1.12", features = ["anyhow", "websocket"], optional = true }
 poem-openapi = { version = "5.1.16", features = ["websocket"], optional = true }

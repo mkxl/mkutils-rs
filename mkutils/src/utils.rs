@@ -78,6 +78,8 @@ use serde_yaml_ng::Error as SerdeYamlError;
     feature = "tui",
 ))]
 use std::fmt::Debug;
+#[cfg(any(feature = "ropey", feature = "tui", feature = "misc"))]
+use std::ops::{Div, Mul, Sub};
 #[cfg(feature = "fs")]
 use std::path::PathBuf;
 use std::{
@@ -429,6 +431,15 @@ pub trait Utils {
         anyhow::bail!("({status}) {text}")
     }
 
+    #[cfg(any(feature = "ropey", feature = "tui", feature = "misc"))]
+    #[must_use]
+    fn clamped(self, min: Self, max: Self) -> Self
+    where
+        Self: PartialOrd + Sized,
+    {
+        num::clamp(self, min, max)
+    }
+
     fn convert<T: From<Self>>(self) -> T
     where
         Self: Sized,
@@ -712,6 +723,24 @@ pub trait Utils {
         Self: BorrowMut<HashMap<K, V>>,
     {
         self.borrow_mut().entry(key).insert_entry(value).into_mut()
+    }
+
+    #[cfg(any(feature = "ropey", feature = "tui", feature = "misc"))]
+    #[must_use]
+    fn interpolate(self, old_min: Self, old_max: Self, new_min: Self, new_max: Self) -> Self
+    where
+        Self: Add<Output = Self>
+            + Copy
+            + Div<Output = Self>
+            + Mul<Output = Self>
+            + PartialOrd
+            + Sized
+            + Sub<Output = Self>,
+    {
+        let old_value = self.clamped(old_min, old_max);
+        let new_value = new_min + (new_max - new_min) * (old_value - old_min) / (old_max - old_min);
+
+        new_value.clamped(new_min, new_max)
     }
 
     fn into_box(self) -> Box<Self>

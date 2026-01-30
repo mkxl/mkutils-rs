@@ -74,8 +74,6 @@ pub use crate::active_vec::ActiveVec;
 pub use crate::event::Event;
 #[cfg(feature = "fmt")]
 pub use crate::fmt::{Debugged, OptionalDisplay};
-#[cfg(any(feature = "ropey", feature = "tui"))]
-pub use crate::geometry::{Orientation, Point, PointU16, PointUsize};
 #[cfg(feature = "misc")]
 pub use crate::indexed::Indexed;
 #[cfg(feature = "tui")]
@@ -105,5 +103,10 @@ pub use crate::timestamped::Timestamped;
 #[cfg(feature = "tracing")]
 pub use crate::tracing::Tracing;
 pub use crate::utils::Utils;
+#[cfg(any(feature = "ropey", feature = "tui"))]
+pub use crate::{
+    geometry::{Orientation, Point, PointU16, PointUsize},
+    transpose::Transpose,
+};
 #[cfg(feature = "mkutils-macros")]
 pub use mkutils_macros::{Default, FromChain, SetVariant, TypeAssoc, context};

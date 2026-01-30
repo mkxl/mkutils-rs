@@ -2,6 +2,7 @@ use crate::geometry::{Orientation, Point};
 use ratatui::layout::{Position, Rect, Size};
 
 pub trait Transpose {
+    #[must_use]
     fn transpose(&self) -> Self;
 }
 

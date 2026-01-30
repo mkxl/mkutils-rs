@@ -2,10 +2,11 @@ mod context;
 mod default;
 mod from_chain;
 mod set_variant;
+mod toggle;
 mod type_assoc;
 mod utils;
 
-use crate::{default::Default, from_chain::FromChain, set_variant::SetVariant, type_assoc::TypeAssoc};
+use crate::{default::Default, from_chain::FromChain, set_variant::SetVariant, toggle::Toggle, type_assoc::TypeAssoc};
 use proc_macro::TokenStream;
 
 // TODO: add documentation
@@ -97,6 +98,7 @@ pub fn default(input_token_stream: TokenStream) -> TokenStream {
     Default::derive(input_token_stream)
 }
 
+/// Adds `set_*()` methods for each unit variant on the given enum.
 ///
 /// # Example
 ///
@@ -125,9 +127,45 @@ pub fn default(input_token_stream: TokenStream) -> TokenStream {
 ///     self
 ///   }
 /// }
-///
 /// ```
 #[proc_macro_derive(SetVariant)]
 pub fn set_variant(input_token_stream: TokenStream) -> TokenStream {
     SetVariant::derive(input_token_stream)
+}
+
+/// Adds a `toggled()` method that maps each enum variant to the next unit variant.
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(Toggle)]
+/// enum MyEnum {
+///   Foo,
+///   Bar,
+///   Baz(String),
+/// }
+/// ```
+///
+/// adds
+///
+/// ```rust
+/// impl MyEnum {
+///   pub fn toggle(&self) -> Self {
+///     match self {
+///         Self::Foo => Self::Bar,
+///         Self::Bar => Self::Foo,
+///         Self::Baz(_string) => Self::Foo,
+///     }
+///   }
+///
+///   pub fn toggle(&mut self) -> &mut Self {
+///     *self = self.toggled();
+///
+///     self
+///   }
+/// }
+/// ```
+#[proc_macro_derive(Toggle)]
+pub fn toggle(input_token_stream: TokenStream) -> TokenStream {
+    Toggle::derive(input_token_stream)
 }

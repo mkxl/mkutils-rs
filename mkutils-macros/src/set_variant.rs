@@ -7,6 +7,7 @@ pub struct SetVariant;
 
 impl SetVariant {
     fn method_block_from_variant(variant: &Variant) -> Option<TokenStream2> {
+        // TODO-76211f: support empty tuple-struct and c-struct enum variants
         if !std::matches!(variant.fields, Fields::Unit) {
             return None;
         }

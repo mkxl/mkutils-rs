@@ -737,19 +737,19 @@ pub trait Utils {
     #[must_use]
     fn interpolate(
         self,
-        old_min: impl Into<f64>,
-        old_max: impl Into<f64>,
-        new_min: impl Into<f64>,
-        new_max: impl Into<f64>,
+        old_min: impl ToPrimitive,
+        old_max: impl ToPrimitive,
+        new_min: impl ToPrimitive,
+        new_max: impl ToPrimitive,
     ) -> Self
     where
-        Self: Bounded + Into<f64> + NumCast,
+        Self: Bounded + NumCast + ToPrimitive,
     {
-        let old_min = old_min.into();
-        let old_max = old_max.into();
-        let new_min = new_min.into();
-        let new_max = new_max.into();
-        let old_value = self.into().clamped(old_min, old_max);
+        let old_min = old_min.cast_or_max::<f64>();
+        let old_max = old_max.cast_or_max::<f64>();
+        let new_min = new_min.cast_or_max::<f64>();
+        let new_max = new_max.cast_or_max::<f64>();
+        let old_value = self.cast_or_max::<f64>().clamped(old_min, old_max);
         let new_value = new_min + (new_max - new_min) * (old_value - old_min) / (old_max - old_min);
         let new_value = new_value.clamped(new_min, new_max);
 

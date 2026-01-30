@@ -78,8 +78,6 @@ use serde_yaml_ng::Error as SerdeYamlError;
     feature = "tui",
 ))]
 use std::fmt::Debug;
-#[cfg(any(feature = "ropey", feature = "tui", feature = "misc"))]
-use std::ops::{Div, Mul, Sub};
 #[cfg(feature = "fs")]
 use std::path::PathBuf;
 use std::{
@@ -729,28 +727,23 @@ pub trait Utils {
     #[must_use]
     fn interpolate(
         self,
-        old_min: impl Into<Self>,
-        old_max: impl Into<Self>,
-        new_min: impl Into<Self>,
-        new_max: impl Into<Self>,
+        old_min: impl Into<f64>,
+        old_max: impl Into<f64>,
+        new_min: impl Into<f64>,
+        new_max: impl Into<f64>,
     ) -> Self
     where
-        Self: Add<Output = Self>
-            + Copy
-            + Div<Output = Self>
-            + Mul<Output = Self>
-            + PartialOrd
-            + Sized
-            + Sub<Output = Self>,
+        Self: Bounded + Into<f64> + NumCast,
     {
         let old_min = old_min.into();
         let old_max = old_max.into();
         let new_min = new_min.into();
         let new_max = new_max.into();
-        let old_value = self.clamped(old_min, old_max);
+        let old_value = self.into().clamped(old_min, old_max);
         let new_value = new_min + (new_max - new_min) * (old_value - old_min) / (old_max - old_min);
+        let new_value = new_value.clamped(new_min, new_max);
 
-        new_value.clamped(new_min, new_max)
+        new_value.cast_or_max()
     }
 
     fn into_box(self) -> Box<Self>

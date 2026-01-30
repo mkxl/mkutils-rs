@@ -36,18 +36,14 @@ pub struct Point<T> {
 }
 
 impl<T> Point<T> {
-    pub const fn const_new(x: T, y: T) -> Self {
+    pub const fn new(x: T, y: T) -> Self {
         Self { x, y }
-    }
-
-    pub fn new<X: Into<T>, Y: Into<T>>(x: X, y: Y) -> Self {
-        Self::const_new(x.into(), y.into())
     }
 
     // TODO: would like to have an [impl<T, S: Into<T>> From<Point<S>> for Point<T>]
     // impl but conflicts with [From<T> for T] when [S = T] in the first
     pub fn into_point<S: From<T>>(self) -> Point<S> {
-        Point::new(self.x, self.y)
+        self.x.pair(self.y).into()
     }
 
     pub fn into_pair(self) -> (T, T) {
@@ -75,31 +71,29 @@ impl<T: ConstZero> Point<T> {
 
 impl<T: Clone + SaturatingSub> Point<T> {
     #[must_use]
-    pub fn saturating_sub(&self, diff: &T, orientation: Orientation) -> Self {
-        if orientation.is_horizontal() {
-            (self.x.saturating_sub(diff), self.y.clone())
-        } else {
-            (self.x.clone(), self.y.saturating_sub(diff))
-        }
-        .into()
+    pub fn saturating_sub(&self, rhs: &Self) -> Self {
+        let x = self.x.saturating_sub(&rhs.x);
+        let y = self.y.saturating_sub(&rhs.y);
+
+        Self::new(x, y)
     }
 }
 
 impl<T, X: Into<T>, Y: Into<T>> From<(X, Y)> for Point<T> {
     fn from((x, y): (X, Y)) -> Self {
-        Self::new(x, y)
+        Self::new(x.into(), y.into())
     }
 }
 
 impl<T: From<u16>> From<Size> for Point<T> {
     fn from(size: Size) -> Self {
-        Self::new(size.width, size.height)
+        size.convert::<(u16, u16)>().into()
     }
 }
 
 impl<T, X: From<T>, Y: From<T>> From<Point<T>> for (X, Y) {
     fn from(point: Point<T>) -> Self {
-        (point.x.into(), point.y.into())
+        point.x.convert::<X>().pair(point.y.into())
     }
 }
 

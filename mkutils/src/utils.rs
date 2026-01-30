@@ -13,6 +13,8 @@ use crate::seq_visitor::SeqVisitor;
 use crate::socket::{Request, Socket};
 #[cfg(feature = "tracing")]
 use crate::status::Status;
+#[cfg(any(feature = "ropey", feature = "tui"))]
+use crate::transpose::Transpose;
 #[cfg(feature = "async")]
 use crate::{into_stream::IntoStream, read_value::ReadValue, run_for::RunForError};
 #[cfg(any(
@@ -445,25 +447,6 @@ pub trait Utils {
         self.into()
     }
 
-    #[cfg(feature = "async")]
-    async fn copy_to_clipboard(&self) -> Result<ExitStatus, IoError>
-    where
-        Self: AsRef<[u8]>,
-    {
-        let (pipe_reader, mut pipe_writer) = std::io::pipe()?;
-        let mut command = Command::new(Self::COPY_COMMAND_STR);
-
-        pipe_writer.write_all_then(self.as_ref())?.flush()?;
-
-        command
-            .stdin(pipe_reader)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .await?
-            .ok()
-    }
-
     fn contains_eq<Q, K>(&self, query: Q) -> bool
     where
         Self: AsRef<[K]>,
@@ -491,6 +474,33 @@ pub trait Utils {
         let context = std::format!("{context}: {path}", path = path.as_ref().display());
 
         self.context(context)
+    }
+
+    #[must_use]
+    fn copied(&self) -> Self
+    where
+        Self: Copy + Sized,
+    {
+        *self
+    }
+
+    #[cfg(feature = "async")]
+    async fn copy_to_clipboard(&self) -> Result<ExitStatus, IoError>
+    where
+        Self: AsRef<[u8]>,
+    {
+        let (pipe_reader, mut pipe_writer) = std::io::pipe()?;
+        let mut command = Command::new(Self::COPY_COMMAND_STR);
+
+        pipe_writer.write_all_then(self.as_ref())?.flush()?;
+
+        command
+            .stdin(pipe_reader)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .await?
+            .ok()
     }
 
     fn create(&self) -> Result<File, IoError>
@@ -1606,6 +1616,15 @@ pub trait Utils {
         Self: Read + Sized,
     {
         serde_yaml_ng::from_reader(self)
+    }
+
+    #[cfg(any(feature = "ropey", feature = "tui"))]
+    #[must_use]
+    fn transpose(&self) -> Self
+    where
+        Self: Transpose + Sized,
+    {
+        Transpose::transpose(self)
     }
 
     fn try_convert<T: TryFrom<Self>>(self) -> Result<T, T::Error>

@@ -50,6 +50,10 @@ impl<T> Point<T> {
         Point::new(self.x, self.y)
     }
 
+    pub fn into_pair(self) -> (T, T) {
+        self.into()
+    }
+
     pub const fn get(&self, orientation: Orientation) -> &T {
         match orientation {
             Orientation::Horizontal => &self.x,

@@ -65,6 +65,9 @@ mod timestamped;
 #[cfg(feature = "tracing")]
 mod tracing;
 
+#[cfg(any(feature = "ropey", feature = "tui"))]
+mod transpose;
+
 #[cfg(feature = "misc")]
 pub use crate::active_vec::ActiveVec;
 #[cfg(feature = "async")]

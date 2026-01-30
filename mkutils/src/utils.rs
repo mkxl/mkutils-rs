@@ -1624,7 +1624,7 @@ pub trait Utils {
     where
         Self: Transpose + Sized,
     {
-        Transpose::transpose(self)
+        Transpose::to_transpose(self)
     }
 
     fn try_convert<T: TryFrom<Self>>(self) -> Result<T, T::Error>

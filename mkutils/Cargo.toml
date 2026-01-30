@@ -19,7 +19,7 @@ derive_more = { version = "2.0.1", features = ["constructor", "from", "into", "i
 futures = { version = "0.3.31", optional = true }
 home = { version = "0.5.12", optional = true }
 itertools = "0.14.0"
-mkutils-macros = { version = "0.1.23", path = "../mkutils-macros", optional = true }
+mkutils-macros = { version = "0.1.24", path = "../mkutils-macros", optional = true }
 num = { version = "0.4.3", optional = true }
 poem = { version = "3.1.12", features = ["anyhow", "websocket"], optional = true }
 poem-openapi = { version = "5.1.16", features = ["websocket"], optional = true }
@@ -43,18 +43,18 @@ valuable = { version = "0.1.1", optional = true }
 [features]
 async = ["dep:anyhow", "dep:bytes", "dep:derive_more", "dep:futures", "dep:tokio", "dep:tokio-stream", "dep:tokio-util"]
 fmt = ["dep:derive_more"]
-output = ["dep:derive_more"]
 fs = ["dep:anyhow", "dep:camino", "dep:derive_more", "dep:home", "dep:shellexpand"]
+misc = ["dep:derive_more", "dep:num"]
+output = ["dep:derive_more"]
 poem = ["dep:bytes", "dep:futures", "dep:poem", "dep:poem-openapi", "dep:serde_json"]
 process = ["dep:anyhow", "dep:tokio"]
+reqwest = ["dep:anyhow", "dep:reqwest", "dep:serde"]
 rmp = ["dep:rmp-serde", "dep:serde"]
 ropey = ["dep:derive_more", "dep:num", "dep:ropey", "dep:serde", "dep:tokio", "dep:unicode-segmentation"]
-reqwest = ["dep:anyhow", "dep:reqwest", "dep:serde"]
 serde = ["dep:serde", "dep:serde_json", "dep:serde_yaml_ng", "dep:valuable"]
 socket = ["dep:anyhow", "async", "dep:derive_more", "rmp", "output"]
 tracing = ["dep:console-subscriber", "dep:derive_more", "dep:tracing", "dep:tracing-subscriber"]
 tui = ["dep:anyhow", "dep:derive_more", "dep:num", "dep:serde", "dep:tracing", "dep:trie-rs", "dep:unicode-segmentation"]
-misc = ["dep:derive_more", "dep:num"]
 
 [lints]
 workspace = true

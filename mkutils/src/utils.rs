@@ -36,6 +36,8 @@ use camino::{Utf8Path, Utf8PathBuf};
 use futures::Stream;
 #[cfg(feature = "async")]
 use futures::{Sink, SinkExt, StreamExt, TryFuture, future::Either, stream::Filter, stream::FuturesUnordered};
+#[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
+use num::Zero;
 #[cfg(feature = "tui")]
 use num::traits::{SaturatingAdd, SaturatingSub};
 #[cfg(feature = "misc")]
@@ -431,7 +433,7 @@ pub trait Utils {
         anyhow::bail!("({status}) {text}")
     }
 
-    #[cfg(any(feature = "ropey", feature = "tui", feature = "misc"))]
+    #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
     #[must_use]
     fn clamped(self, min: Self, max: Self) -> Self
     where
@@ -733,7 +735,7 @@ pub trait Utils {
         self.borrow_mut().entry(key).insert_entry(value).into_mut()
     }
 
-    #[cfg(any(feature = "ropey", feature = "tui", feature = "misc"))]
+    #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
     #[must_use]
     fn interpolate(
         self,
@@ -939,6 +941,14 @@ pub trait Utils {
         Self: Into<T>,
     {
         self.into() < rhs
+    }
+
+    #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
+    fn is_positive(&self) -> bool
+    where
+        Self: PartialOrd + Zero,
+    {
+        &Self::zero() < self
     }
 
     #[cfg(feature = "async")]

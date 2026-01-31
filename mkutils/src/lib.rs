@@ -87,7 +87,7 @@ pub use crate::key_map::key_map_state::{KeyMapIncSearch, KeyMapState};
 #[cfg(feature = "output")]
 pub use crate::output::Output;
 #[cfg(feature = "process")]
-pub use crate::process::Process;
+pub use crate::process::{Process, ProcessBuilder};
 #[cfg(feature = "async")]
 pub use crate::read_value::ReadValue;
 #[cfg(feature = "ropey")]

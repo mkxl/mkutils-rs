@@ -7,6 +7,8 @@ use crate::geometry::PointUsize;
 use crate::is::Is;
 #[cfg(feature = "output")]
 use crate::output::Output;
+#[cfg(feature = "process")]
+use crate::process::ProcessBuilder;
 #[cfg(any(feature = "serde", feature = "tui"))]
 use crate::seq_visitor::SeqVisitor;
 #[cfg(feature = "socket")]
@@ -36,12 +38,10 @@ use camino::{Utf8Path, Utf8PathBuf};
 use futures::Stream;
 #[cfg(feature = "async")]
 use futures::{Sink, SinkExt, StreamExt, TryFuture, future::Either, stream::Filter, stream::FuturesUnordered};
-#[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
-use num::Zero;
 #[cfg(feature = "tui")]
 use num::traits::{SaturatingAdd, SaturatingSub};
-#[cfg(feature = "misc")]
-use num::{Bounded, NumCast, ToPrimitive};
+#[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
+use num::{Bounded, NumCast, ToPrimitive, Zero};
 #[cfg(feature = "poem")]
 use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
 #[cfg(feature = "poem")]
@@ -84,6 +84,8 @@ use serde_yaml_ng::Error as SerdeYamlError;
 use std::fmt::Debug;
 #[cfg(feature = "fs")]
 use std::path::PathBuf;
+#[cfg(feature = "process")]
+use std::process::ExitStatus;
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
@@ -107,11 +109,9 @@ use std::{
     time::Instant,
 };
 #[cfg(feature = "async")]
-use std::{
-    fs::Metadata,
-    process::{ExitStatus, Stdio},
-    time::Duration,
-};
+use std::{fs::Metadata, time::Duration};
+#[cfg(any(feature = "async", feature = "process"))]
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 #[cfg(any(feature = "async", feature = "ropey"))]
 use tokio::{
     fs::File as TokioFile,
@@ -119,8 +119,7 @@ use tokio::{
 };
 #[cfg(feature = "async")]
 use tokio::{
-    io::{AsyncReadExt, AsyncWrite, AsyncWriteExt, BufWriter as TokioBufWriter},
-    process::Command,
+    io::{AsyncWrite, BufWriter as TokioBufWriter},
     sync::oneshot::Sender as OneshotSender,
     task::JoinHandle,
     task::{JoinSet, LocalSet},
@@ -140,7 +139,8 @@ use valuable::Value;
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
-    const COPY_COMMAND_STR: &str = "pbpaste";
+    const READ_FROM_CLIPBOARD_COMMAND: &str = "pbpaste";
+    const WRITE_TO_CLIPBOARD_COMMAND: &str = "pbcopy";
     const IS_EXTENDED: bool = true;
     const NEWLINE: &str = "\n";
 
@@ -343,7 +343,7 @@ pub trait Utils {
         TokioBufWriter::new(self)
     }
 
-    #[cfg(feature = "misc")]
+    #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
     fn cast_or_max<T: Bounded + NumCast>(self) -> T
     where
         Self: Sized + ToPrimitive,
@@ -486,23 +486,32 @@ pub trait Utils {
         *self
     }
 
-    #[cfg(feature = "async")]
-    async fn copy_to_clipboard(&self) -> Result<ExitStatus, IoError>
+    #[cfg(feature = "process")]
+    async fn write_to_clipboard(&self) -> Result<ExitStatus, AnyhowError>
     where
         Self: AsRef<[u8]>,
     {
-        let (pipe_reader, mut pipe_writer) = std::io::pipe()?;
-        let mut command = Command::new(Self::COPY_COMMAND_STR);
+        let mut process = ProcessBuilder::new(Self::WRITE_TO_CLIPBOARD_COMMAND).build()?;
 
-        pipe_writer.write_all_then(self.as_ref())?.flush()?;
-
-        command
-            .stdin(pipe_reader)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
+        process
+            .stdin_mut()
+            .write_all_then_async(self.as_ref())
             .await?
-            .ok()
+            .flush()
+            .await?;
+
+        process.run().await?.ok()
+    }
+
+    #[cfg(feature = "process")]
+    #[must_use]
+    async fn read_from_clipboard() -> Result<String, AnyhowError> {
+        let mut process = ProcessBuilder::new(Self::READ_FROM_CLIPBOARD_COMMAND).build()?;
+        let string = process.stdout_mut().read_to_string_async().await?;
+
+        process.run().await?;
+
+        string.ok()
     }
 
     fn create(&self) -> Result<File, IoError>
@@ -1256,8 +1265,8 @@ pub trait Utils {
         Rect { x, y, width, height }
     }
 
-    #[cfg(feature = "async")]
-    async fn read_string_async(&mut self) -> Result<String, IoError>
+    #[cfg(any(feature = "async", feature = "process"))]
+    async fn read_to_string_async(&mut self) -> Result<String, IoError>
     where
         Self: AsyncReadExt + Unpin,
     {
@@ -1269,31 +1278,13 @@ pub trait Utils {
     }
 
     #[cfg(feature = "async")]
-    async fn read_to_string_async(self) -> ReadValue<Self>
+    async fn read_to_string_fs_async(self) -> ReadValue<Self>
     where
         Self: AsRef<Path> + Sized,
     {
         let result = tokio::fs::read_to_string(self.as_ref()).await;
 
         ReadValue::new(self, result)
-    }
-
-    #[cfg(feature = "async")]
-    async fn read_to_string_else_stdin_async<P: AsRef<Path>>(self) -> ReadValue<Option<P>>
-    where
-        Self: Is<Option<P>> + Sized,
-    {
-        if let Some(filepath) = self.into_self() {
-            tokio::fs::read_to_string(filepath.as_ref()).await.pair(filepath.some())
-        } else {
-            tokio::io::stdin()
-                .buf_reader_async()
-                .read_string_async()
-                .await
-                .pair(None)
-        }
-        .reversed()
-        .into()
     }
 
     fn ready(self) -> Ready<Self>
@@ -1738,7 +1729,7 @@ pub trait Utils {
         self.write_all(byte_str)?.with(self).ok()
     }
 
-    #[cfg(feature = "async")]
+    #[cfg(any(feature = "async", feature = "process"))]
     async fn write_all_then_async(&mut self, byte_str: &[u8]) -> Result<&mut Self, IoError>
     where
         Self: AsyncWriteExt + Unpin,

@@ -57,6 +57,12 @@ impl<T> ActiveVec<T> {
         (index, item)
     }
 
+    pub const fn set_active_index(&mut self, active_index: usize) {
+        if active_index < self.vec.len() {
+            self.active_index = active_index;
+        }
+    }
+
     pub fn cycle(&mut self, amount: isize) -> &mut Self {
         self.active_index.cycle_in_place(amount, self.vec.len());
 

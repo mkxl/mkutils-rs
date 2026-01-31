@@ -50,8 +50,11 @@ impl<T> ActiveVec<T> {
         element.some()
     }
 
-    pub fn push(&mut self, item: T) {
-        self.vec.push(item);
+    pub fn push(&mut self, item: T) -> (usize, &mut T) {
+        let index = self.vec.len();
+        let item = self.vec.mut_push(item);
+
+        (index, item)
     }
 
     pub fn cycle(&mut self, amount: isize) -> &mut Self {

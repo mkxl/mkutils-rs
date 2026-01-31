@@ -1062,6 +1062,18 @@ pub trait Utils {
         tokio::fs::metadata(self).await
     }
 
+    // NOTE: [https://doc.rust-lang.org/stable/std/vec/struct.Vec.html#method.push_mut]
+    fn mut_push<T>(&mut self, item: T) -> &mut T
+    where
+        Self: BorrowMut<Vec<T>>,
+    {
+        let vec = self.borrow_mut();
+
+        vec.push(item);
+
+        vec.last_mut().unwrap()
+    }
+
     #[cfg(feature = "ropey")]
     fn num_lines_and_extended_graphemes<'a>(self) -> PointUsize
     where

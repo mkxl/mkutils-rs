@@ -46,6 +46,15 @@ impl Tracing<StderrLockFn> {
     pub const DEFAULT_TOKIO_CONSOLE_ENABLED: bool = false;
     pub const DEFAULT_TOKIO_CONSOLE_IP_ADDR: IpAddr = ConsoleServer::DEFAULT_IP;
     pub const DEFAULT_TOKIO_CONSOLE_PORT: u16 = ConsoleServer::DEFAULT_PORT;
+
+    #[must_use]
+    pub fn default_span_events() -> FmtSpan {
+        FmtSpan::NEW | FmtSpan::CLOSE
+    }
+
+    pub fn default_writer() -> StderrLock<'static> {
+        Self::stderr_lock_writer()
+    }
 }
 
 impl Default for Tracing<StderrLockFn> {
@@ -57,16 +66,12 @@ impl Default for Tracing<StderrLockFn> {
             tokio_console_enabled: Self::DEFAULT_TOKIO_CONSOLE_ENABLED,
             tokio_console_ip_addr: Self::DEFAULT_TOKIO_CONSOLE_IP_ADDR,
             tokio_console_port: Self::DEFAULT_TOKIO_CONSOLE_PORT,
-            writer: Self::stderr_lock_writer,
+            writer: Self::default_writer,
         }
     }
 }
 
 impl<W> Tracing<W> {
-    fn default_span_events() -> FmtSpan {
-        FmtSpan::NEW | FmtSpan::CLOSE
-    }
-
     pub fn stdout_lock_writer() -> StdoutLock<'static> {
         std::io::stdout().lock()
     }

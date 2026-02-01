@@ -67,11 +67,11 @@ impl<W> Tracing<W> {
         FmtSpan::NEW | FmtSpan::CLOSE
     }
 
-    fn stdout_lock_writer() -> StdoutLock<'static> {
+    pub fn stdout_lock_writer() -> StdoutLock<'static> {
         std::io::stdout().lock()
     }
 
-    fn stderr_lock_writer() -> StderrLock<'static> {
+    pub fn stderr_lock_writer() -> StderrLock<'static> {
         std::io::stderr().lock()
     }
 

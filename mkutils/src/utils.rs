@@ -566,6 +566,14 @@ pub trait Utils {
     }
 
     #[cfg(feature = "output")]
+    fn end_err<T>(self) -> Output<T, Self>
+    where
+        Self: Sized,
+    {
+        Output::EndErr(self)
+    }
+
+    #[cfg(feature = "output")]
     fn end_ok<T, E>(&self) -> Output<T, E> {
         Output::EndOk
     }
@@ -1125,6 +1133,14 @@ pub trait Utils {
     #[cfg(feature = "fmt")]
     fn optional_display(&self) -> OptionalDisplay<'_, Self> {
         OptionalDisplay::new(self)
+    }
+
+    #[cfg(feature = "output")]
+    fn output_ok<E>(self) -> Output<Self, E>
+    where
+        Self: Sized,
+    {
+        Output::Ok(self)
     }
 
     fn owned<B: ?Sized + ToOwned<Owned = Self>>(self) -> Cow<'static, B>

@@ -1246,6 +1246,13 @@ pub trait Utils {
         collection.extend(self.once());
     }
 
+    fn push_all_to<T: Extend<Self::Item>>(self, collection: &mut T)
+    where
+        Self: IntoIterator + Sized,
+    {
+        collection.extend(self);
+    }
+
     #[cfg(feature = "reqwest")]
     fn query_all<T: Serialize>(self, name: &str, values: impl IntoIterator<Item = T>) -> RequestBuilder
     where
@@ -1529,10 +1536,10 @@ pub trait Utils {
     where
         Self: AsRef<[u8]>,
     {
-        let bytes = self.as_ref();
+        let byte_str = self.as_ref();
         let predicate = |substr| substr == query;
         let query_len = query.len();
-        let begin = bytes.windows(query_len).position(predicate)?;
+        let begin = byte_str.windows(query_len).position(predicate)?;
         let end = begin + query_len;
 
         (begin, end).some()

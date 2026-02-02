@@ -51,21 +51,26 @@ impl Terminal {
 
     // NOTE: no way to set the terminal title using ratatui, so must fallback to
     // crossterm methods
-    pub fn set_title<T: Display>(&mut self, title: T) -> Result<(), IoError> {
+    pub fn set_title<T: Display>(&mut self, title: T) -> Result<&mut Self, IoError> {
         let set_title = SetTitle(title);
 
         self.byte_str.queue(set_title)?.flush()?;
 
-        ().ok()
+        self.ok()
     }
 
-    pub fn draw<F: FnOnce(&mut Frame) -> Result<(), IoError>>(&mut self, draw_fn: F) -> Result<Vec<u8>, IoError> {
+    pub fn draw<F: FnOnce(&mut Frame) -> Result<(), IoError>>(&mut self, draw_fn: F) -> Result<&mut Self, IoError> {
         self.ratatui_terminal.try_draw(draw_fn)?;
+        self.ratatui_terminal
+            .backend_mut()
+            .writer_mut()
+            .split_off(0)
+            .push_all_to(&mut self.byte_str);
 
-        let mut byte_str = self.ratatui_terminal.backend_mut().writer_mut().split_off(0);
+        self.ok()
+    }
 
-        byte_str.append(&mut self.byte_str);
-
-        byte_str.ok()
+    pub fn take_byte_str(&mut self) -> Vec<u8> {
+        self.byte_str.mem_take()
     }
 }

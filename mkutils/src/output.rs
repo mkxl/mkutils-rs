@@ -29,11 +29,11 @@ impl<T, E> Output<T, E> {
         }
     }
 
-    pub fn into_end(self) -> Result<(), E> {
-        if let Self::EndErr(err) = self {
-            err.err()
-        } else {
-            ().ok()
+    pub fn into_end(self) -> Option<Result<(), E>> {
+        match self {
+            Self::Ok(_ok) => None,
+            Self::EndOk => ().ok().some(),
+            Self::EndErr(err) => err.err().some(),
         }
     }
 }

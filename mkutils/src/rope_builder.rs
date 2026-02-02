@@ -7,7 +7,8 @@ use std::{
 };
 use tokio::io::AsyncReadExt;
 
-pub struct RopeBuilder<R, const N: usize = 8192> {
+// NOTE: can't use [Utils] and can't use [Self] so using [RopeyBuilder] instead
+pub struct RopeBuilder<R, const N: usize = { RopeyBuilder::DEFAULT_ROPE_BUILDER_BUFFER_SIZE }> {
     reader: R,
     builder: RopeyBuilder,
     buffer: [u8; N],

@@ -141,10 +141,11 @@ use valuable::Value;
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
-    const READ_FROM_CLIPBOARD_COMMAND: &str = "pbpaste";
-    const WRITE_TO_CLIPBOARD_COMMAND: &str = "pbcopy";
+    const DEFAULT_ROPE_BUILDER_BUFFER_SIZE: usize = 8192;
     const IS_EXTENDED: bool = true;
     const NEWLINE: &str = "\n";
+    const READ_FROM_CLIPBOARD_COMMAND: &str = "pbpaste";
+    const WRITE_TO_CLIPBOARD_COMMAND: &str = "pbcopy";
 
     #[cfg(feature = "async")]
     async fn abort_all_and_wait<T: 'static>(&mut self)

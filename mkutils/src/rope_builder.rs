@@ -4,12 +4,8 @@ use std::{
     io::{Error as IoError, ErrorKind as IoErrorKind},
     marker::Unpin,
     ops::Range,
-    path::Path,
 };
-use tokio::{
-    fs::File as TokioFile,
-    io::{AsyncReadExt, BufReader as TokioBufReader},
-};
+use tokio::io::AsyncReadExt;
 
 pub struct RopeBuilder<R, const N: usize = 8192> {
     reader: R,
@@ -117,16 +113,5 @@ impl<R: AsyncReadExt + Unpin, const N: usize> RopeBuilder<R, N> {
                 }
             }
         }
-    }
-}
-
-impl<const N: usize> RopeBuilder<TokioBufReader<TokioFile>, N> {
-    pub async fn from_filepath<T: AsRef<Path>>(filepath: T) -> Result<Self, IoError> {
-        filepath
-            .open_async()
-            .await?
-            .buf_reader_async()
-            .pipe_into(Self::new)
-            .ok()
     }
 }

@@ -66,7 +66,7 @@ impl<T> Point<T> {
 }
 
 impl<T: ConstZero> Point<T> {
-    pub const ORIGIN: Self = Self { x: T::ZERO, y: T::ZERO };
+    pub const ZERO: Self = Self { x: T::ZERO, y: T::ZERO };
 }
 
 impl<T: Clone + SaturatingSub> Point<T> {

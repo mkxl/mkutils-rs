@@ -9,6 +9,8 @@ use crate::is::Is;
 use crate::output::Output;
 #[cfg(feature = "process")]
 use crate::process::ProcessBuilder;
+#[cfg(feature = "ropey")]
+use crate::rope_builder::RopeBuilder;
 #[cfg(any(feature = "serde", feature = "tui"))]
 use crate::seq_visitor::SeqVisitor;
 #[cfg(feature = "socket")]
@@ -1336,6 +1338,18 @@ pub trait Utils {
         let (x, y) = self.into_self();
 
         y.pair(x)
+    }
+
+    #[cfg(feature = "ropey")]
+    async fn rope_builder<const N: usize>(&self) -> Result<RopeBuilder<TokioBufReader<TokioFile>, N>, IoError>
+    where
+        Self: AsRef<Path>,
+    {
+        self.open_async()
+            .await?
+            .buf_reader_async()
+            .pipe_into(RopeBuilder::new)
+            .ok()
     }
 
     #[cfg(feature = "async")]

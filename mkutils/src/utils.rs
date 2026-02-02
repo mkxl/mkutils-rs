@@ -1341,15 +1341,16 @@ pub trait Utils {
     }
 
     #[cfg(feature = "ropey")]
-    async fn rope_builder<const N: usize>(&self) -> Result<RopeBuilder<TokioBufReader<TokioFile>, N>, IoError>
+    async fn rope<const N: usize>(&self) -> Result<Rope, IoError>
     where
         Self: AsRef<Path>,
     {
         self.open_async()
             .await?
             .buf_reader_async()
-            .pipe_into(RopeBuilder::new)
-            .ok()
+            .pipe_into(RopeBuilder::<_, N>::new)
+            .build()
+            .await
     }
 
     #[cfg(feature = "async")]

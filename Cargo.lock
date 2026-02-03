@@ -1443,7 +1443,7 @@ dependencies = [
 
 [[package]]
 name = "mkutils"
-version = "0.1.36"
+version = "0.1.38"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1478,7 +1478,7 @@ dependencies = [
 
 [[package]]
 name = "mkutils-macros"
-version = "0.1.36"
+version = "0.1.38"
 dependencies = [
  "heck",
  "proc-macro2",

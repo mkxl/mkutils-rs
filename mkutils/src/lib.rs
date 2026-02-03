@@ -97,6 +97,8 @@ pub use crate::read_value::ReadValue;
 pub use crate::rope_builder::RopeBuilder;
 #[cfg(feature = "tui")]
 pub use crate::screen::{Screen, ScreenConfig, ScreenTerminal, Stdout};
+#[cfg(feature = "tui")]
+pub use crate::scrollable::Scrollable;
 #[cfg(feature = "socket")]
 pub use crate::socket::{Request, Socket};
 #[cfg(feature = "tui")]

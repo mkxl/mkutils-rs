@@ -1,4 +1,5 @@
 use crate::{geometry::PointU16, utils::Utils};
+use anyhow::Error as AnyhowError;
 use crossterm::{QueueableCommand, terminal::SetTitle};
 use ratatui::{Frame, Terminal as BaseRatatuiTerminal, TerminalOptions, Viewport, backend::CrosstermBackend};
 use std::{
@@ -59,8 +60,8 @@ impl Terminal {
         self.ok()
     }
 
-    pub fn draw<F: FnOnce(&mut Frame) -> Result<(), IoError>>(&mut self, draw_fn: F) -> Result<&mut Self, IoError> {
-        self.ratatui_terminal.try_draw(draw_fn)?;
+    pub fn draw<F: FnOnce(&mut Frame) -> Result<(), AnyhowError>>(&mut self, draw_fn: F) -> Result<&mut Self, IoError> {
+        self.ratatui_terminal.try_draw(|frame| draw_fn(frame).io_result())?;
         self.ratatui_terminal
             .backend_mut()
             .writer_mut()

@@ -98,7 +98,7 @@ pub use crate::rope_builder::RopeBuilder;
 #[cfg(feature = "tui")]
 pub use crate::screen::{Screen, ScreenConfig, ScreenTerminal, Stdout};
 #[cfg(feature = "tui")]
-pub use crate::scrollable::{Scrollable, ScrollWhen, ScrollCount};
+pub use crate::scrollable::{ScrollCount, ScrollWhen, Scrollable};
 #[cfg(feature = "socket")]
 pub use crate::socket::{Request, Socket};
 #[cfg(feature = "tui")]

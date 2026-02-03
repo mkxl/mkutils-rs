@@ -1491,12 +1491,21 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn scroll(&mut self, scroll_count: ScrollCount, scroll_when: ScrollWhen, content_size: PointUsize, orientation: Orientation, add: bool)
-    where
+    fn scroll(
+        &mut self,
+        scroll_count: ScrollCount,
+        scroll_when: ScrollWhen,
+        content_size: PointUsize,
+        orientation: Orientation,
+        add: bool,
+    ) where
         Self: Scrollable,
     {
         let scroll_count = self.as_immut().scroll_count(scroll_count, orientation);
-        let max_scroll_offset = *self.as_immut().max_scroll_offset(scroll_when, content_size).get(orientation);
+        let max_scroll_offset = *self
+            .as_immut()
+            .max_scroll_offset(scroll_when, content_size)
+            .get(orientation);
 
         self.scroll_offset_mut()
             .get_mut(orientation)

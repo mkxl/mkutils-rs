@@ -294,7 +294,7 @@ pub trait Utils {
     }
 
     #[cfg(feature = "ropey")]
-    fn as_slice(&self) -> RopeSlice<'_>
+    fn as_rope_slice(&self) -> RopeSlice<'_>
     where
         Self: Borrow<Rope>,
     {

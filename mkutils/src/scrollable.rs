@@ -17,6 +17,4 @@ pub trait Scrollable {
     fn scroll_offset_mut(&mut self) -> &mut PointUsize;
 
     fn latest_content_render_size(&self) -> PointUsize;
-
-    fn content_size(&self) -> PointUsize;
 }

@@ -1480,23 +1480,23 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn max_scroll_offset(&self, scroll_when: ScrollWhen) -> PointUsize
+    fn max_scroll_offset(&self, scroll_when: ScrollWhen, content_size: PointUsize) -> PointUsize
     where
         Self: Scrollable,
     {
         match scroll_when {
-            ScrollWhen::Always => self.content_size().saturating_sub_scalar(&1),
-            ScrollWhen::ForLargeContent => self.content_size().saturating_sub(&self.latest_content_render_size()),
+            ScrollWhen::Always => content_size.saturating_sub_scalar(&1),
+            ScrollWhen::ForLargeContent => content_size.saturating_sub(&self.latest_content_render_size()),
         }
     }
 
     #[cfg(feature = "tui")]
-    fn scroll(&mut self, scroll_count: ScrollCount, scroll_when: ScrollWhen, orientation: Orientation, add: bool)
+    fn scroll(&mut self, scroll_count: ScrollCount, scroll_when: ScrollWhen, content_size: PointUsize, orientation: Orientation, add: bool)
     where
         Self: Scrollable,
     {
         let scroll_count = self.as_immut().scroll_count(scroll_count, orientation);
-        let max_scroll_offset = *self.as_immut().max_scroll_offset(scroll_when).get(orientation);
+        let max_scroll_offset = *self.as_immut().max_scroll_offset(scroll_when, content_size).get(orientation);
 
         self.scroll_offset_mut()
             .get_mut(orientation)
@@ -1504,35 +1504,35 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn scroll_down(&mut self, scroll_count: ScrollCount, scroll_when: ScrollWhen)
+    fn scroll_down(&mut self, scroll_count: ScrollCount, content_size: PointUsize, scroll_when: ScrollWhen)
     where
         Self: Scrollable,
     {
-        self.scroll(scroll_count, scroll_when, Orientation::Vertical, true);
+        self.scroll(scroll_count, scroll_when, content_size, Orientation::Vertical, true);
     }
 
     #[cfg(feature = "tui")]
-    fn scroll_up(&mut self, scroll_count: ScrollCount, scroll_when: ScrollWhen)
+    fn scroll_up(&mut self, scroll_count: ScrollCount, content_size: PointUsize, scroll_when: ScrollWhen)
     where
         Self: Scrollable,
     {
-        self.scroll(scroll_count, scroll_when, Orientation::Vertical, false);
+        self.scroll(scroll_count, scroll_when, content_size, Orientation::Vertical, false);
     }
 
     #[cfg(feature = "tui")]
-    fn scroll_left(&mut self, scroll_count: ScrollCount, scroll_when: ScrollWhen)
+    fn scroll_left(&mut self, scroll_count: ScrollCount, content_size: PointUsize, scroll_when: ScrollWhen)
     where
         Self: Scrollable,
     {
-        self.scroll(scroll_count, scroll_when, Orientation::Horizontal, false);
+        self.scroll(scroll_count, scroll_when, content_size, Orientation::Horizontal, false);
     }
 
     #[cfg(feature = "tui")]
-    fn scroll_right(&mut self, scroll_count: ScrollCount, scroll_when: ScrollWhen)
+    fn scroll_right(&mut self, scroll_count: ScrollCount, content_size: PointUsize, scroll_when: ScrollWhen)
     where
         Self: Scrollable,
     {
-        self.scroll(scroll_count, scroll_when, Orientation::Horizontal, true);
+        self.scroll(scroll_count, scroll_when, content_size, Orientation::Horizontal, true);
     }
 
     #[cfg(feature = "async")]

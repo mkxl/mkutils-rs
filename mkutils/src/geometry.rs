@@ -77,6 +77,14 @@ impl<T: Clone + SaturatingSub> Point<T> {
 
         Self::new(x, y)
     }
+
+    #[must_use]
+    pub fn saturating_sub_scalar(&self, rhs: &T) -> Self {
+        let x = self.x.saturating_sub(rhs);
+        let y = self.y.saturating_sub(rhs);
+
+        Self::new(x, y)
+    }
 }
 
 impl<T, X: Into<T>, Y: Into<T>> From<(X, Y)> for Point<T> {

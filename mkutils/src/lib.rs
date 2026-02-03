@@ -47,6 +47,9 @@ mod run_for;
 #[cfg(feature = "tui")]
 mod screen;
 
+#[cfg(feature = "tui")]
+mod scrollable;
+
 #[cfg(any(feature = "serde", feature = "tui"))]
 mod seq_visitor;
 

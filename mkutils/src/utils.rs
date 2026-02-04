@@ -48,6 +48,8 @@ use futures::{Sink, SinkExt, StreamExt, TryFuture, future::Either, stream::Filte
 use num::traits::{SaturatingAdd, SaturatingSub};
 #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
 use num::{Bounded, NumCast, ToPrimitive, Zero};
+#[cfg(feature = "tui")]
+use palette::IntoColor;
 #[cfg(feature = "poem")]
 use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
 #[cfg(feature = "poem")]
@@ -791,6 +793,14 @@ pub trait Utils {
         Self: Sized,
     {
         ControlFlow::Break(self)
+    }
+
+    #[cfg(feature = "tui")]
+    fn into_color<T>(self) -> T
+    where
+        Self: IntoColor<T>,
+    {
+        IntoColor::into_color(self)
     }
 
     fn into_continue<B>(self) -> ControlFlow<B, Self>

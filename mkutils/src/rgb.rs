@@ -1,15 +1,28 @@
 use crate::utils::Utils;
 use derive_more::From;
-use palette::Srgb;
+use palette::{Lighten, Okhsl, Srgb};
 use ratatui::style::Color;
 use serde::{Deserialize, Deserializer, de::Error};
 use std::str::FromStr;
 
 type SrgbU8 = Srgb<u8>;
 
-#[derive(From)]
+#[derive(Clone, Copy, Debug, From)]
 pub struct Rgb {
     srgb: SrgbU8,
+}
+
+impl Rgb {
+    #[must_use]
+    pub fn lighten_fixed(&self, amount: f32) -> Self {
+        self.srgb
+            .into_format::<f32>()
+            .into_color::<Okhsl<f32>>()
+            .lighten_fixed(amount)
+            .into_color::<Srgb<f32>>()
+            .into_format()
+            .into()
+    }
 }
 
 impl FromStr for Rgb {

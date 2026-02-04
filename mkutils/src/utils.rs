@@ -171,9 +171,9 @@ pub trait Utils {
         let path = self.as_ref();
 
         if path.is_absolute() {
-            path.borrowed().ok()
+            path.to_cow_borrowed().ok()
         } else {
-            camino::absolute_utf8(path)?.owned::<Utf8Path>().ok()
+            camino::absolute_utf8(path)?.into_cow_owned::<Utf8Path>().ok()
         }
     }
 
@@ -315,13 +315,6 @@ pub trait Utils {
         Self: Into<Line<'a>> + Sized,
     {
         Block::bordered().title(self)
-    }
-
-    fn borrowed(&self) -> Cow<'_, Self>
-    where
-        Self: ToOwned,
-    {
-        Cow::Borrowed(self)
     }
 
     fn buf_reader(self) -> BufReader<Self>
@@ -603,9 +596,9 @@ pub trait Utils {
         if let Some(relative_path_str) = path_str.strip_prefix("~/")
             && let Some(home_dirpath) = Self::home_dirpath()
         {
-            home_dirpath.join(relative_path_str).owned()
+            home_dirpath.join(relative_path_str).into_cow_owned()
         } else {
-            path_str.as_utf8_path().borrowed()
+            path_str.as_utf8_path().to_cow_borrowed()
         }
     }
 
@@ -620,14 +613,14 @@ pub trait Utils {
             && let Some(relative_path_str) = path_str.strip_prefix(home_dirpath.as_str())
         {
             if relative_path_str.is_empty() {
-                "~".convert::<Utf8PathBuf>().owned()
+                "~".convert::<Utf8PathBuf>().into_cow_owned()
             } else if relative_path_str.as_utf8_path().is_absolute() {
-                "~".cat(relative_path_str).convert::<Utf8PathBuf>().owned()
+                "~".cat(relative_path_str).convert::<Utf8PathBuf>().into_cow_owned()
             } else {
-                path_str.as_utf8_path().borrowed()
+                path_str.as_utf8_path().to_cow_borrowed()
             }
         } else {
-            path_str.as_utf8_path().borrowed()
+            path_str.as_utf8_path().to_cow_borrowed()
         }
     }
 
@@ -805,6 +798,13 @@ pub trait Utils {
         Self: Sized,
     {
         ControlFlow::Continue(self)
+    }
+
+    fn into_cow_owned<B: ?Sized + ToOwned<Owned = Self>>(self) -> Cow<'static, B>
+    where
+        Self: Sized,
+    {
+        Cow::Owned(self)
     }
 
     #[cfg(feature = "poem")]
@@ -1149,13 +1149,6 @@ pub trait Utils {
         Self: Sized,
     {
         Output::Ok(self)
-    }
-
-    fn owned<B: ?Sized + ToOwned<Owned = Self>>(self) -> Cow<'static, B>
-    where
-        Self: Sized,
-    {
-        Cow::Owned(self)
     }
 
     fn pair<T>(self, rhs: T) -> (Self, T)
@@ -1647,6 +1640,13 @@ pub trait Utils {
         Self: Future + Sized,
     {
         tokio::time::timeout(duration, self)
+    }
+
+    fn to_cow_borrowed(&self) -> Cow<'_, Self>
+    where
+        Self: ToOwned,
+    {
+        Cow::Borrowed(self)
     }
 
     fn toggle(&mut self)

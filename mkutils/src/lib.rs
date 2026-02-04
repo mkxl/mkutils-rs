@@ -38,6 +38,9 @@ mod process;
 #[cfg(feature = "async")]
 mod read_value;
 
+#[cfg(feature = "tui")]
+mod rgb;
+
 #[cfg(feature = "ropey")]
 mod rope_builder;
 
@@ -93,6 +96,8 @@ pub use crate::output::Output;
 pub use crate::process::{Process, ProcessBuilder};
 #[cfg(feature = "async")]
 pub use crate::read_value::ReadValue;
+#[cfg(feature = "tui")]
+pub use crate::rgb::Rgb;
 #[cfg(feature = "ropey")]
 pub use crate::rope_builder::RopeBuilder;
 #[cfg(feature = "tui")]

@@ -4,7 +4,7 @@ use crate::as_valuable::AsValuable;
 use crate::fmt::{Debugged, OptionalDisplay};
 #[cfg(feature = "tui")]
 use crate::geometry::Orientation;
-#[cfg(feature = "ropey")]
+#[cfg(any(feature = "ropey", feature = "tui"))]
 use crate::geometry::PointUsize;
 use crate::is::Is;
 #[cfg(feature = "output")]

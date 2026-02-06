@@ -1,6 +1,6 @@
 use crate::utils::Utils;
 use anyhow::{Context, Error as AnyhowError};
-use derive_more::{Constructor, From};
+use derive_more::{Constructor, From, Into};
 use std::{
     borrow::Borrow,
     ffi::OsStr,
@@ -10,7 +10,7 @@ use std::{
 };
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command};
 
-#[derive(From)]
+#[derive(From, Into)]
 pub struct ProcessBuilder {
     command: Command,
 }
@@ -61,6 +61,11 @@ impl ProcessBuilder {
 
     fn take_stdio<T>(stdio: &mut Option<T>) -> Result<T, AnyhowError> {
         stdio.take().context(Self::STDIO_ERROR_MESSAGE)
+    }
+
+    #[must_use]
+    pub fn into_command(self) -> Command {
+        self.command
     }
 
     pub fn build(&mut self) -> Result<Process, AnyhowError> {

@@ -63,9 +63,8 @@ impl ProcessBuilder {
         stdio.take().context(Self::STDIO_ERROR_MESSAGE)
     }
 
-    #[must_use]
-    pub fn into_command(self) -> Command {
-        self.command
+    pub const fn command_mut(&mut self) -> &mut Command {
+        &mut self.command
     }
 
     pub fn build(&mut self) -> Result<Process, AnyhowError> {

@@ -752,14 +752,14 @@ pub trait Utils {
         self.borrow().fetch_add(1, Ordering::SeqCst)
     }
 
-    fn index_into<T: Index<Self>>(self, collection: &T) -> &T::Output
+    fn index_into<T: Index<Self> + ?Sized>(self, collection: &T) -> &T::Output
     where
         Self: Sized,
     {
         collection.index(self)
     }
 
-    fn index_into_mut<T: IndexMut<Self>>(self, collection: &mut T) -> &mut T::Output
+    fn index_into_mut<T: IndexMut<Self> + ?Sized>(self, collection: &mut T) -> &mut T::Output
     where
         Self: Sized,
     {

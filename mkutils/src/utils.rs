@@ -1489,6 +1489,14 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
+    fn saturating_add_assign(&mut self, rhs: &Self)
+    where
+        Self: SaturatingAdd,
+    {
+        *self = self.saturating_add(rhs);
+    }
+
+    #[cfg(feature = "tui")]
     fn saturating_add_or_sub_in_place_with_max(&mut self, rhs: Self, max_value: Self, add: bool)
     where
         Self: Ord + SaturatingAdd + SaturatingSub + Sized,

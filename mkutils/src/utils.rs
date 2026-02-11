@@ -147,9 +147,10 @@ use valuable::Value;
 
 #[allow(async_fn_in_trait)]
 pub trait Utils {
+    const CRLF: &str = "\r\n";
     const DEFAULT_ROPE_BUILDER_BUFFER_SIZE: usize = 8192;
     const IS_EXTENDED: bool = true;
-    const NEWLINE: &str = "\n";
+    const LF: &str = "\n";
     const READ_FROM_CLIPBOARD_COMMAND: &str = "pbpaste";
     const WRITE_TO_CLIPBOARD_COMMAND: &str = "pbcopy";
 
@@ -989,6 +990,15 @@ pub trait Utils {
         &Self::zero() < self
     }
 
+    fn is_newline(&self) -> bool
+    where
+        Self: AsRef<str>,
+    {
+        let string = self.as_ref();
+
+        (string == Self::CRLF) || (string == Self::LF)
+    }
+
     #[cfg(feature = "async")]
     async fn join_all<T>(self) -> T
     where
@@ -1616,6 +1626,33 @@ pub trait Utils {
         Self::Output: 'static + Send,
     {
         tokio::spawn(self)
+    }
+
+    #[cfg(any(feature = "ropey", feature = "tui"))]
+    fn split_along_extended_graphemes(&self, max_prefix_size: usize) -> (&str, &str)
+    where
+        Self: AsRef<str>,
+    {
+        let string = self.as_ref();
+        let prefix_len = string
+            .extended_grapheme_indices()
+            .map(|(index, _extended_grapheme)| index)
+            .take_while(|index| *index < max_prefix_size)
+            .last()
+            .unwrap_or(0);
+
+        string.split_at(prefix_len)
+    }
+
+    fn split_at(&self, index: usize) -> (&str, &str)
+    where
+        Self: AsRef<str>,
+    {
+        let string = self.as_ref();
+        let prefix = &string[..index];
+        let suffix = &string[index..];
+
+        (prefix, suffix)
     }
 
     // TODO-4eef0b: permit reverse search

@@ -78,7 +78,7 @@ use serde::de::DeserializeOwned;
 #[cfg(any(feature = "poem", feature = "serde"))]
 use serde_json::Error as SerdeJsonError;
 #[cfg(feature = "serde")]
-use serde_json::{Value as Json, value::Index};
+use serde_json::{Value as Json, value::Index as SerdeJsonIndex};
 #[cfg(feature = "serde")]
 use serde_yaml_ng::Error as SerdeYamlError;
 #[cfg(any(
@@ -105,7 +105,7 @@ use std::{
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
     iter::{Once, Repeat},
     mem::ManuallyDrop,
-    ops::{Add, ControlFlow, Range},
+    ops::{Add, ControlFlow, Index, IndexMut, Range},
     path::Path,
     pin::Pin,
     str::Utf8Error,
@@ -750,6 +750,20 @@ pub trait Utils {
         Self: Borrow<AtomicUsize>,
     {
         self.borrow().fetch_add(1, Ordering::SeqCst)
+    }
+
+    fn index_into<T: Index<Self>>(self, collection: &T) -> &T::Output
+    where
+        Self: Sized,
+    {
+        collection.index(self)
+    }
+
+    fn index_into_mut<T: IndexMut<Self>>(self, collection: &mut T) -> &mut T::Output
+    where
+        Self: Sized,
+    {
+        collection.index_mut(self)
     }
 
     fn insert_mut<'a, K: 'a + Eq + Hash, V>(&'a mut self, key: K, value: V) -> &'a mut V
@@ -1677,7 +1691,7 @@ pub trait Utils {
     }
 
     #[cfg(feature = "serde")]
-    fn take_json<T: DeserializeOwned>(&mut self, index: impl Index) -> Result<T, SerdeJsonError>
+    fn take_json<T: DeserializeOwned>(&mut self, index: impl SerdeJsonIndex) -> Result<T, SerdeJsonError>
     where
         Self: BorrowMut<Json>,
     {

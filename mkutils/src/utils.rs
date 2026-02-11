@@ -1113,6 +1113,13 @@ pub trait Utils {
         vec.last_mut().unwrap()
     }
 
+    fn iter_next(&mut self) -> Option<Self::Item>
+    where
+        Self: Iterator,
+    {
+        self.next()
+    }
+
     #[cfg(feature = "ropey")]
     fn num_lines_and_extended_graphemes<'a>(self) -> PointUsize
     where

@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(feature = "output", feature(try_trait_v2))]
 #![cfg_attr(feature = "socket", feature(associated_type_defaults))]
 

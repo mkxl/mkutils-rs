@@ -1539,6 +1539,14 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
+    fn saturating_sub_assign(&mut self, rhs: &Self)
+    where
+        Self: SaturatingSub,
+    {
+        *self = self.saturating_sub(rhs);
+    }
+
+    #[cfg(feature = "tui")]
     fn scroll_count(&self, scroll_count: ScrollCount, orientation: Orientation) -> usize
     where
         Self: Scrollable,

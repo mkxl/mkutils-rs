@@ -106,7 +106,7 @@ use std::{
     future::Ready,
     hash::Hash,
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
-    iter::{Once, Repeat},
+    iter::{Once, Peekable, Repeat},
     mem::ManuallyDrop,
     ops::{Add, ControlFlow, Index, IndexMut, Range},
     path::Path,
@@ -996,6 +996,20 @@ pub trait Utils {
         Self: Is<Result<T, E>>,
     {
         self.into_self().map_err(E::io_error)
+    }
+
+    fn is_non_empty<T: Iterator>(&mut self) -> bool
+    where
+        Self: BorrowMut<Peekable<T>>,
+    {
+        !self.is_empty()
+    }
+
+    fn is_empty<T: Iterator>(&mut self) -> bool
+    where
+        Self: BorrowMut<Peekable<T>>,
+    {
+        self.borrow_mut().peek().is_some()
     }
 
     #[allow(clippy::wrong_self_convention)]

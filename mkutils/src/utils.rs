@@ -819,6 +819,15 @@ pub trait Utils {
         IntoColor::into_color(self)
     }
 
+    fn into_common<T>(self) -> T
+    where
+        Self: Is<Result<T, T>>,
+    {
+        match self.into_self() {
+            Ok(value) | Err(value) => value,
+        }
+    }
+
     fn into_continue<B>(self) -> ControlFlow<B, Self>
     where
         Self: Sized,

@@ -120,4 +120,4 @@ pub use crate::{
     transpose::Transpose,
 };
 #[cfg(feature = "mkutils-macros")]
-pub use mkutils_macros::{Default, FromChain, SetVariant, Toggle, TypeAssoc, context};
+pub use mkutils_macros::{Default, FromChain, Inner, SetVariant, Toggle, TypeAssoc, context};

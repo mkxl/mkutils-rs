@@ -1,12 +1,16 @@
 mod context;
 mod default;
 mod from_chain;
+mod inner;
 mod set_variant;
 mod toggle;
 mod type_assoc;
 mod utils;
 
-use crate::{default::Default, from_chain::FromChain, set_variant::SetVariant, toggle::Toggle, type_assoc::TypeAssoc};
+use crate::{
+    default::Default, from_chain::FromChain, inner::Inner, set_variant::SetVariant, toggle::Toggle,
+    type_assoc::TypeAssoc,
+};
 use proc_macro::TokenStream;
 
 // TODO: add documentation
@@ -168,4 +172,27 @@ pub fn set_variant(input_token_stream: TokenStream) -> TokenStream {
 #[proc_macro_derive(Toggle)]
 pub fn toggle(input_token_stream: TokenStream) -> TokenStream {
     Toggle::derive(input_token_stream)
+}
+
+/// Adds an `inner()` method that returns a copy of the wrapped type.
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(Inner)]
+/// struct MyStruct(usize)
+/// ```
+///
+/// adds
+///
+/// ```rust
+/// impl MyStruct {
+///   pub fn inner(&self) -> usize {
+///     self.0
+///   }
+/// }
+/// ```
+#[proc_macro_derive(Inner)]
+pub fn inner(input_token_stream: TokenStream) -> TokenStream {
+    Inner::derive(input_token_stream)
 }

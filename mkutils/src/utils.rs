@@ -1135,6 +1135,10 @@ pub trait Utils {
         self.next()
     }
 
+    fn none<T>(&self) -> Option<T> {
+        None
+    }
+
     #[cfg(feature = "ropey")]
     fn num_lines_and_extended_graphemes<'a>(self) -> PointUsize
     where

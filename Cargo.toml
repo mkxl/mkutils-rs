@@ -3,7 +3,7 @@ resolver = "3"
 members = ["mkutils", "mkutils-macros"]
 
 [workspace.package]
-version = "0.1.55"
+version = "0.1.56"
 edition = "2024"
 description = "Utility methods, traits, and types."
 readme = "README.md"

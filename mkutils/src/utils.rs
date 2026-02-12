@@ -1830,6 +1830,19 @@ pub trait Utils {
         serde_yaml_ng::from_reader(self)
     }
 
+    #[cfg(feature = "tui")]
+    #[must_use]
+    fn translate_to(&mut self, value: Self) -> Self
+    where
+        Self: SaturatingSub,
+    {
+        let difference = value.saturating_sub(self);
+
+        *self = value;
+
+        difference
+    }
+
     #[cfg(any(feature = "ropey", feature = "tui"))]
     #[must_use]
     fn transpose(&self) -> Self

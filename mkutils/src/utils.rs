@@ -44,10 +44,13 @@ use camino::{Utf8Path, Utf8PathBuf};
 use futures::Stream;
 #[cfg(feature = "async")]
 use futures::{Sink, SinkExt, StreamExt, TryFuture, future::Either, stream::Filter, stream::FuturesUnordered};
-#[cfg(feature = "tui")]
-use num::traits::{SaturatingAdd, SaturatingSub};
 #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
 use num::{Bounded, NumCast, ToPrimitive, Zero};
+#[cfg(feature = "tui")]
+use num::{
+    One,
+    traits::{SaturatingAdd, SaturatingSub},
+};
 #[cfg(feature = "tui")]
 use palette::IntoColor;
 #[cfg(feature = "poem")]
@@ -109,10 +112,7 @@ use std::{
     path::Path,
     pin::Pin,
     str::Utf8Error,
-    sync::{
-        Arc,
-        atomic::{AtomicUsize, Ordering},
-    },
+    sync::Arc,
     task::Poll,
     time::Instant,
 };
@@ -745,11 +745,12 @@ pub trait Utils {
         self
     }
 
-    fn inc(&self) -> usize
+    #[cfg(feature = "tui")]
+    fn increment(&mut self)
     where
-        Self: Borrow<AtomicUsize>,
+        Self: One + SaturatingAdd,
     {
-        self.borrow().fetch_add(1, Ordering::SeqCst)
+        self.saturating_add_assign(&Self::one());
     }
 
     fn index_into<T: Index<Self> + ?Sized>(self, collection: &T) -> &T::Output

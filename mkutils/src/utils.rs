@@ -1677,6 +1677,16 @@ pub trait Utils {
         self.borrow_mut().mem_replace(false)
     }
 
+    #[cfg(feature = "tui")]
+    fn size<T: SaturatingSub>(&self) -> T
+    where
+        Self: Borrow<Range<T>>,
+    {
+        let range = self.borrow();
+
+        range.end.saturating_sub(&range.start)
+    }
+
     #[cfg(feature = "async")]
     fn sleep(self) -> Sleep
     where

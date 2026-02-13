@@ -556,6 +556,14 @@ pub trait Utils {
         Debugged::new(self)
     }
 
+    #[cfg(feature = "tui")]
+    fn decrement(&mut self)
+    where
+        Self: One + SaturatingSub,
+    {
+        self.saturating_sub_assign(&Self::one());
+    }
+
     #[cfg(any(feature = "serde", feature = "tui"))]
     fn deserialize_from_seq<'de, D: Deserializer<'de>, X: Deserialize<'de>, Y, E: Display, F: Fn(X) -> Result<Y, E>>(
         deserializer: D,

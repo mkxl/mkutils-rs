@@ -80,7 +80,7 @@ pub use crate::active_vec::ActiveVec;
 #[cfg(feature = "async")]
 pub use crate::event::Event;
 #[cfg(feature = "fmt")]
-pub use crate::fmt::{Debugged, OptionalDisplay};
+pub use crate::fmt::{Debugged, OptionDisplay, ResultDisplay};
 #[cfg(feature = "misc")]
 pub use crate::indexed::Indexed;
 #[cfg(feature = "tui")]

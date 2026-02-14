@@ -1,7 +1,7 @@
 #[cfg(feature = "serde")]
 use crate::as_valuable::AsValuable;
 #[cfg(feature = "fmt")]
-use crate::fmt::{Debugged, OptionalDisplay};
+use crate::fmt::{Debugged, OptionDisplay, ResultDisplay};
 #[cfg(feature = "tui")]
 use crate::geometry::Orientation;
 #[cfg(any(feature = "ropey", feature = "tui"))]
@@ -112,6 +112,7 @@ use std::{
     path::Path,
     pin::Pin,
     str::Utf8Error,
+    string::FromUtf8Error,
     sync::Arc,
     task::Poll,
     time::Instant,
@@ -552,7 +553,10 @@ pub trait Utils {
     }
 
     #[cfg(feature = "fmt")]
-    fn debug(&self) -> Debugged<'_, Self> {
+    fn debug(self) -> Debugged<Self>
+    where
+        Self: Sized,
+    {
         Debugged::new(self)
     }
 
@@ -915,6 +919,13 @@ pub trait Utils {
         Framed::new(self, LinesCodec::new())
     }
 
+    fn into_utf8(self) -> Result<String, FromUtf8Error>
+    where
+        Self: Is<Vec<u8>>,
+    {
+        String::from_utf8(self.into_self())
+    }
+
     #[cfg(feature = "async")]
     fn into_right<L>(self) -> Either<L, Self>
     where
@@ -1216,8 +1227,11 @@ pub trait Utils {
     }
 
     #[cfg(feature = "fmt")]
-    fn optional_display(&self) -> OptionalDisplay<'_, Self> {
-        OptionalDisplay::new(self)
+    fn option_display(self) -> OptionDisplay<Self>
+    where
+        Self: Sized,
+    {
+        OptionDisplay::new(self)
     }
 
     #[cfg(feature = "output")]
@@ -1431,6 +1445,14 @@ pub trait Utils {
         Self: Clone,
     {
         std::iter::repeat(self)
+    }
+
+    #[cfg(feature = "fmt")]
+    fn result_display(self) -> ResultDisplay<Self>
+    where
+        Self: Sized,
+    {
+        ResultDisplay::new(self)
     }
 
     fn reversed<X, Y>(self) -> (Y, X)

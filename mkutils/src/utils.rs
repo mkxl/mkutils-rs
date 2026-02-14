@@ -568,6 +568,15 @@ pub trait Utils {
         self.saturating_sub_assign(&Self::one());
     }
 
+    #[cfg(feature = "tui")]
+    #[must_use]
+    fn decremented(&self) -> Self
+    where
+        Self: One + SaturatingSub,
+    {
+        self.saturating_sub(&Self::one())
+    }
+
     #[cfg(any(feature = "serde", feature = "tui"))]
     fn deserialize_from_seq<'de, D: Deserializer<'de>, X: Deserialize<'de>, Y, E: Display, F: Fn(X) -> Result<Y, E>>(
         deserializer: D,
@@ -763,6 +772,15 @@ pub trait Utils {
         Self: One + SaturatingAdd,
     {
         self.saturating_add_assign(&Self::one());
+    }
+
+    #[cfg(feature = "tui")]
+    #[must_use]
+    fn incremented(&self) -> Self
+    where
+        Self: One + SaturatingAdd,
+    {
+        self.saturating_add(&Self::one())
     }
 
     fn index_into<T: Index<Self> + ?Sized>(self, collection: &T) -> &T::Output

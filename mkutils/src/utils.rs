@@ -146,6 +146,8 @@ use unicode_segmentation::{GraphemeIndices, Graphemes, UnicodeSegmentation};
 #[cfg(feature = "serde")]
 use valuable::Value;
 
+pub type BoxError = Box<dyn StdError + Send + Sync>;
+
 #[allow(async_fn_in_trait)]
 pub trait Utils {
     const CRLF: &str = "\r\n";
@@ -1023,12 +1025,12 @@ pub trait Utils {
 
     fn io_error(self) -> IoError
     where
-        Self: Into<Box<dyn StdError + Send + Sync>>,
+        Self: Into<BoxError>,
     {
         IoError::other(self)
     }
 
-    fn io_result<T, E: Into<Box<dyn StdError + Send + Sync>>>(self) -> Result<T, IoError>
+    fn io_result<T, E: Into<BoxError>>(self) -> Result<T, IoError>
     where
         Self: Is<Result<T, E>>,
     {

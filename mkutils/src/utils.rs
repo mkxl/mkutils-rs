@@ -43,7 +43,11 @@ use camino::{Utf8Path, Utf8PathBuf};
 #[cfg(any(feature = "async", feature = "poem"))]
 use futures::Stream;
 #[cfg(feature = "async")]
-use futures::{Sink, SinkExt, StreamExt, TryFuture, future::Either, stream::Filter, stream::FuturesUnordered};
+use futures::{
+    Sink, SinkExt, StreamExt, TryFuture,
+    future::{Either, JoinAll},
+    stream::{Filter, FuturesUnordered},
+};
 #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
 use num::{Bounded, NumCast, ToPrimitive, Zero};
 #[cfg(feature = "tui")]
@@ -1077,12 +1081,20 @@ pub trait Utils {
     }
 
     #[cfg(feature = "async")]
-    async fn join_all<T>(self) -> T
+    fn join_all(self) -> JoinAll<<Self as IntoIterator>::Item>
+    where
+        Self: IntoIterator<Item: Future> + Sized,
+    {
+        futures::future::join_all(self)
+    }
+
+    #[cfg(feature = "async")]
+    async fn join_all_into<T>(self) -> T
     where
         Self: IntoIterator<Item: Future> + Sized,
         T: FromIterator<<Self::Item as Future>::Output>,
     {
-        futures::future::join_all(self).await.into_iter().collect()
+        self.join_all().await.into_iter().collect()
     }
 
     #[cfg(any(feature = "ropey", feature = "tui"))]
@@ -1937,6 +1949,15 @@ pub trait Utils {
         *self = value;
 
         difference
+    }
+
+    #[cfg(feature = "tui")]
+    fn transfer(&self, src: &mut Self, dst: &mut Self)
+    where
+        Self: SaturatingAdd + SaturatingSub,
+    {
+        src.saturating_sub_assign(self);
+        dst.saturating_add_assign(self);
     }
 
     #[cfg(any(feature = "ropey", feature = "tui"))]

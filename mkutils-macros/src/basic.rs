@@ -14,7 +14,7 @@ impl Basic {
             return Err(Error::c_struct_field_missing_name(field.span()));
         };
         let field_assignment =
-            quote::quote! { #field_name: <Self as #trait_path>::#method(&self.#field_name, &other.#field_name) };
+            quote::quote! { #field_name: #trait_path::#method(&self.#field_name, &other.#field_name) };
 
         Ok(field_assignment)
     }
@@ -38,7 +38,7 @@ impl Basic {
         let num_fields = fields_unnamed.unnamed.len();
         let field_values = (0..num_fields)
             .map(Index::from)
-            .map(|index| quote::quote! { <Self as #trait_path>::#method(&self.#index, &other.#index) });
+            .map(|index| quote::quote! { #trait_path::#method(&self.#index, &other.#index) });
 
         quote::quote! { Self(#(#field_values),*) }
     }

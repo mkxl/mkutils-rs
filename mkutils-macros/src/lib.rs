@@ -1,5 +1,7 @@
+mod basic;
 mod context;
 mod default;
+mod error;
 mod from_chain;
 mod inner;
 mod set_variant;
@@ -8,7 +10,7 @@ mod type_assoc;
 mod utils;
 
 use crate::{
-    default::Default, from_chain::FromChain, inner::Inner, set_variant::SetVariant, toggle::Toggle,
+    basic::Basic, default::Default, from_chain::FromChain, inner::Inner, set_variant::SetVariant, toggle::Toggle,
     type_assoc::TypeAssoc,
 };
 use proc_macro::TokenStream;
@@ -195,4 +197,50 @@ pub fn toggle(input_token_stream: TokenStream) -> TokenStream {
 #[proc_macro_derive(Inner)]
 pub fn inner(input_token_stream: TokenStream) -> TokenStream {
     Inner::derive(input_token_stream)
+}
+
+/// Implements `num::traits::SaturatingAdd` for a struct by delegating to each field.
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(SaturatingAdd)]
+/// struct MyStruct(usize);
+/// ```
+///
+/// adds
+///
+/// ```rust
+/// impl num::traits::SaturatingAdd for MyStruct {
+///     fn saturating_add(&self, v: &Self) -> Self {
+///         Self(self.0.saturating_add(&v.0))
+///     }
+/// }
+/// ```
+#[proc_macro_derive(SaturatingAdd)]
+pub fn saturating_add(input_token_stream: TokenStream) -> TokenStream {
+    Basic::derive(input_token_stream, "::num::traits::SaturatingAdd", "saturating_add")
+}
+
+/// Implements `num::traits::SaturatingSub` for a struct by delegating to each field.
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(SaturatingSub)]
+/// struct MyStruct(usize);
+/// ```
+///
+/// adds
+///
+/// ```rust
+/// impl num::traits::SaturatingSub for MyStruct {
+///     fn saturating_sub(&self, v: &Self) -> Self {
+///         Self(self.0.saturating_sub(&v.0))
+///     }
+/// }
+/// ```
+#[proc_macro_derive(SaturatingSub)]
+pub fn saturating_sub(input_token_stream: TokenStream) -> TokenStream {
+    Basic::derive(input_token_stream, "::num::traits::SaturatingSub", "saturating_sub")
 }

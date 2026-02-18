@@ -1,22 +1,17 @@
+use crate::error::Error;
 use proc_macro::TokenStream;
-use proc_macro2::{Span, TokenStream as TokenStream2};
+use proc_macro2::TokenStream as TokenStream2;
 use syn::{Data, DataEnum, DeriveInput, Error as SynError, Fields, Ident, Variant, spanned::Spanned};
 
 pub struct Toggle;
 
 impl Toggle {
-    const NO_UNIT_VARIANTS_ERROR_MESSAGE: &'static str = "there are no unit variants on this enum";
-
     const fn unit_variant_ident(variant: &Variant) -> Option<&Ident> {
         if std::matches!(variant.fields, Fields::Unit) {
             Some(&variant.ident)
         } else {
             None
         }
-    }
-
-    fn no_unit_variants_syn_error(span: Span) -> SynError {
-        SynError::new(span, Self::NO_UNIT_VARIANTS_ERROR_MESSAGE)
     }
 
     fn match_arms(data_enum: &DataEnum) -> Result<Vec<TokenStream2>, SynError> {
@@ -42,7 +37,7 @@ impl Toggle {
                 Fields::Unnamed(_fields_unnamed) => quote::quote! { Self::#from_variant_ident { .. } },
             };
             let Some(to_ident) = unit_variant_idents.get(index % num_unit_variants) else {
-                return Err(Self::no_unit_variants_syn_error(data_enum.variants.span()));
+                return Err(Error::no_unit_variants_syn_error(data_enum.variants.span()));
             };
             let match_arm = quote::quote! { #lhs => Self::#to_ident, };
 

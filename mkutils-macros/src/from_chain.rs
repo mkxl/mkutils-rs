@@ -1,21 +1,12 @@
-use crate::utils::CommaPunctuated;
+use crate::{error::Error, utils::CommaPunctuated};
 use proc_macro::TokenStream;
-use proc_macro2::{Span, TokenStream as TokenStream2};
+use proc_macro2::TokenStream as TokenStream2;
 use syn::{DeriveInput, Error as SynError, Type, spanned::Spanned};
 
 pub struct FromChain;
 
 impl FromChain {
     const ATTRIBUTE_NAME: &str = "from";
-
-    fn empty_chain(span: Span) -> SynError {
-        let message = std::format!(
-            "empty `{attribute_name}` attribute found",
-            attribute_name = Self::ATTRIBUTE_NAME
-        );
-
-        SynError::new(span, message)
-    }
 
     fn from_impl_block_token_stream(
         input: &DeriveInput,
@@ -24,7 +15,9 @@ impl FromChain {
         let input_ident = &input.ident;
         let (impl_generics, input_generics, input_where_clause) = input.generics.split_for_impl();
         let mut type_chain_pairs = type_chain.pairs();
-        let Some(head_type) = type_chain_pairs.next() else { Err(Self::empty_chain(type_chain.span()))? };
+        let Some(head_type) = type_chain_pairs.next() else {
+            Err(Error::empty_attribute(type_chain.span(), Self::ATTRIBUTE_NAME))?
+        };
         let head_ident = quote::quote! { value };
         let mut from_chain = quote::quote! { #head_ident };
 

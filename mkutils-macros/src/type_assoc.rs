@@ -1,6 +1,9 @@
-use crate::utils::{Cat3, Comma, CommaPunctuated, IdentAssignment};
+use crate::{
+    error::Error,
+    utils::{Cat3, Comma, CommaPunctuated, IdentAssignment},
+};
 use proc_macro::TokenStream;
-use proc_macro2::{Span, TokenStream as TokenStream2};
+use proc_macro2::TokenStream as TokenStream2;
 use syn::{
     DeriveInput, Error as SynError, Path, Type,
     parse::{Parse, ParseStream},
@@ -16,24 +19,6 @@ impl TypeAssoc {
     const TYPE_ASSOC_ATTRIBUTE_NAME: &str = "type_assoc";
     const TRAIT_PATH_KEY: &str = "impl_trait";
 
-    fn missing_type_assoc_attribute_error_message(span: Span) -> SynError {
-        let message = std::format!(
-            "no `{attribute_name}` attribute found",
-            attribute_name = Self::TYPE_ASSOC_ATTRIBUTE_NAME
-        );
-
-        SynError::new(span, message)
-    }
-
-    fn unexpected_trait_path_key(span: Span) -> SynError {
-        let message = std::format!(
-            "expected `{trait_path_key}` here",
-            trait_path_key = Self::TRAIT_PATH_KEY
-        );
-
-        SynError::new(span, message)
-    }
-
     fn assoc_type_token_stream(Cat3(assoc_type_ident, _comma, assoc_type_type): IdentAssignment<Type>) -> TokenStream2 {
         quote::quote! {
             type #assoc_type_ident = #assoc_type_type;
@@ -47,7 +32,10 @@ impl TypeAssoc {
             }
         }
 
-        Err(Self::missing_type_assoc_attribute_error_message(input.span()))
+        Err(Error::missing_expected_attribute(
+            input.span(),
+            Self::TYPE_ASSOC_ATTRIBUTE_NAME,
+        ))
     }
 
     pub fn derive_impl(input: &DeriveInput) -> Result<TokenStream2, SynError> {
@@ -82,7 +70,7 @@ impl Parse for TypeAssoc {
         let (trait_path_key, _equals, trait_path) = parse_stream.parse::<IdentAssignment<Path>>()?.into_tuple();
 
         if trait_path_key != Self::TRAIT_PATH_KEY {
-            return Err(Self::unexpected_trait_path_key(trait_path_key.span()));
+            return Err(Error::unexpected_value(trait_path_key.span(), Self::TRAIT_PATH_KEY));
         }
 
         parse_stream.parse::<Comma>()?;

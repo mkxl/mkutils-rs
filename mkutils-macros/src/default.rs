@@ -1,22 +1,12 @@
+use crate::error::Error;
 use proc_macro::TokenStream;
-use proc_macro2::{Span, TokenStream as TokenStream2};
+use proc_macro2::TokenStream as TokenStream2;
 use syn::{Data, DeriveInput, Error as SynError, Expr, Field, Fields, FieldsNamed, FieldsUnnamed, spanned::Spanned};
 
 pub struct Default;
 
 impl Default {
     const ATTRIBUTE_NAME: &str = "default";
-    const UNSUPPORTED_ITEM_TYPE_ERROR_MESSAGE: &str = "this macro is currently only supported on struct types";
-    const C_STRUCT_FIELD_MISSING_NAME_ERROR_MESSAGE: &str =
-        "a field in this C struct unexpectedly does not have a name";
-
-    fn unsupported_item_type(span: Span) -> SynError {
-        SynError::new(span, Self::UNSUPPORTED_ITEM_TYPE_ERROR_MESSAGE)
-    }
-
-    fn c_struct_field_missing_name(span: Span) -> SynError {
-        SynError::new(span, Self::C_STRUCT_FIELD_MISSING_NAME_ERROR_MESSAGE)
-    }
 
     fn std_default_field_value() -> TokenStream2 {
         quote::quote! { ::std::default::Default::default() }
@@ -37,7 +27,7 @@ impl Default {
 
     fn default_field_assignment(field: &Field) -> Result<TokenStream2, SynError> {
         let Some(field_name) = &field.ident else {
-            return Err(Self::c_struct_field_missing_name(field.span()));
+            return Err(Error::c_struct_field_missing_name(field.span()));
         };
         let default_field_value = Self::default_field_value(field)?;
         let default_field_assignment = quote::quote! { #field_name: #default_field_value };
@@ -73,7 +63,7 @@ impl Default {
 
     fn default_value(input: &DeriveInput) -> Result<TokenStream2, SynError> {
         let Data::Struct(data_struct) = &input.data else {
-            return Err(Self::unsupported_item_type(input.span()));
+            return Err(Error::unsupported_item_type(input.span()));
         };
         let default_value = match &data_struct.fields {
             Fields::Named(fields_named) => Self::default_value_for_c_struct(fields_named)?,

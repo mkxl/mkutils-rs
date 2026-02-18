@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use proc_macro2::{Literal, TokenStream as TokenStream2};
-use syn::{Data, DeriveInput, Field, Fields, Type};
+use proc_macro2::TokenStream as TokenStream2;
+use syn::{Data, DeriveInput, Field, Fields, Index, Type};
 
 pub struct Inner;
 
@@ -21,7 +21,7 @@ impl Inner {
 
             (return_type, inner)
         } else {
-            let field_index = (0..num_fields).map(Literal::usize_unsuffixed);
+            let field_index = (0..num_fields).map(Index::from);
             let inner = quote::quote! { ( #(self.#field_index,)* ) };
             let return_type = fields_unnamed.unnamed.iter().map(Self::get_type);
             let return_type = quote::quote! { ( #(#return_type,)* ) };

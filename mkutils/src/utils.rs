@@ -763,6 +763,21 @@ pub trait Utils {
         self.as_ref().iter().enumerate().find(|(_index, key)| *key == query)
     }
 
+    fn find_substr<'a>(&'a self, substr: &str) -> Option<(&'a str, &'a str, &'a str)>
+    where
+        Self: AsRef<str>,
+    {
+        let string = self.as_ref();
+        let begin_index = string.find(substr)?;
+        let end_index = begin_index.saturating_add(substr.len());
+        let prefix = &string[..begin_index];
+        let substr = &string[begin_index..end_index];
+        let suffix = &string[end_index..];
+        let triple = (prefix, substr, suffix);
+
+        triple.some()
+    }
+
     fn has_happened(self) -> bool
     where
         Self: Is<Instant>,

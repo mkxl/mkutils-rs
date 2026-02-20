@@ -160,6 +160,7 @@ pub trait Utils {
     const LF: &str = "\n";
     const READ_FROM_CLIPBOARD_COMMAND: &str = "pbpaste";
     const WRITE_TO_CLIPBOARD_COMMAND: &str = "pbcopy";
+    const URI_PREFIX: &str = "file://";
 
     #[cfg(feature = "async")]
     async fn abort_all_and_wait<T: 'static>(&mut self)
@@ -1535,6 +1536,15 @@ pub trait Utils {
         std::fs::remove_file(self)
     }
 
+    fn remove_prefix(&self, prefix: &str) -> &str
+    where
+        Self: AsRef<str>,
+    {
+        let string = self.as_ref();
+
+        string.strip_prefix(prefix).unwrap_or(string)
+    }
+
     #[cfg(feature = "socket")]
     async fn respond_to<T: Request<Response = Self>>(
         &self,
@@ -1887,7 +1897,7 @@ pub trait Utils {
     where
         Self: AsRef<Utf8Path>,
     {
-        "file://".cat(self.absolute_utf8()?).ok()
+        Self::URI_PREFIX.cat(self.absolute_utf8()?).ok()
     }
 
     #[cfg(feature = "serde")]

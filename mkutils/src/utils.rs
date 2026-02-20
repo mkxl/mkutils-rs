@@ -741,6 +741,20 @@ pub trait Utils {
         self.as_ref().file_name().context("path has no file name")
     }
 
+    #[cfg(feature = "fs")]
+    fn file_name_or_self(&self) -> &str
+    where
+        Self: AsRef<Utf8Path>,
+    {
+        let path = self.as_ref();
+
+        if let Some(file_name) = path.file_name() {
+            file_name
+        } else {
+            path.as_str()
+        }
+    }
+
     fn find_eq<Q, K>(&self, query: Q) -> Option<(usize, &K)>
     where
         Self: AsRef<[K]>,

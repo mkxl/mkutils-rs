@@ -1755,6 +1755,13 @@ pub trait Utils {
         self.borrow_mut().mem_replace(false)
     }
 
+    fn singleton<T: FromIterator<Self>>(self) -> T
+    where
+        Self: Sized,
+    {
+        self.once().collect()
+    }
+
     #[cfg(feature = "tui")]
     fn size<T: SaturatingSub>(&self) -> T
     where

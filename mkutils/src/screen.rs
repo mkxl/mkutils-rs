@@ -105,6 +105,9 @@ impl Screen {
         terminal.ok()
     }
 
+    // NOTE:
+    // - [https://chatgpt.com/c/695cfdcf-be98-8331-90dc-123981ab6ba8]
+    // - [https://chatgpt.com/c/695d51f6-c0b0-832d-865f-31462c278e0a]
     #[must_use]
     pub fn into_stdout(mut self) -> Stdout {
         self.on_drop();

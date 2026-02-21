@@ -21,6 +21,9 @@ impl Content for Vec<RatatuiLine<'_>> {
     }
 
     fn lines(&self, rows: Range<usize>, cols: Range<usize>) -> Vec<RatatuiLine<'_>> {
-        self[rows].iter().map(|line| line.subline(cols.clone())).collect()
+        let end = rows.end.min(self.len());
+        let lines = self[rows.start..end].iter().map(|line| line.subline(cols.clone()));
+
+        lines.collect()
     }
 }

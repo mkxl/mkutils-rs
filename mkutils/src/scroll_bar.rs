@@ -17,7 +17,7 @@ pub struct ScrollBar {
 impl ScrollBar {
     const VERTICAL_THUMB_AREA_WIDTH: u16 = 1;
     const VERTICAL_THUMB_AREA_MIN_HEIGHT: u16 = 1;
-    const STYLE: Style = Style::new().reversed();
+    const STYLE: Style = Style::new().on_dark_gray();
 
     fn vertical_thumb_area(&self, render_content_area: Rect) -> Rect {
         let thumb_area_height = render_content_area

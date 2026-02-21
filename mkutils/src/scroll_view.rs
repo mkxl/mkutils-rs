@@ -70,6 +70,10 @@ impl<T: Content> ScrollView<T> {
         self.latest_content_size = content.size();
         self.content = content;
     }
+
+    pub const fn content(&self) -> &T {
+        &self.content
+    }
 }
 
 impl<T: Content> StatefulWidget for &ScrollView<T> {

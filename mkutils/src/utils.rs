@@ -11,8 +11,6 @@ use crate::output::Output;
 use crate::process::ProcessBuilder;
 #[cfg(feature = "ropey")]
 use crate::rope_builder::RopeBuilder;
-#[cfg(feature = "tui")]
-use crate::scrollable::{ScrollCountType, Scrollable};
 #[cfg(any(feature = "serde", feature = "tui"))]
 use crate::seq_visitor::SeqVisitor;
 #[cfg(feature = "socket")]
@@ -65,7 +63,7 @@ use ratatui::{
     layout::Rect,
     style::Styled,
     text::{Line, Span},
-    widgets::{Block, Widget},
+    widgets::{Block, StatefulWidget, Widget},
 };
 #[cfg(feature = "reqwest")]
 use reqwest::{RequestBuilder, Response};
@@ -1501,6 +1499,14 @@ pub trait Utils {
         frame.render_widget(self, rect);
     }
 
+    #[cfg(feature = "tui")]
+    fn render_to_with_state(self, frame: &mut Frame, rect: Rect, state: &mut Self::State)
+    where
+        Self: StatefulWidget + Sized,
+    {
+        frame.render_stateful_widget(self, rect, state);
+    }
+
     fn repeat(self) -> Repeat<Self>
     where
         Self: Clone,
@@ -1644,38 +1650,6 @@ pub trait Utils {
         Self: SaturatingSub,
     {
         *self = self.saturating_sub(rhs);
-    }
-
-    #[cfg(feature = "tui")]
-    fn scroll_down(&mut self, scroll_count_type: ScrollCountType)
-    where
-        Self: Scrollable,
-    {
-        Scrollable::scroll_down(self, scroll_count_type);
-    }
-
-    #[cfg(feature = "tui")]
-    fn scroll_up(&mut self, scroll_count_type: ScrollCountType)
-    where
-        Self: Scrollable,
-    {
-        Scrollable::scroll_up(self, scroll_count_type);
-    }
-
-    #[cfg(feature = "tui")]
-    fn scroll_left(&mut self, scroll_count_type: ScrollCountType)
-    where
-        Self: Scrollable,
-    {
-        Scrollable::scroll_left(self, scroll_count_type);
-    }
-
-    #[cfg(feature = "tui")]
-    fn scroll_right(&mut self, scroll_count_type: ScrollCountType)
-    where
-        Self: Scrollable,
-    {
-        Scrollable::scroll_right(self, scroll_count_type);
     }
 
     #[cfg(feature = "async")]

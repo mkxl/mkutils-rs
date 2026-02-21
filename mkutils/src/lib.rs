@@ -55,13 +55,13 @@ mod run_for;
 mod screen;
 
 #[cfg(feature = "tui")]
-mod scrollable;
-
-#[cfg(feature = "tui")]
 mod scroll_bar;
 
 #[cfg(feature = "tui")]
 mod scroll_view;
+
+#[cfg(feature = "tui")]
+mod scroll_view_state;
 
 #[cfg(any(feature = "serde", feature = "tui"))]
 mod seq_visitor;
@@ -117,7 +117,7 @@ pub use crate::screen::{Screen, ScreenConfig, ScreenTerminal, Stdout};
 #[cfg(feature = "tui")]
 pub use crate::scroll_view::ScrollView;
 #[cfg(feature = "tui")]
-pub use crate::scrollable::{ScrollCountType, ScrollWhen, Scrollable};
+pub use crate::scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen};
 #[cfg(feature = "socket")]
 pub use crate::socket::{Request, Socket};
 #[cfg(feature = "tui")]

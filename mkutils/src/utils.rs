@@ -1500,7 +1500,7 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn render_to_with_state(self, frame: &mut Frame, rect: Rect, state: &mut Self::State)
+    fn render_with_state(self, frame: &mut Frame, rect: Rect, state: &mut Self::State)
     where
         Self: StatefulWidget + Sized,
     {

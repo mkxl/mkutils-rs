@@ -4,7 +4,7 @@ use crate::{
 };
 use mkutils_macros::Toggle;
 
-#[derive(Toggle)]
+#[derive(Clone, Copy, Toggle)]
 pub enum ScrollWhen {
     Always,
     ForLargeContent,

@@ -63,6 +63,7 @@ use poem_openapi::{error::ParseRequestPayloadError, payload::Binary as PoemBinar
 use ratatui::{
     Frame,
     layout::Rect,
+    style::Styled,
     text::{Line, Span},
     widgets::{Block, Widget},
 };
@@ -1790,6 +1791,34 @@ pub trait Utils {
         let suffix = &string[index..];
 
         (prefix, suffix)
+    }
+
+    #[cfg(feature = "tui")]
+    fn subline<'a>(&'a self, range: Range<usize>) -> Line<'a>
+    where
+        Self: Borrow<Line<'a>>,
+    {
+        let line = self.borrow();
+        let mut subline = Line::default().set_style(line.style);
+        let mut extended_grapheme_index = 0;
+
+        if line.alignment.is_some() {
+            subline.alignment = line.alignment.copied();
+        }
+
+        'outer: for span in &line.spans {
+            for extended_grapheme in span.content.extended_graphemes() {
+                if range.end <= extended_grapheme_index {
+                    break 'outer;
+                } else if range.start <= extended_grapheme_index {
+                    Span::styled(extended_grapheme.to_cow_borrowed(), span.style).push_to(&mut subline.spans);
+                }
+
+                extended_grapheme_index.increment();
+            }
+        }
+
+        subline
     }
 
     // TODO-4eef0b: permit reverse search

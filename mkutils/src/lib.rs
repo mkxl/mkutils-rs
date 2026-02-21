@@ -57,6 +57,12 @@ mod screen;
 #[cfg(feature = "tui")]
 mod scrollable;
 
+#[cfg(feature = "tui")]
+mod scroll_bar;
+
+#[cfg(feature = "tui")]
+mod scroll_view;
+
 #[cfg(any(feature = "serde", feature = "tui"))]
 mod seq_visitor;
 
@@ -108,6 +114,8 @@ pub use crate::rgb::Rgb;
 pub use crate::rope_builder::RopeBuilder;
 #[cfg(feature = "tui")]
 pub use crate::screen::{Screen, ScreenConfig, ScreenTerminal, Stdout};
+#[cfg(feature = "tui")]
+pub use crate::scroll_view::ScrollView;
 #[cfg(feature = "tui")]
 pub use crate::scrollable::{ScrollCountType, ScrollWhen, Scrollable};
 #[cfg(feature = "socket")]

@@ -2,8 +2,6 @@
 use crate::as_valuable::AsValuable;
 #[cfg(feature = "fmt")]
 use crate::fmt::{Debugged, OptionDisplay, ResultDisplay};
-#[cfg(feature = "tui")]
-use crate::geometry::Orientation;
 #[cfg(any(feature = "ropey", feature = "tui"))]
 use crate::geometry::PointUsize;
 use crate::is::Is;
@@ -14,7 +12,7 @@ use crate::process::ProcessBuilder;
 #[cfg(feature = "ropey")]
 use crate::rope_builder::RopeBuilder;
 #[cfg(feature = "tui")]
-use crate::scrollable::{ScrollCount, ScrollWhen, Scrollable};
+use crate::scrollable::{ScrollCountType, Scrollable};
 #[cfg(any(feature = "serde", feature = "tui"))]
 use crate::seq_visitor::SeqVisitor;
 #[cfg(feature = "socket")]
@@ -1648,79 +1646,35 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn scroll_count(&self, scroll_count: ScrollCount, orientation: Orientation) -> usize
+    fn scroll_down(&mut self, scroll_count_type: ScrollCountType)
     where
         Self: Scrollable,
     {
-        match scroll_count {
-            ScrollCount::Fixed(scroll_count) => scroll_count,
-            ScrollCount::PageSize => *self.latest_content_render_size().get(orientation),
-        }
+        Scrollable::scroll_down(self, scroll_count_type);
     }
 
     #[cfg(feature = "tui")]
-    fn max_scroll_offset(&self, scroll_when: ScrollWhen, content_size: PointUsize) -> PointUsize
+    fn scroll_up(&mut self, scroll_count_type: ScrollCountType)
     where
         Self: Scrollable,
     {
-        match scroll_when {
-            ScrollWhen::Always => content_size.saturating_sub_scalar(&1),
-            ScrollWhen::ForLargeContent => content_size.saturating_sub(&self.latest_content_render_size()),
-        }
+        Scrollable::scroll_up(self, scroll_count_type);
     }
 
     #[cfg(feature = "tui")]
-    fn scroll(
-        &mut self,
-        scroll_count: ScrollCount,
-        scroll_when: ScrollWhen,
-        content_size: PointUsize,
-        orientation: Orientation,
-        add: bool,
-    ) where
-        Self: Scrollable,
-    {
-        let scroll_count = self.as_immut().scroll_count(scroll_count, orientation);
-        let max_scroll_offset = *self
-            .as_immut()
-            .max_scroll_offset(scroll_when, content_size)
-            .get(orientation);
-
-        self.scroll_offset_mut()
-            .get_mut(orientation)
-            .saturating_add_or_sub_in_place_with_max(scroll_count, max_scroll_offset, add);
-    }
-
-    #[cfg(feature = "tui")]
-    fn scroll_down(&mut self, scroll_count: ScrollCount, content_size: PointUsize, scroll_when: ScrollWhen)
+    fn scroll_left(&mut self, scroll_count_type: ScrollCountType)
     where
         Self: Scrollable,
     {
-        self.scroll(scroll_count, scroll_when, content_size, Orientation::Vertical, true);
+        Scrollable::scroll_left(self, scroll_count_type);
     }
 
     #[cfg(feature = "tui")]
-    fn scroll_up(&mut self, scroll_count: ScrollCount, content_size: PointUsize, scroll_when: ScrollWhen)
+    fn scroll_right(&mut self, scroll_count_type: ScrollCountType)
     where
         Self: Scrollable,
     {
-        self.scroll(scroll_count, scroll_when, content_size, Orientation::Vertical, false);
-    }
-
-    #[cfg(feature = "tui")]
-    fn scroll_left(&mut self, scroll_count: ScrollCount, content_size: PointUsize, scroll_when: ScrollWhen)
-    where
-        Self: Scrollable,
-    {
-        self.scroll(scroll_count, scroll_when, content_size, Orientation::Horizontal, false);
-    }
-
-    #[cfg(feature = "tui")]
-    fn scroll_right(&mut self, scroll_count: ScrollCount, content_size: PointUsize, scroll_when: ScrollWhen)
-    where
-        Self: Scrollable,
-    {
-        self.scroll(scroll_count, scroll_when, content_size, Orientation::Horizontal, true);
+        Scrollable::scroll_right(self, scroll_count_type);
     }
 
     #[cfg(feature = "async")]

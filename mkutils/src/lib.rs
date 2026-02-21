@@ -15,6 +15,9 @@ mod fmt;
 #[cfg(feature = "serde")]
 mod as_valuable;
 
+#[cfg(feature = "tui")]
+mod content;
+
 #[cfg(feature = "async")]
 mod event;
 
@@ -77,6 +80,8 @@ mod transpose;
 
 #[cfg(feature = "misc")]
 pub use crate::active_vec::ActiveVec;
+#[cfg(feature = "tui")]
+pub use crate::content::Content;
 #[cfg(feature = "async")]
 pub use crate::event::Event;
 #[cfg(feature = "fmt")]
@@ -104,7 +109,7 @@ pub use crate::rope_builder::RopeBuilder;
 #[cfg(feature = "tui")]
 pub use crate::screen::{Screen, ScreenConfig, ScreenTerminal, Stdout};
 #[cfg(feature = "tui")]
-pub use crate::scrollable::{ScrollCount, ScrollWhen, Scrollable};
+pub use crate::scrollable::{ScrollCountType, ScrollWhen, Scrollable};
 #[cfg(feature = "socket")]
 pub use crate::socket::{Request, Socket};
 #[cfg(feature = "tui")]

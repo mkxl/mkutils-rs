@@ -13,9 +13,14 @@ impl Content for Vec<RatatuiLine<'_>> {
         let num_rows = self.len();
         let num_cols = self
             .iter()
-            .flat_map(|line| line.spans.as_slice())
-            .map(|span| span.content.len_extended_graphemes())
-            .sum();
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.len_extended_graphemes())
+                    .sum()
+            })
+            .max()
+            .unwrap_or(0);
 
         PointUsize::new(num_cols, num_rows)
     }

@@ -1955,7 +1955,7 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn transfer(&self, src: &mut Self, dst: &mut Self)
+    fn transfer_from_to(&self, src: &mut Self, dst: &mut Self)
     where
         Self: SaturatingAdd + SaturatingSub,
     {
@@ -1980,17 +1980,21 @@ pub trait Utils {
     }
 
     #[cfg(feature = "async")]
-    async fn try_join_all<T, E>(self) -> Result<T, E>
+    async fn try_join_all(self) -> Result<Vec<<Self::Item as TryFuture>::Ok>, <Self::Item as TryFuture>::Error>
+    where
+        Self: IntoIterator<Item: TryFuture> + Sized,
+    {
+        futures::future::try_join_all(self).await
+    }
+
+    #[cfg(feature = "async")]
+    async fn try_join_all_into<T, E>(self) -> Result<T, E>
     where
         Self: IntoIterator<Item: TryFuture> + Sized,
         T: FromIterator<<Self::Item as TryFuture>::Ok>,
         E: From<<Self::Item as TryFuture>::Error>,
     {
-        futures::future::try_join_all(self)
-            .await?
-            .into_iter()
-            .collect::<T>()
-            .ok()
+        self.try_join_all().await?.into_iter().collect::<T>().ok()
     }
 
     #[cfg(feature = "async")]

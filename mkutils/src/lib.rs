@@ -21,7 +21,7 @@ mod content;
 #[cfg(feature = "async")]
 mod event;
 
-#[cfg(any(feature = "ropey", feature = "tui"))]
+#[cfg(feature = "tui")]
 mod geometry;
 
 #[cfg(feature = "misc")]
@@ -47,9 +47,6 @@ mod rgb;
 
 #[cfg(feature = "rope")]
 mod rope;
-
-#[cfg(feature = "ropey")]
-mod rope_builder;
 
 #[cfg(feature = "async")]
 mod run_for;
@@ -84,7 +81,7 @@ mod timestamped;
 #[cfg(feature = "tracing")]
 mod tracing;
 
-#[cfg(any(feature = "ropey", feature = "tui"))]
+#[cfg(feature = "tui")]
 mod transpose;
 
 #[cfg(feature = "fmt")]
@@ -96,6 +93,7 @@ pub use crate::process::{Process, ProcessBuilder};
 #[cfg(feature = "rope")]
 pub use crate::rope::{
     atoms::{Atom, Atoms},
+    builder::RopeBuilder,
     chunk::Chunk,
     distance::{Distance, NumExtendedGraphemes, NumNewlines},
     extended_grapheme_iter::ExtendedGraphemeIter,
@@ -103,8 +101,6 @@ pub use crate::rope::{
     lines::Lines,
     rope::Rope,
 };
-#[cfg(feature = "ropey")]
-pub use crate::rope_builder::RopeBuilder;
 #[cfg(feature = "socket")]
 pub use crate::socket::{Request, Socket};
 #[cfg(feature = "tracing")]
@@ -129,7 +125,7 @@ pub use crate::{
 };
 #[cfg(feature = "async")]
 pub use crate::{event::Event, read_value::ReadValue};
-#[cfg(any(feature = "ropey", feature = "tui"))]
+#[cfg(feature = "tui")]
 pub use crate::{
     geometry::{Orientation, Point, PointU16, PointUsize},
     transpose::Transpose,

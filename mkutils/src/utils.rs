@@ -2,24 +2,20 @@
 use crate::as_valuable::AsValuable;
 #[cfg(feature = "fmt")]
 use crate::fmt::{Debugged, OptionDisplay, ResultDisplay};
-#[cfg(any(feature = "ropey", feature = "tui"))]
-use crate::geometry::PointUsize;
 use crate::is::Is;
 #[cfg(feature = "output")]
 use crate::output::Output;
 #[cfg(feature = "process")]
 use crate::process::ProcessBuilder;
 #[cfg(feature = "rope")]
-use crate::rope::atoms::Atom;
-#[cfg(feature = "ropey")]
-use crate::rope_builder::RopeBuilder;
+use crate::rope::{atoms::Atom, builder::RopeBuilder, rope::Rope};
 #[cfg(any(feature = "serde", feature = "tui"))]
 use crate::seq_visitor::SeqVisitor;
 #[cfg(feature = "socket")]
 use crate::socket::{Request, Socket};
 #[cfg(feature = "tracing")]
 use crate::status::Status;
-#[cfg(any(feature = "ropey", feature = "tui"))]
+#[cfg(feature = "tui")]
 use crate::transpose::Transpose;
 #[cfg(feature = "async")]
 use crate::{into_stream::IntoStream, read_value::ReadValue, run_for::RunForError};
@@ -46,7 +42,7 @@ use futures::{
     future::{Either, JoinAll},
     stream::{Filter, FuturesUnordered},
 };
-#[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
+#[cfg(any(feature = "misc", feature = "tui"))]
 use num::{Bounded, NumCast, ToPrimitive, Zero};
 #[cfg(feature = "tui")]
 use num::{
@@ -71,8 +67,6 @@ use ratatui::{
 use reqwest::{RequestBuilder, Response};
 #[cfg(feature = "rmp")]
 use rmp_serde::{decode::Error as RmpDecodeError, encode::Error as RmpEncodeError};
-#[cfg(feature = "ropey")]
-use ropey::{Rope, RopeSlice, iter::Chunks, iter::Lines};
 #[cfg(any(feature = "rmp", feature = "serde", feature = "tui"))]
 use serde::Deserialize;
 #[cfg(any(feature = "serde", feature = "tui"))]
@@ -124,7 +118,7 @@ use std::{
 use std::{fs::Metadata, time::Duration};
 #[cfg(any(feature = "async", feature = "process"))]
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-#[cfg(any(feature = "async", feature = "ropey"))]
+#[cfg(feature = "async")]
 use tokio::{
     fs::File as TokioFile,
     io::{AsyncRead, BufReader as TokioBufReader},
@@ -144,7 +138,11 @@ use tokio_util::{
 };
 #[cfg(feature = "tracing")]
 use tracing::Level;
-#[cfg(any(feature = "ropey", feature = "tui"))]
+#[cfg(any(feature = "misc", feature = "rope"))]
+use tuplities_remove::TupleRemove;
+#[cfg(any(feature = "misc", feature = "rope"))]
+use typenum::{U0, U1, U2};
+#[cfg(feature = "tui")]
 use unicode_segmentation::{GraphemeIndices, Graphemes, UnicodeSegmentation};
 #[cfg(feature = "serde")]
 use valuable::Value;
@@ -154,7 +152,7 @@ pub type BoxError = Box<dyn StdError + Send + Sync>;
 #[allow(async_fn_in_trait)]
 pub trait Utils {
     const CRLF: &str = "\r\n";
-    const DEFAULT_ROPE_BUILDER_BUFFER_SIZE: usize = 8192;
+    const DEFAULT_ROPE_BUILDER_BUFFER_SIZE: usize = 8192; // TODO: remove
     const IS_EXTENDED: bool = true;
     const LF: &str = "\n";
     const READ_FROM_CLIPBOARD_COMMAND: &str = "pbpaste";
@@ -303,14 +301,6 @@ pub trait Utils {
         self.as_ref()
     }
 
-    #[cfg(feature = "ropey")]
-    fn as_rope_slice(&self) -> RopeSlice<'_>
-    where
-        Self: Borrow<Rope>,
-    {
-        self.borrow().slice(..)
-    }
-
     #[cfg(feature = "serde")]
     fn as_valuable(&self) -> Value<'_>
     where
@@ -334,7 +324,7 @@ pub trait Utils {
         BufReader::new(self)
     }
 
-    #[cfg(any(feature = "async", feature = "ropey"))]
+    #[cfg(feature = "async")]
     fn buf_reader_async(self) -> TokioBufReader<Self>
     where
         Self: AsyncRead + Sized,
@@ -357,7 +347,7 @@ pub trait Utils {
         TokioBufWriter::new(self)
     }
 
-    #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
+    #[cfg(any(feature = "misc", feature = "tui"))]
     fn cast_or_max<T: Bounded + NumCast>(self) -> T
     where
         Self: Sized + ToPrimitive,
@@ -447,7 +437,7 @@ pub trait Utils {
         anyhow::bail!("({status}) {text}")
     }
 
-    #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
+    #[cfg(any(feature = "misc", feature = "tui"))]
     #[must_use]
     fn clamped(self, min: Self, max: Self) -> Self
     where
@@ -662,7 +652,7 @@ pub trait Utils {
         }
     }
 
-    #[cfg(any(feature = "ropey", feature = "tui"))]
+    #[cfg(feature = "tui")]
     fn extended_graphemes(&self) -> Graphemes<'_>
     where
         Self: AsRef<str>,
@@ -670,60 +660,32 @@ pub trait Utils {
         self.as_ref().graphemes(Self::IS_EXTENDED)
     }
 
-    #[cfg(any(feature = "ropey", feature = "tui"))]
-    fn extended_grapheme_indices(&self) -> GraphemeIndices<'_>
+    #[cfg(feature = "tui")]
+    fn extended_grapheme_byte_offsets(&self) -> impl Iterator<Item = usize>
+    where
+        Self: AsRef<str>,
+    {
+        self.extended_grapheme_and_byte_offset_pairs().map(Utils::into_first)
+    }
+
+    #[cfg(feature = "tui")]
+    fn extended_grapheme_and_byte_offset_pairs(&self) -> GraphemeIndices<'_>
     where
         Self: AsRef<str>,
     {
         self.as_ref().grapheme_indices(Self::IS_EXTENDED)
     }
 
-    #[cfg(feature = "ropey")]
-    fn extended_graphemes_at<'a>(self, extended_graphemes_index_range: Range<usize>) -> impl Iterator<Item = &'a str>
-    where
-        Self: Is<RopeSlice<'a>>,
-    {
-        let extended_graphemes_index_range = extended_graphemes_index_range.borrow();
-
-        self.into_self()
-            .chunks()
-            .flat_map(str::extended_graphemes)
-            .skip(extended_graphemes_index_range.start)
-            .take(extended_graphemes_index_range.len())
-    }
-
-    #[cfg(feature = "ropey")]
-    fn extended_graphemes_at_rect<'a>(
-        self,
-        lines_index_range: Range<usize>,
-        extended_graphemes_index_range: Range<usize>,
-    ) -> impl Iterator<Item = impl Iterator<Item = &'a str>>
-    where
-        Self: Is<RopeSlice<'a>>,
-    {
-        self.into_self()
-            .saturating_lines_at(lines_index_range.start)
-            .take(lines_index_range.len())
-            .map(move |line_rope_slice| line_rope_slice.extended_graphemes_at(extended_graphemes_index_range.clone()))
-    }
-
-    #[cfg(any(feature = "ropey", feature = "tui"))]
+    #[cfg(feature = "tui")]
     fn extended_grapheme_substring(&self, range: Range<usize>) -> &str
     where
         Self: AsRef<str>,
     {
         let string = self.as_ref();
-        let mut extended_grapheme_indices = string.extended_grapheme_indices().skip(range.start);
-        let Some((begin_byte_offset, _begin_extended_grapheme)) = extended_grapheme_indices.next() else {
-            return "";
-        };
-        let mut extended_grapheme_indices = extended_grapheme_indices.skip(range.len());
-        let end_byte_offset = if let Some((end_byte_offset, _end_extended_grapheme)) = extended_grapheme_indices.next()
-        {
-            end_byte_offset
-        } else {
-            string.len()
-        };
+        let mut extended_grapheme_byte_offsets = string.extended_grapheme_byte_offsets().skip(range.start);
+        let Some(begin_byte_offset) = extended_grapheme_byte_offsets.next() else { return "" };
+        let mut extended_grapheme_byte_offsets = extended_grapheme_byte_offsets.skip(range.len());
+        let end_byte_offset = extended_grapheme_byte_offsets.next().unwrap_or(string.len());
 
         &string[begin_byte_offset..end_byte_offset]
     }
@@ -847,7 +809,7 @@ pub trait Utils {
         self.borrow_mut().entry(key).insert_entry(value).into_mut()
     }
 
-    #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
+    #[cfg(any(feature = "misc", feature = "tui"))]
     #[must_use]
     fn interpolate(
         self,
@@ -923,6 +885,30 @@ pub trait Utils {
         let func = move |_request| self.clone();
 
         poem::endpoint::make_sync(func)
+    }
+
+    #[cfg(any(feature = "misc", feature = "rope"))]
+    fn into_first(self) -> Self::Type
+    where
+        Self: Sized + TupleRemove<U0>,
+    {
+        self.remove().0
+    }
+
+    #[cfg(any(feature = "misc", feature = "rope"))]
+    fn into_second(self) -> Self::Type
+    where
+        Self: Sized + TupleRemove<U1>,
+    {
+        self.remove().0
+    }
+
+    #[cfg(any(feature = "misc", feature = "rope"))]
+    fn into_third(self) -> Self::Type
+    where
+        Self: Sized + TupleRemove<U2>,
+    {
+        self.remove().0
     }
 
     #[cfg(feature = "async")]
@@ -1100,7 +1086,7 @@ pub trait Utils {
         self.into() < rhs
     }
 
-    #[cfg(any(feature = "ropey", feature = "misc", feature = "tui"))]
+    #[cfg(any(feature = "misc", feature = "tui"))]
     fn is_positive(&self) -> bool
     where
         Self: PartialOrd + Zero,
@@ -1144,7 +1130,7 @@ pub trait Utils {
         range.end.saturating_sub(&range.start)
     }
 
-    #[cfg(any(feature = "ropey", feature = "tui"))]
+    #[cfg(feature = "tui")]
     fn len_extended_graphemes(&self) -> usize
     where
         Self: AsRef<str>,
@@ -1271,22 +1257,6 @@ pub trait Utils {
         None
     }
 
-    #[cfg(feature = "ropey")]
-    fn num_lines_and_extended_graphemes<'a>(self) -> PointUsize
-    where
-        Self: Is<RopeSlice<'a>>,
-    {
-        let rope_slice = self.into_self();
-        let y = rope_slice.len_lines();
-        let x = rope_slice
-            .lines()
-            .map(|line_rope| line_rope.chunks().map(str::len_extended_graphemes).sum())
-            .max()
-            .unwrap_or(0);
-
-        PointUsize::new(x, y)
-    }
-
     fn ok<E>(self) -> Result<Self, E>
     where
         Self: Sized,
@@ -1308,7 +1278,7 @@ pub trait Utils {
         File::open(self)
     }
 
-    #[cfg(any(feature = "ropey", feature = "async"))]
+    #[cfg(feature = "async")]
     async fn open_async(&self) -> Result<TokioFile, IoError>
     where
         Self: AsRef<Path>,
@@ -1562,7 +1532,7 @@ pub trait Utils {
         y.pair(x)
     }
 
-    #[cfg(feature = "ropey")]
+    #[cfg(feature = "rope")]
     async fn rope<const N: usize>(&self) -> Result<Rope, IoError>
     where
         Self: AsRef<Path>,
@@ -1616,41 +1586,6 @@ pub trait Utils {
         mut socket: impl BorrowMut<Socket>,
     ) -> Result<(), AnyhowError> {
         socket.borrow_mut().respond::<T>(self).await
-    }
-
-    // TODO-ac2072:
-    // - add [AsRopeSlice] trait that both [Rope] and [RopeSlice<'_>] implement
-    // - i was doing this, but it didn't work due to some use of tempoarary variables error
-    #[cfg(feature = "ropey")]
-    fn saturating_chunks_at_extended_grapheme<'a>(self, extended_grapheme_index: usize) -> Chunks<'a>
-    where
-        Self: Is<RopeSlice<'a>>,
-    {
-        self.saturating_chunks_at_char(extended_grapheme_index)
-    }
-
-    // TODO-ac2072
-    #[cfg(feature = "ropey")]
-    fn saturating_chunks_at_char<'a>(self, char_index: usize) -> Chunks<'a>
-    where
-        Self: Is<RopeSlice<'a>>,
-    {
-        let rope_slice = self.into_self();
-        let char_index = rope_slice.len_chars().min(char_index);
-
-        rope_slice.chunks_at_char(char_index).0
-    }
-
-    // TODO-ac2072
-    #[cfg(feature = "ropey")]
-    fn saturating_lines_at<'a>(self, line_index: usize) -> Lines<'a>
-    where
-        Self: Is<RopeSlice<'a>>,
-    {
-        let rope_slice = self.into_self();
-        let line_index = rope_slice.len_lines().min(line_index);
-
-        rope_slice.lines_at(line_index)
     }
 
     #[cfg(feature = "tui")]
@@ -1716,18 +1651,18 @@ pub trait Utils {
             .context("unable to send value over oneshot channel")
     }
 
-    fn set_true(&mut self) -> bool
+    fn set_true(&mut self)
     where
         Self: BorrowMut<bool>,
     {
-        self.borrow_mut().mem_replace(true)
+        self.borrow_mut().mem_replace(true).mem_drop();
     }
 
-    fn set_false(&mut self) -> bool
+    fn set_false(&mut self)
     where
         Self: BorrowMut<bool>,
     {
-        self.borrow_mut().mem_replace(false)
+        self.borrow_mut().mem_replace(false).mem_drop();
     }
 
     fn singleton<T: FromIterator<Self>>(self) -> T
@@ -1761,16 +1696,15 @@ pub trait Utils {
         tokio::spawn(self)
     }
 
-    #[cfg(any(feature = "ropey", feature = "tui"))]
+    #[cfg(feature = "tui")]
     fn split_along_extended_graphemes(&self, max_prefix_size: usize) -> (&str, &str)
     where
         Self: AsRef<str>,
     {
         let string = self.as_ref();
         let prefix_len = string
-            .extended_grapheme_indices()
-            .map(|(index, _extended_grapheme)| index)
-            .take_while(|index| *index < max_prefix_size)
+            .extended_grapheme_byte_offsets()
+            .take_while(|byte_offset| *byte_offset < max_prefix_size)
             .last()
             .unwrap_or(0);
 
@@ -1984,7 +1918,7 @@ pub trait Utils {
         dst.saturating_add_assign(self);
     }
 
-    #[cfg(any(feature = "ropey", feature = "tui"))]
+    #[cfg(feature = "tui")]
     #[must_use]
     fn transpose(&self) -> Self
     where

@@ -18,7 +18,7 @@ pub struct Chunk {
 }
 
 impl Chunk {
-    const CAPACITY: usize = 1024;
+    const CAPACITY: usize = 256;
 
     #[must_use]
     pub fn empty() -> Self {

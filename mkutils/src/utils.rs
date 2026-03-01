@@ -1,60 +1,49 @@
-#[cfg(feature = "serde")]
+#[cfg(feature = "tracing")]
 use crate::as_valuable::AsValuable;
-#[cfg(feature = "fmt")]
-use crate::fmt::{Debugged, OptionDisplay, ResultDisplay};
-use crate::is::Is;
-#[cfg(feature = "output")]
+#[cfg(feature = "unstable")]
 use crate::output::Output;
-#[cfg(feature = "process")]
-use crate::process::ProcessBuilder;
-#[cfg(feature = "rope")]
-use crate::rope::{atoms::Atom, builder::RopeBuilder, rope::Rope};
-#[cfg(any(feature = "serde", feature = "tui"))]
-use crate::seq_visitor::SeqVisitor;
-#[cfg(feature = "socket")]
+#[cfg(all(feature = "async", feature = "unstable", feature = "serde-extra"))]
 use crate::socket::{Request, Socket};
 #[cfg(feature = "tracing")]
 use crate::status::Status;
-#[cfg(feature = "tui")]
-use crate::transpose::Transpose;
+use crate::{
+    fmt::{Debugged, OptionDisplay, ResultDisplay},
+    is::Is,
+    seq_visitor::SeqVisitor,
+};
 #[cfg(feature = "async")]
-use crate::{into_stream::IntoStream, read_value::ReadValue, run_for::RunForError};
-#[cfg(any(
-    feature = "async",
-    feature = "fs",
-    feature = "process",
-    feature = "reqwest",
-    feature = "socket",
-    feature = "tui",
-))]
+use crate::{into_stream::IntoStream, process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
+#[cfg(feature = "tui")]
+use crate::{
+    rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
+    transpose::Transpose,
+};
 use anyhow::{Context, Error as AnyhowError};
 #[cfg(feature = "async")]
 use bytes::Buf;
-#[cfg(feature = "poem")]
+#[cfg(all(feature = "async", feature = "http"))]
 use bytes::Bytes;
-#[cfg(feature = "fs")]
 use camino::{Utf8Path, Utf8PathBuf};
-#[cfg(any(feature = "async", feature = "poem"))]
-use futures::Stream;
 #[cfg(feature = "async")]
 use futures::{
-    Sink, SinkExt, StreamExt, TryFuture,
+    Sink, SinkExt, Stream, StreamExt, TryFuture,
     future::{Either, JoinAll},
     stream::{Filter, FuturesUnordered},
 };
-#[cfg(any(feature = "misc", feature = "tui"))]
-use num::{Bounded, NumCast, ToPrimitive, Zero};
-#[cfg(feature = "tui")]
 use num::{
-    One,
+    Bounded, NumCast, One, ToPrimitive, Zero,
     traits::{SaturatingAdd, SaturatingSub},
 };
 #[cfg(feature = "tui")]
 use palette::IntoColor;
-#[cfg(feature = "poem")]
-use poem::{Body as PoemBody, Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
-#[cfg(feature = "poem")]
-use poem_openapi::{error::ParseRequestPayloadError, payload::Binary as PoemBinary, payload::Json as PoemJson};
+#[cfg(all(feature = "async", feature = "http"))]
+use poem::Body as PoemBody;
+#[cfg(feature = "http")]
+use poem::{Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
+#[cfg(all(feature = "http", feature = "serde-extra"))]
+use poem_openapi::error::ParseRequestPayloadError;
+#[cfg(feature = "http")]
+use poem_openapi::payload::{Binary as PoemBinary, Json as PoemJson};
 #[cfg(feature = "tui")]
 use ratatui::{
     Frame,
@@ -63,42 +52,24 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, StatefulWidget, Widget},
 };
-#[cfg(feature = "reqwest")]
+#[cfg(feature = "http")]
 use reqwest::{RequestBuilder, Response};
-#[cfg(feature = "rmp")]
+#[cfg(feature = "serde-extra")]
 use rmp_serde::{decode::Error as RmpDecodeError, encode::Error as RmpEncodeError};
-#[cfg(any(feature = "rmp", feature = "serde", feature = "tui"))]
-use serde::Deserialize;
-#[cfg(any(feature = "serde", feature = "tui"))]
-use serde::Deserializer;
-#[cfg(any(feature = "reqwest", feature = "rmp", feature = "serde"))]
+#[cfg(any(feature = "http", feature = "serde-extra"))]
 use serde::Serialize;
-#[cfg(feature = "serde")]
+#[cfg(feature = "serde-extra")]
 use serde::de::DeserializeOwned;
-#[cfg(any(feature = "poem", feature = "serde"))]
-use serde_json::Error as SerdeJsonError;
-#[cfg(feature = "serde")]
-use serde_json::{Value as Json, value::Index as SerdeJsonIndex};
-#[cfg(feature = "serde")]
+use serde::{Deserialize, Deserializer};
+#[cfg(feature = "serde-extra")]
+use serde_json::{Error as SerdeJsonError, Value as Json, value::Index as SerdeJsonIndex};
+#[cfg(feature = "serde-extra")]
 use serde_yaml_ng::Error as SerdeYamlError;
-#[cfg(any(
-    feature = "async",
-    feature = "fs",
-    feature = "process",
-    feature = "reqwest",
-    feature = "socket",
-    feature = "tui",
-))]
-use std::fmt::Debug;
-#[cfg(feature = "fs")]
-use std::path::PathBuf;
-#[cfg(feature = "process")]
-use std::process::ExitStatus;
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
     error::Error as StdError,
-    fmt::Display,
+    fmt::{Debug, Display},
     fs::File,
     future::Ready,
     hash::Hash,
@@ -106,7 +77,7 @@ use std::{
     iter::{Once, Peekable, Repeat},
     mem::ManuallyDrop,
     ops::{Add, ControlFlow, Index, IndexMut, Range},
-    path::Path,
+    path::{Path, PathBuf},
     pin::Pin,
     str::Utf8Error,
     string::FromUtf8Error,
@@ -115,20 +86,18 @@ use std::{
     time::Instant,
 };
 #[cfg(feature = "async")]
-use std::{fs::Metadata, time::Duration};
-#[cfg(any(feature = "async", feature = "process"))]
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-#[cfg(feature = "async")]
+use std::{fs::Metadata, process::ExitStatus};
+#[cfg(any(feature = "async", feature = "tui"))]
 use tokio::{
     fs::File as TokioFile,
     io::{AsyncRead, BufReader as TokioBufReader},
 };
 #[cfg(feature = "async")]
 use tokio::{
-    io::{AsyncWrite, BufWriter as TokioBufWriter},
+    io::{AsyncReadExt, AsyncWrite, AsyncWriteExt, BufWriter as TokioBufWriter},
     sync::oneshot::Sender as OneshotSender,
-    task::JoinHandle,
-    task::{JoinSet, LocalSet},
+    task::{JoinHandle, JoinSet, LocalSet},
+    time::Duration,
     time::{Interval, Sleep, Timeout},
 };
 #[cfg(feature = "async")]
@@ -138,13 +107,11 @@ use tokio_util::{
 };
 #[cfg(feature = "tracing")]
 use tracing::Level;
-#[cfg(any(feature = "misc", feature = "rope"))]
 use tuplities_remove::TupleRemove;
-#[cfg(any(feature = "misc", feature = "rope"))]
 use typenum::{U0, U1, U2};
 #[cfg(feature = "tui")]
 use unicode_segmentation::{GraphemeIndices, Graphemes, UnicodeSegmentation};
-#[cfg(feature = "serde")]
+#[cfg(feature = "tracing")]
 use valuable::Value;
 
 pub type BoxError = Box<dyn StdError + Send + Sync>;
@@ -171,7 +138,6 @@ pub trait Utils {
         while join_set.join_next().await.is_some() {}
     }
 
-    #[cfg(feature = "fs")]
     fn absolute_utf8(&self) -> Result<Cow<'_, Utf8Path>, IoError>
     where
         Self: AsRef<Utf8Path>,
@@ -206,14 +172,6 @@ pub trait Utils {
         line
     }
 
-    #[cfg(any(
-        feature = "async",
-        feature = "fs",
-        feature = "process",
-        feature = "reqwest",
-        feature = "socket",
-        feature = "tui",
-    ))]
     fn anyhow_msg_error(self) -> AnyhowError
     where
         Self: 'static + Debug + Display + Send + Sized + Sync,
@@ -221,14 +179,6 @@ pub trait Utils {
         AnyhowError::msg(self)
     }
 
-    #[cfg(any(
-        feature = "async",
-        feature = "fs",
-        feature = "process",
-        feature = "reqwest",
-        feature = "socket",
-        feature = "tui",
-    ))]
     fn anyhow_error(self) -> AnyhowError
     where
         Self: Into<AnyhowError>,
@@ -236,14 +186,6 @@ pub trait Utils {
         self.into()
     }
 
-    #[cfg(any(
-        feature = "async",
-        feature = "fs",
-        feature = "process",
-        feature = "reqwest",
-        feature = "socket",
-        feature = "tui",
-    ))]
     fn anyhow_result<T, E: Into<AnyhowError>>(self) -> Result<T, AnyhowError>
     where
         Self: Is<Result<T, E>>,
@@ -293,7 +235,6 @@ pub trait Utils {
         std::str::from_utf8(self.as_ref())
     }
 
-    #[cfg(feature = "fs")]
     fn as_utf8_path(&self) -> &Utf8Path
     where
         Self: AsRef<Utf8Path>,
@@ -301,7 +242,7 @@ pub trait Utils {
         self.as_ref()
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "tracing")]
     fn as_valuable(&self) -> Value<'_>
     where
         Self: AsValuable,
@@ -324,7 +265,7 @@ pub trait Utils {
         BufReader::new(self)
     }
 
-    #[cfg(feature = "async")]
+    #[cfg(any(feature = "async", feature = "tui"))]
     fn buf_reader_async(self) -> TokioBufReader<Self>
     where
         Self: AsyncRead + Sized,
@@ -347,7 +288,6 @@ pub trait Utils {
         TokioBufWriter::new(self)
     }
 
-    #[cfg(any(feature = "misc", feature = "tui"))]
     fn cast_or_max<T: Bounded + NumCast>(self) -> T
     where
         Self: Sized + ToPrimitive,
@@ -374,14 +314,6 @@ pub trait Utils {
         std::format!("{self}{rhs}")
     }
 
-    #[cfg(any(
-        feature = "async",
-        feature = "fs",
-        feature = "process",
-        feature = "reqwest",
-        feature = "socket",
-        feature = "tui",
-    ))]
     fn check_next<T>(self) -> Result<T, AnyhowError>
     where
         Self: Is<Option<T>>,
@@ -395,14 +327,6 @@ pub trait Utils {
         }
     }
 
-    #[cfg(any(
-        feature = "async",
-        feature = "fs",
-        feature = "process",
-        feature = "reqwest",
-        feature = "socket",
-        feature = "tui",
-    ))]
     fn check_present<T>(self) -> Result<T, AnyhowError>
     where
         Self: Is<Option<T>>,
@@ -417,7 +341,7 @@ pub trait Utils {
     }
 
     // NOTE: [https://docs.rs/reqwest/latest/reqwest/struct.Response.html#method.error_for_status]
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "http")]
     async fn check_status(self) -> Result<Response, AnyhowError>
     where
         Self: Is<Response>,
@@ -437,7 +361,6 @@ pub trait Utils {
         anyhow::bail!("({status}) {text}")
     }
 
-    #[cfg(any(feature = "misc", feature = "tui"))]
     #[must_use]
     fn clamped(self, min: Self, max: Self) -> Self
     where
@@ -446,7 +369,7 @@ pub trait Utils {
         num::clamp(self, min, max)
     }
 
-    #[cfg(feature = "rope")]
+    #[cfg(feature = "tui")]
     fn collect_atoms<'a>(&mut self) -> String
     where
         Self: Iterator<Item = Atom<'a>>,
@@ -469,14 +392,6 @@ pub trait Utils {
         self.find_eq(query).is_some()
     }
 
-    #[cfg(any(
-        feature = "async",
-        feature = "fs",
-        feature = "process",
-        feature = "reqwest",
-        feature = "socket",
-        feature = "tui",
-    ))]
     fn context_path<T, E, C: 'static + Display + Send + Sync, P: AsRef<Path>>(
         self,
         context: C,
@@ -498,7 +413,7 @@ pub trait Utils {
         *self
     }
 
-    #[cfg(feature = "process")]
+    #[cfg(feature = "async")]
     async fn write_to_clipboard(&self) -> Result<ExitStatus, AnyhowError>
     where
         Self: AsRef<[u8]>,
@@ -515,7 +430,7 @@ pub trait Utils {
         process.run().await?.ok()
     }
 
-    #[cfg(feature = "process")]
+    #[cfg(feature = "async")]
     #[must_use]
     async fn read_from_clipboard() -> Result<String, AnyhowError> {
         let mut process = ProcessBuilder::new(Self::READ_FROM_CLIPBOARD_COMMAND).build()?;
@@ -540,7 +455,6 @@ pub trait Utils {
         std::fs::create_dir_all(self)
     }
 
-    #[cfg(feature = "misc")]
     fn cycle_in_place(&mut self, amount: isize, total: usize)
     where
         Self: BorrowMut<usize>,
@@ -556,7 +470,6 @@ pub trait Utils {
             .cast_or_max();
     }
 
-    #[cfg(feature = "fmt")]
     fn debug(self) -> Debugged<Self>
     where
         Self: Sized,
@@ -564,7 +477,6 @@ pub trait Utils {
         Debugged::new(self)
     }
 
-    #[cfg(feature = "tui")]
     fn decrement(&mut self)
     where
         Self: One + SaturatingSub,
@@ -572,7 +484,6 @@ pub trait Utils {
         self.saturating_sub_assign(&Self::one());
     }
 
-    #[cfg(feature = "tui")]
     #[must_use]
     fn decremented(&self) -> Self
     where
@@ -581,7 +492,6 @@ pub trait Utils {
         self.saturating_sub(&Self::one())
     }
 
-    #[cfg(any(feature = "serde", feature = "tui"))]
     fn deserialize_from_seq<'de, D: Deserializer<'de>, X: Deserialize<'de>, Y, E: Display, F: Fn(X) -> Result<Y, E>>(
         deserializer: D,
         func: F,
@@ -594,7 +504,7 @@ pub trait Utils {
         deserializer.deserialize_seq(seq_visitor)
     }
 
-    #[cfg(feature = "output")]
+    #[cfg(feature = "unstable")]
     fn end_err<T>(self) -> Output<T, Self>
     where
         Self: Sized,
@@ -602,7 +512,7 @@ pub trait Utils {
         Output::EndErr(self)
     }
 
-    #[cfg(feature = "output")]
+    #[cfg(feature = "unstable")]
     fn end_ok<T, E>(&self) -> Output<T, E> {
         Output::EndOk
     }
@@ -614,7 +524,6 @@ pub trait Utils {
         Err(self)
     }
 
-    #[cfg(feature = "fs")]
     fn expand_user(&self) -> Cow<'_, Utf8Path>
     where
         Self: AsRef<str>,
@@ -630,7 +539,6 @@ pub trait Utils {
         }
     }
 
-    #[cfg(feature = "fs")]
     fn unexpand_user(&self) -> Cow<'_, Utf8Path>
     where
         Self: AsRef<str>,
@@ -702,7 +610,6 @@ pub trait Utils {
         self.filter(move |x| func(x).ready())
     }
 
-    #[cfg(feature = "fs")]
     fn file_name_ok(&self) -> Result<&str, AnyhowError>
     where
         Self: AsRef<Utf8Path>,
@@ -710,7 +617,6 @@ pub trait Utils {
         self.as_ref().file_name().context("path has no file name")
     }
 
-    #[cfg(feature = "fs")]
     fn file_name_or_self(&self) -> &str
     where
         Self: AsRef<Utf8Path>,
@@ -754,7 +660,6 @@ pub trait Utils {
         self.into_self() <= Instant::now()
     }
 
-    #[cfg(feature = "fs")]
     #[must_use]
     fn home_dirpath() -> Option<Utf8PathBuf> {
         home::home_dir()?.try_convert::<Utf8PathBuf>().ok()
@@ -771,7 +676,6 @@ pub trait Utils {
         self
     }
 
-    #[cfg(feature = "tui")]
     fn increment(&mut self)
     where
         Self: One + SaturatingAdd,
@@ -779,7 +683,6 @@ pub trait Utils {
         *self = self.immutable().incremented();
     }
 
-    #[cfg(feature = "tui")]
     #[must_use]
     fn incremented(&self) -> Self
     where
@@ -809,7 +712,6 @@ pub trait Utils {
         self.borrow_mut().entry(key).insert_entry(value).into_mut()
     }
 
-    #[cfg(any(feature = "misc", feature = "tui"))]
     #[must_use]
     fn interpolate(
         self,
@@ -877,7 +779,7 @@ pub trait Utils {
         Cow::Owned(self)
     }
 
-    #[cfg(feature = "poem")]
+    #[cfg(feature = "http")]
     fn into_endpoint(self) -> impl Endpoint<Output = Self>
     where
         Self: Clone + IntoResponse + Sync,
@@ -887,7 +789,6 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
-    #[cfg(any(feature = "misc", feature = "rope"))]
     fn into_first(self) -> Self::Type
     where
         Self: Sized + TupleRemove<U0>,
@@ -895,7 +796,6 @@ pub trait Utils {
         self.remove().0
     }
 
-    #[cfg(any(feature = "misc", feature = "rope"))]
     fn into_second(self) -> Self::Type
     where
         Self: Sized + TupleRemove<U1>,
@@ -903,7 +803,6 @@ pub trait Utils {
         self.remove().0
     }
 
-    #[cfg(any(feature = "misc", feature = "rope"))]
     fn into_third(self) -> Self::Type
     where
         Self: Sized + TupleRemove<U2>,
@@ -982,7 +881,7 @@ pub trait Utils {
     }
 
     // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]
-    #[cfg(feature = "poem")]
+    #[cfg(all(feature = "http", feature = "serde-extra"))]
     fn into_parse_request_payload_result<T>(self) -> Result<T, ParseRequestPayloadError>
     where
         Self: Is<Result<T, SerdeJsonError>>,
@@ -1023,7 +922,6 @@ pub trait Utils {
         IntoStream::into_stream(self)
     }
 
-    #[cfg(feature = "fs")]
     fn into_string(self) -> Result<String, AnyhowError>
     where
         Self: Is<PathBuf>,
@@ -1034,7 +932,7 @@ pub trait Utils {
         }
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn into_value_from_json<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
     where
         Self: Is<Json>,
@@ -1042,7 +940,6 @@ pub trait Utils {
         serde_json::from_value(self.into_self())
     }
 
-    #[cfg(feature = "fs")]
     fn invalid_utf8_err<T>(&self) -> Result<T, AnyhowError>
     where
         Self: Debug,
@@ -1086,7 +983,6 @@ pub trait Utils {
         self.into() < rhs
     }
 
-    #[cfg(any(feature = "misc", feature = "tui"))]
     fn is_positive(&self) -> bool
     where
         Self: PartialOrd + Zero,
@@ -1120,7 +1016,6 @@ pub trait Utils {
         self.join_all().await.into_iter().collect()
     }
 
-    #[cfg(feature = "tui")]
     fn len_range<T: SaturatingSub>(&self) -> T
     where
         Self: Borrow<Range<T>>,
@@ -1150,7 +1045,7 @@ pub trait Utils {
         }
     }
 
-    #[cfg(any(feature = "tui", feature = "tracing"))]
+    #[cfg(any(feature = "tracing", feature = "tui"))]
     fn log_error(&self)
     where
         Self: Display,
@@ -1158,7 +1053,7 @@ pub trait Utils {
         tracing::warn!(error = %self, "error: {self:#}");
     }
 
-    #[cfg(any(feature = "tui", feature = "tracing"))]
+    #[cfg(any(feature = "tracing", feature = "tui"))]
     #[must_use]
     fn log_if_error<T, E: Display>(self) -> Self
     where
@@ -1278,7 +1173,7 @@ pub trait Utils {
         File::open(self)
     }
 
-    #[cfg(feature = "async")]
+    #[cfg(any(feature = "async", feature = "tui"))]
     async fn open_async(&self) -> Result<TokioFile, IoError>
     where
         Self: AsRef<Path>,
@@ -1286,7 +1181,6 @@ pub trait Utils {
         TokioFile::open(self).await
     }
 
-    #[cfg(feature = "fmt")]
     fn option_display(self) -> OptionDisplay<Self>
     where
         Self: Sized,
@@ -1294,7 +1188,7 @@ pub trait Utils {
         OptionDisplay::new(self)
     }
 
-    #[cfg(feature = "output")]
+    #[cfg(feature = "unstable")]
     fn output_ok<E>(self) -> Output<Self, E>
     where
         Self: Sized,
@@ -1337,7 +1231,7 @@ pub trait Utils {
         func(self)
     }
 
-    #[cfg(feature = "poem")]
+    #[cfg(feature = "http")]
     fn poem_binary(self) -> PoemBinary<Self>
     where
         Self: Sized,
@@ -1345,7 +1239,7 @@ pub trait Utils {
         PoemBinary(self)
     }
 
-    #[cfg(feature = "poem")]
+    #[cfg(feature = "http")]
     fn poem_binary_message(self) -> PoemMessage
     where
         Self: Is<Vec<u8>>,
@@ -1353,7 +1247,7 @@ pub trait Utils {
         PoemMessage::Binary(self.into_self())
     }
 
-    #[cfg(feature = "poem")]
+    #[cfg(feature = "http")]
     fn poem_json(self) -> PoemJson<Self>
     where
         Self: Sized,
@@ -1361,7 +1255,7 @@ pub trait Utils {
         PoemJson(self)
     }
 
-    #[cfg(feature = "poem")]
+    #[cfg(all(feature = "async", feature = "http"))]
     fn poem_stream_body<O: 'static + Into<Bytes>, E: 'static + Into<IoError>>(self) -> PoemBinary<PoemBody>
     where
         Self: 'static + Send + Sized + Stream<Item = Result<O, E>>,
@@ -1369,7 +1263,7 @@ pub trait Utils {
         PoemBody::from_bytes_stream(self).poem_binary()
     }
 
-    #[cfg(feature = "poem")]
+    #[cfg(feature = "http")]
     fn poem_text_message(self) -> PoemMessage
     where
         Self: Is<String>,
@@ -1405,7 +1299,7 @@ pub trait Utils {
         collection.extend(self);
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "http")]
     fn query_all<T: Serialize>(self, name: &str, values: impl IntoIterator<Item = T>) -> RequestBuilder
     where
         Self: Is<RequestBuilder>,
@@ -1419,7 +1313,7 @@ pub trait Utils {
         request_builder
     }
 
-    #[cfg(feature = "reqwest")]
+    #[cfg(feature = "http")]
     fn query_one<T: Serialize>(self, name: &str, value: impl Into<Option<T>>) -> RequestBuilder
     where
         Self: Is<RequestBuilder>,
@@ -1449,13 +1343,11 @@ pub trait Utils {
         Self: Into<(u16, u16)>,
     {
         let (width, height) = self.into();
-        let x = 0;
-        let y = 0;
 
-        Rect { x, y, width, height }
+        Rect::new(0, 0, width, height)
     }
 
-    #[cfg(any(feature = "async", feature = "process"))]
+    #[cfg(feature = "async")]
     async fn read_to_string_async(&mut self) -> Result<String, IoError>
     where
         Self: AsyncReadExt + Unpin,
@@ -1515,7 +1407,6 @@ pub trait Utils {
         std::iter::repeat(self)
     }
 
-    #[cfg(feature = "fmt")]
     fn result_display(self) -> ResultDisplay<Self>
     where
         Self: Sized,
@@ -1532,7 +1423,7 @@ pub trait Utils {
         y.pair(x)
     }
 
-    #[cfg(feature = "rope")]
+    #[cfg(feature = "tui")]
     async fn rope<const N: usize>(&self) -> Result<Rope, IoError>
     where
         Self: AsRef<Path>,
@@ -1580,15 +1471,14 @@ pub trait Utils {
         string.strip_prefix(prefix).unwrap_or(string)
     }
 
-    #[cfg(feature = "socket")]
+    #[cfg(all(feature = "async", feature = "unstable", feature = "serde-extra"))]
     async fn respond_to<T: Request<Response = Self>>(
         &self,
         mut socket: impl BorrowMut<Socket>,
     ) -> Result<(), AnyhowError> {
-        socket.borrow_mut().respond::<T>(self).await
+        socket.borrow_mut().respond_with::<T>(self).await
     }
 
-    #[cfg(feature = "tui")]
     fn saturating_add_assign(&mut self, rhs: &Self)
     where
         Self: SaturatingAdd,
@@ -1596,7 +1486,6 @@ pub trait Utils {
         *self = self.saturating_add(rhs);
     }
 
-    #[cfg(feature = "tui")]
     fn saturating_add_or_sub_in_place_with_max(&mut self, rhs: Self, max_value: Self, add: bool)
     where
         Self: Ord + SaturatingAdd + SaturatingSub + Sized,
@@ -1610,7 +1499,6 @@ pub trait Utils {
         *self = value.min(max_value);
     }
 
-    #[cfg(feature = "tui")]
     fn saturating_sub_assign(&mut self, rhs: &Self)
     where
         Self: SaturatingSub,
@@ -1764,7 +1652,7 @@ pub trait Utils {
         (begin, end).some()
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn take_json<T: DeserializeOwned>(&mut self, index: impl SerdeJsonIndex) -> Result<T, SerdeJsonError>
     where
         Self: BorrowMut<Json>,
@@ -1800,7 +1688,7 @@ pub trait Utils {
         *bool_value = !*bool_value;
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn to_json(&self) -> Result<Json, SerdeJsonError>
     where
         Self: Serialize,
@@ -1808,7 +1696,7 @@ pub trait Utils {
         serde_json::to_value(self)
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn to_json_byte_str(&self) -> Result<Vec<u8>, SerdeJsonError>
     where
         Self: Serialize,
@@ -1816,7 +1704,7 @@ pub trait Utils {
         serde_json::to_vec(self)
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn to_json_object(&self, key: &str) -> Json
     where
         Self: Serialize,
@@ -1824,7 +1712,7 @@ pub trait Utils {
         serde_json::json!({key: self})
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn to_json_str(&self) -> Result<String, SerdeJsonError>
     where
         Self: Serialize,
@@ -1832,7 +1720,7 @@ pub trait Utils {
         serde_json::to_string(self)
     }
 
-    #[cfg(feature = "rmp")]
+    #[cfg(feature = "serde-extra")]
     fn to_rmp_byte_str(&self) -> Result<Vec<u8>, RmpEncodeError>
     where
         Self: Serialize,
@@ -1840,7 +1728,6 @@ pub trait Utils {
         rmp_serde::to_vec(self)
     }
 
-    #[cfg(feature = "fs")]
     fn to_uri(&self) -> Result<String, IoError>
     where
         Self: AsRef<Utf8Path>,
@@ -1848,7 +1735,7 @@ pub trait Utils {
         Self::URI_PREFIX.cat(self.absolute_utf8()?).ok()
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn to_value_from_json_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeJsonError>
     where
         Self: AsRef<[u8]>,
@@ -1856,7 +1743,7 @@ pub trait Utils {
         serde_json::from_slice(self.as_ref())
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn to_value_from_json_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
     where
         Self: Read + Sized,
@@ -1864,7 +1751,7 @@ pub trait Utils {
         serde_json::from_reader(self)
     }
 
-    #[cfg(feature = "rmp")]
+    #[cfg(feature = "serde-extra")]
     fn to_value_from_rmp_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, RmpDecodeError>
     where
         Self: AsRef<[u8]>,
@@ -1872,7 +1759,7 @@ pub trait Utils {
         rmp_serde::from_slice(self.as_ref())
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn to_value_from_value<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>
     where
         Self: Serialize,
@@ -1880,7 +1767,7 @@ pub trait Utils {
         self.to_json()?.into_value_from_json()
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn to_value_from_yaml_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeYamlError>
     where
         Self: AsRef<[u8]>,
@@ -1888,7 +1775,7 @@ pub trait Utils {
         serde_yaml_ng::from_slice(self.as_ref())
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn to_value_from_yaml_reader<T: DeserializeOwned>(self) -> Result<T, SerdeYamlError>
     where
         Self: Read + Sized,
@@ -1896,7 +1783,6 @@ pub trait Utils {
         serde_yaml_ng::from_reader(self)
     }
 
-    #[cfg(feature = "tui")]
     #[must_use]
     fn translate_to(&mut self, value: Self) -> Self
     where
@@ -1909,7 +1795,6 @@ pub trait Utils {
         difference
     }
 
-    #[cfg(feature = "tui")]
     fn transfer_from_to(&self, src: &mut Self, dst: &mut Self)
     where
         Self: SaturatingAdd + SaturatingSub,
@@ -2017,7 +1902,7 @@ pub trait Utils {
         string
     }
 
-    #[cfg(feature = "serde")]
+    #[cfg(feature = "serde-extra")]
     fn write_as_json_to<T: Write>(&self, writer: T) -> Result<(), SerdeJsonError>
     where
         Self: Serialize,
@@ -2032,7 +1917,7 @@ pub trait Utils {
         self.write_all(byte_str)?.with(self).ok()
     }
 
-    #[cfg(any(feature = "async", feature = "process"))]
+    #[cfg(feature = "async")]
     async fn write_all_then_async(&mut self, byte_str: &[u8]) -> Result<&mut Self, IoError>
     where
         Self: AsyncWriteExt + Unpin,

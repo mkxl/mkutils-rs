@@ -1497,7 +1497,7 @@ dependencies = [
 
 [[package]]
 name = "mkutils"
-version = "0.1.84"
+version = "0.1.85"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1536,7 +1536,7 @@ dependencies = [
 
 [[package]]
 name = "mkutils-macros"
-version = "0.1.84"
+version = "0.1.85"
 dependencies = [
  "heck",
  "proc-macro2",

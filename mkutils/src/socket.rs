@@ -41,7 +41,7 @@ impl Socket {
         self.exchange::<T::Serialized, T::Response>(request).await
     }
 
-    pub async fn respond<T: Request>(&mut self, response: &T::Response) -> Result<(), AnyhowError> {
+    pub async fn respond_with<T: Request>(&mut self, response: &T::Response) -> Result<(), AnyhowError> {
         self.send(response).await
     }
 

@@ -1,18 +1,17 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(feature = "output", feature(try_trait_v2))]
-#![cfg_attr(feature = "socket", feature(associated_type_defaults))]
+#![cfg_attr(feature = "unstable", feature(associated_type_defaults, try_trait_v2))]
 
+mod active_vec;
+mod fmt;
+mod indexed;
 mod is;
 mod macros;
+mod read_value;
+mod seq_visitor;
+mod timestamped;
 mod utils;
 
-#[cfg(feature = "misc")]
-mod active_vec;
-
-#[cfg(feature = "fmt")]
-mod fmt;
-
-#[cfg(feature = "serde")]
+#[cfg(feature = "tracing")]
 mod as_valuable;
 
 #[cfg(feature = "tui")]
@@ -24,28 +23,22 @@ mod event;
 #[cfg(feature = "tui")]
 mod geometry;
 
-#[cfg(feature = "misc")]
-mod indexed;
-
 #[cfg(feature = "async")]
 mod into_stream;
 
 #[cfg(feature = "tui")]
 mod key_map;
 
-#[cfg(feature = "output")]
+#[cfg(feature = "unstable")]
 mod output;
 
-#[cfg(feature = "process")]
-mod process;
-
 #[cfg(feature = "async")]
-mod read_value;
+mod process;
 
 #[cfg(feature = "tui")]
 mod rgb;
 
-#[cfg(feature = "rope")]
+#[cfg(feature = "tui")]
 mod rope;
 
 #[cfg(feature = "async")]
@@ -63,10 +56,7 @@ mod scroll_view;
 #[cfg(feature = "tui")]
 mod scroll_view_state;
 
-#[cfg(any(feature = "serde", feature = "tui"))]
-mod seq_visitor;
-
-#[cfg(feature = "socket")]
+#[cfg(all(feature = "async", feature = "unstable", feature = "serde-extra"))]
 mod socket;
 
 #[cfg(feature = "tracing")]
@@ -75,42 +65,30 @@ mod status;
 #[cfg(feature = "tui")]
 mod terminal;
 
-#[cfg(feature = "misc")]
-mod timestamped;
-
 #[cfg(feature = "tracing")]
 mod tracing;
 
 #[cfg(feature = "tui")]
 mod transpose;
 
-#[cfg(feature = "fmt")]
-pub use crate::fmt::{Debugged, OptionDisplay, ResultDisplay};
-#[cfg(feature = "output")]
+#[cfg(feature = "unstable")]
 pub use crate::output::Output;
-#[cfg(feature = "process")]
-pub use crate::process::{Process, ProcessBuilder};
-#[cfg(feature = "rope")]
-pub use crate::rope::{
-    atoms::{Atom, Atoms},
-    builder::RopeBuilder,
-    chunk::Chunk,
-    distance::{Distance, NumExtendedGraphemes, NumNewlines},
-    extended_grapheme_iter::ExtendedGraphemeIter,
-    line::Line,
-    lines::Lines,
-    rope::Rope,
-};
-#[cfg(feature = "socket")]
+#[cfg(all(feature = "async", feature = "unstable", feature = "serde-extra"))]
 pub use crate::socket::{Request, Socket};
 #[cfg(feature = "tracing")]
 pub use crate::tracing::Tracing;
-pub use crate::utils::Utils;
-#[cfg(feature = "misc")]
-pub use crate::{active_vec::ActiveVec, indexed::Indexed, timestamped::Timestamped};
+pub use crate::{
+    active_vec::ActiveVec,
+    fmt::{Debugged, OptionDisplay, ResultDisplay},
+    indexed::Indexed,
+    read_value::ReadValue,
+    timestamped::Timestamped,
+    utils::Utils,
+};
 #[cfg(feature = "tui")]
 pub use crate::{
     content::Content,
+    geometry::{Orientation, Point, PointU16, PointUsize},
     key_map::{
         key_binding::KeyBinding,
         key_map::{KeyBindingTrie, KeyMap},
@@ -118,17 +96,25 @@ pub use crate::{
         key_map_state::{KeyMapIncSearch, KeyMapState},
     },
     rgb::Rgb,
+    rope::{
+        atoms::{Atom, Atoms},
+        builder::RopeBuilder,
+        chunk::Chunk,
+        distance::{Distance, NumExtendedGraphemes, NumNewlines},
+        extended_grapheme_iter::ExtendedGraphemeIter,
+        line::Line,
+        lines::Lines,
+        rope::Rope,
+    },
     screen::{Screen, ScreenConfig, ScreenTerminal, Stdout},
     scroll_view::ScrollView,
     scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen},
     terminal::Terminal,
-};
-#[cfg(feature = "async")]
-pub use crate::{event::Event, read_value::ReadValue};
-#[cfg(feature = "tui")]
-pub use crate::{
-    geometry::{Orientation, Point, PointU16, PointUsize},
     transpose::Transpose,
 };
-#[cfg(feature = "mkutils-macros")]
+#[cfg(feature = "async")]
+pub use crate::{
+    event::Event,
+    process::{Process, ProcessBuilder},
+};
 pub use mkutils_macros::{Default, FromChain, SaturatingAdd, SaturatingSub, SetVariant, Toggle, TypeAssoc, context};

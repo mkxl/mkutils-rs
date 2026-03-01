@@ -1,17 +1,17 @@
 mod basic;
+mod constructor;
 mod context;
 mod default;
 mod error;
 mod from_chain;
-mod inner;
 mod set_variant;
 mod toggle;
 mod type_assoc;
 mod utils;
 
 use crate::{
-    basic::Basic, default::Default, from_chain::FromChain, inner::Inner, set_variant::SetVariant, toggle::Toggle,
-    type_assoc::TypeAssoc,
+    basic::Basic, constructor::Constructor, default::Default, from_chain::FromChain, set_variant::SetVariant,
+    toggle::Toggle, type_assoc::TypeAssoc,
 };
 use proc_macro::TokenStream;
 
@@ -28,7 +28,7 @@ pub fn context(args_token_stream: TokenStream, input_token_stream: TokenStream) 
 ///
 /// ```rust
 /// #[derive(FromChain)]
-/// #[from(Foo, Bar, Baz)]
+/// #[from_chain(Foo, Bar, Baz)]
 /// struct MyStruct;
 /// ```
 ///
@@ -41,7 +41,7 @@ pub fn context(args_token_stream: TokenStream, input_token_stream: TokenStream) 
 ///     }
 /// }
 /// ```
-#[proc_macro_derive(FromChain, attributes(from))]
+#[proc_macro_derive(FromChain, attributes(from_chain))]
 pub fn from_chain(input_token_stream: TokenStream) -> TokenStream {
     FromChain::derive(input_token_stream)
 }
@@ -176,29 +176,6 @@ pub fn toggle(input_token_stream: TokenStream) -> TokenStream {
     Toggle::derive(input_token_stream)
 }
 
-/// Adds an `inner()` method that returns a copy of the wrapped type.
-///
-/// # Example
-///
-/// ```rust
-/// #[derive(Inner)]
-/// struct MyStruct(usize)
-/// ```
-///
-/// adds
-///
-/// ```rust
-/// impl MyStruct {
-///   pub fn inner(&self) -> usize {
-///     self.0
-///   }
-/// }
-/// ```
-#[proc_macro_derive(Inner)]
-pub fn inner(input_token_stream: TokenStream) -> TokenStream {
-    Inner::derive(input_token_stream)
-}
-
 /// Implements `num::traits::SaturatingAdd` for a struct by delegating to each field.
 ///
 /// # Example
@@ -243,4 +220,50 @@ pub fn saturating_add(input_token_stream: TokenStream) -> TokenStream {
 #[proc_macro_derive(SaturatingSub)]
 pub fn saturating_sub(input_token_stream: TokenStream) -> TokenStream {
     Basic::derive(input_token_stream, "::num::traits::SaturatingSub", "saturating_sub")
+}
+
+/// Adds a `new()` constructor that accepts each field as a parameter.
+/// The method is private by default. Use `#[new("pub")]` or `#[new("pub(crate)")]`
+/// to set a custom visibility.
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(Constructor)]
+/// struct MyStruct {
+///     name: String,
+///     count: i32,
+/// }
+/// ```
+///
+/// adds
+///
+/// ```rust
+/// impl MyStruct {
+///     fn new(name: String, count: i32) -> Self {
+///         Self { name, count }
+///     }
+/// }
+/// ```
+///
+/// With a visibility attribute:
+///
+/// ```rust
+/// #[derive(Constructor)]
+/// #[new(pub(crate))]
+/// struct MyStruct(usize);
+/// ```
+///
+/// adds
+///
+/// ```rust
+/// impl MyStruct {
+///     pub(crate) fn new(_0: usize) -> Self {
+///         Self(_0)
+///     }
+/// }
+/// ```
+#[proc_macro_derive(Constructor, attributes(new))]
+pub fn constructor(input_token_stream: TokenStream) -> TokenStream {
+    Constructor::derive(input_token_stream)
 }

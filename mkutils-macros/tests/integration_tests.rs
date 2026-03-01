@@ -1,4 +1,4 @@
-use mkutils_macros::{Inner, SetVariant, Toggle};
+use mkutils_macros::{Constructor, SetVariant, Toggle};
 
 #[derive(Debug, PartialEq, SetVariant, Toggle)]
 enum MyEnum {
@@ -8,9 +8,6 @@ enum MyEnum {
     String(String),
     Tuple(i32, i32),
 }
-
-#[derive(Inner)]
-struct MyTupleStruct(bool, usize);
 
 #[test]
 fn test_set_variant() {
@@ -34,11 +31,46 @@ fn test_toggle() {
     std::assert_eq!(MyEnum::Tuple(0, 0).toggled(), MyEnum::UnitOne);
 }
 
-#[test]
-fn test_inner() {
-    let my_tuple_struct = MyTupleStruct(false, 0);
-    let actual_pair = my_tuple_struct.inner();
-    let expected_pair = (my_tuple_struct.0, my_tuple_struct.1);
+#[derive(Constructor)]
+struct CStruct {
+    name: String,
+    count: i32,
+}
 
-    std::assert_eq!(actual_pair, expected_pair)
+#[derive(Constructor)]
+struct TupleStruct(bool, usize);
+
+#[derive(Constructor)]
+struct UnitStruct;
+
+#[derive(Constructor)]
+#[new(pub)]
+struct PubConstructorStruct(u8);
+
+#[test]
+fn test_constructor_c_struct() {
+    let val = CStruct::new(String::from("hello"), 42);
+
+    std::assert_eq!(val.name, "hello");
+    std::assert_eq!(val.count, 42);
+}
+
+#[test]
+fn test_constructor_tuple_struct() {
+    let val = TupleStruct::new(true, 7);
+
+    std::assert_eq!(val.0, true);
+    std::assert_eq!(val.1, 7);
+}
+
+#[test]
+fn test_constructor_unit_struct() {
+    let _val = UnitStruct::new();
+}
+
+#[test]
+fn test_constructor_pub_visibility() {
+    let val = PubConstructorStruct::new(255);
+
+    std::assert_eq!(val.0, 255);
 }

@@ -11,14 +11,16 @@ categories.workspace = true
 
 [dependencies]
 anyhow = { version = "1.0.100", optional = true }
+arrayvec = { version = "0.7.6", optional = true }
 bytes = { version = "1.10.1", optional = true }
 camino = { version = "1.2.1", optional = true }
 console-subscriber = { version = "0.4.1", optional = true }
 crossterm = { version = "0.29.0", features = ["event-stream", "libc", "serde", "use-dev-tty"], optional = true }
-derive_more = { version = "2.0.1", features = ["constructor", "from", "into", "is_variant"], optional = true }
+derive_more = { version = "2.0.1", features = ["add", "constructor", "from", "into", "is_variant", "mul"], optional = true }
 futures = { version = "0.3.31", optional = true }
+getset = { version = "0.1.6", optional = true }
 home = { version = "0.5.12", optional = true }
-mkutils-macros = { version = "0.1.82", path = "../mkutils-macros", optional = true }
+mkutils-macros = { version = "0.1.84", path = "../mkutils-macros", optional = true }
 num = { version = "0.4.3", optional = true }
 palette = { version = "0.7.6", optional = true }
 poem = { version = "3.1.12", features = ["anyhow", "websocket"], optional = true }
@@ -39,6 +41,7 @@ tracing-subscriber = { version = "0.3.20", features = ["json", "valuable"], opti
 trie-rs = { version = "0.4.2", optional = true }
 unicode-segmentation = { version = "1.12.0", optional = true }
 valuable = { version = "0.1.1", optional = true }
+zed-sum-tree = { version = "0.2.0", optional = true }
 
 [features]
 async = ["dep:anyhow", "dep:bytes", "dep:derive_more", "dep:futures", "dep:tokio", "dep:tokio-stream", "dep:tokio-util"]
@@ -51,11 +54,15 @@ poem = ["dep:bytes", "dep:futures", "dep:poem", "dep:poem-openapi", "dep:serde_j
 process = ["dep:anyhow", "dep:derive_more", "dep:tokio"]
 reqwest = ["dep:anyhow", "dep:reqwest", "dep:serde"]
 rmp = ["dep:rmp-serde", "dep:serde"]
+rope = ["dep:arrayvec", "dep:getset", "dep:zed-sum-tree", "tui"]
 ropey = ["dep:derive_more", "dep:num", "dep:ropey", "dep:serde", "dep:tokio", "dep:unicode-segmentation"]
 serde = ["dep:serde", "dep:serde_json", "dep:serde_yaml_ng", "dep:valuable"]
 socket = ["dep:anyhow", "async", "dep:derive_more", "rmp", "output"]
 tracing = ["dep:console-subscriber", "dep:derive_more", "dep:tracing", "dep:tracing-subscriber"]
 tui = ["dep:anyhow", "dep:crossterm", "dep:derive_more", "dep:mkutils-macros", "dep:num", "dep:palette", "dep:ratatui", "dep:serde", "dep:tracing", "dep:trie-rs", "dep:unicode-segmentation"]
+getset = ["dep:getset"]
+zed-sum-tree = ["dep:zed-sum-tree"]
+arrayvec = ["dep:arrayvec"]
 
 [lints]
 workspace = true

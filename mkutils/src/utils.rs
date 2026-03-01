@@ -9,6 +9,8 @@ use crate::is::Is;
 use crate::output::Output;
 #[cfg(feature = "process")]
 use crate::process::ProcessBuilder;
+#[cfg(feature = "rope")]
+use crate::rope::atoms::Atom;
 #[cfg(feature = "ropey")]
 use crate::rope_builder::RopeBuilder;
 #[cfg(any(feature = "serde", feature = "tui"))]
@@ -454,6 +456,14 @@ pub trait Utils {
         num::clamp(self, min, max)
     }
 
+    #[cfg(feature = "rope")]
+    fn collect_atoms<'a>(&mut self) -> String
+    where
+        Self: Iterator<Item = Atom<'a>>,
+    {
+        self.map(|atom| atom.extended_grapheme()).collect()
+    }
+
     fn convert<T: From<Self>>(self) -> T
     where
         Self: Sized,
@@ -804,7 +814,7 @@ pub trait Utils {
     where
         Self: One + SaturatingAdd,
     {
-        self.saturating_add_assign(&Self::one());
+        *self = self.immutable().incremented();
     }
 
     #[cfg(feature = "tui")]
@@ -882,7 +892,7 @@ pub trait Utils {
         IntoColor::into_color(self)
     }
 
-    fn into_common<T>(self) -> T
+    fn into_ok_err<T>(self) -> T
     where
         Self: Is<Result<T, T>>,
     {
@@ -1079,7 +1089,7 @@ pub trait Utils {
     where
         Self: BorrowMut<Peekable<T>>,
     {
-        self.borrow_mut().peek().is_some()
+        self.borrow_mut().peek().is_none()
     }
 
     #[allow(clippy::wrong_self_convention)]
@@ -1122,6 +1132,16 @@ pub trait Utils {
         T: FromIterator<<Self::Item as Future>::Output>,
     {
         self.join_all().await.into_iter().collect()
+    }
+
+    #[cfg(feature = "tui")]
+    fn len_range<T: SaturatingSub>(&self) -> T
+    where
+        Self: Borrow<Range<T>>,
+    {
+        let range = self.borrow();
+
+        range.end.saturating_sub(&range.start)
     }
 
     #[cfg(any(feature = "ropey", feature = "tui"))]
@@ -1186,6 +1206,17 @@ pub trait Utils {
         self.borrow().as_ref().map(X::as_ref)
     }
 
+    fn map_range<X, Y>(self, mut func: impl FnMut(X) -> Y) -> Range<Y>
+    where
+        Self: Is<Range<X>>,
+    {
+        let range = self.into_self();
+        let start = func(range.start);
+        let end = func(range.end);
+
+        start..end
+    }
+
     fn mem_drop(self)
     where
         Self: Sized,
@@ -1229,7 +1260,7 @@ pub trait Utils {
         vec.last_mut().unwrap()
     }
 
-    fn iter_next(&mut self) -> Option<Self::Item>
+    fn next_iter(&mut self) -> Option<Self::Item>
     where
         Self: Iterator,
     {
@@ -1704,16 +1735,6 @@ pub trait Utils {
         Self: Sized,
     {
         self.once().collect()
-    }
-
-    #[cfg(feature = "tui")]
-    fn size<T: SaturatingSub>(&self) -> T
-    where
-        Self: Borrow<Range<T>>,
-    {
-        let range = self.borrow();
-
-        range.end.saturating_sub(&range.start)
     }
 
     #[cfg(feature = "async")]

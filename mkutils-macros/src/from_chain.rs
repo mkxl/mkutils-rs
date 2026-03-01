@@ -6,31 +6,35 @@ use syn::{DeriveInput, Error as SynError, Type, spanned::Spanned};
 pub struct FromChain;
 
 impl FromChain {
-    const ATTRIBUTE_NAME: &str = "from";
+    const ATTRIBUTE_NAME: &str = "from_chain";
 
     fn from_impl_block_token_stream(
         input: &DeriveInput,
-        type_chain: &CommaPunctuated<Type>,
+        mut type_chain: CommaPunctuated<Type>,
     ) -> Result<TokenStream2, SynError> {
+        let self_type = syn::parse_quote!(Self);
+
+        type_chain.push(self_type);
+
         let input_ident = &input.ident;
         let (impl_generics, input_generics, input_where_clause) = input.generics.split_for_impl();
-        let mut type_chain_pairs = type_chain.pairs();
-        let Some(head_type) = type_chain_pairs.next() else {
+        let Some(head_type) = type_chain.first() else {
             Err(Error::empty_attribute(type_chain.span(), Self::ATTRIBUTE_NAME))?
         };
-        let head_ident = quote::quote! { value };
-        let mut from_chain = quote::quote! { #head_ident };
+        let head_ident = quote::format_ident!("value");
+        let mut value = quote::quote! { #head_ident };
+        let src_and_dst_type_pair_iter = type_chain.iter().rev().skip(1).zip(type_chain.iter().rev()).rev();
 
-        while let Some(type_pair) = type_chain_pairs.next_back() {
-            let type_ = type_pair.into_value();
-
-            from_chain = quote::quote! { #type_::from(#from_chain) };
+        for (src_type, dst_type) in src_and_dst_type_pair_iter {
+            value = quote::quote! {
+                <#dst_type as ::std::convert::From<#src_type>>::from(#value)
+            };
         }
 
         let from_impl_block_token_stream = quote::quote! {
             impl #impl_generics ::std::convert::From<#head_type> for #input_ident #input_generics #input_where_clause {
                 fn from(#head_ident: #head_type) -> Self {
-                    Self::from(#from_chain)
+                    #value
                 }
             }
         };
@@ -45,7 +49,7 @@ impl FromChain {
         for attribute in &input.attrs {
             if attribute.path().is_ident(Self::ATTRIBUTE_NAME) {
                 let type_chain = attribute.parse_args_with(CommaPunctuated::<Type>::parse_terminated)?;
-                let from_impl_block_token_stream = Self::from_impl_block_token_stream(input, &type_chain)?;
+                let from_impl_block_token_stream = Self::from_impl_block_token_stream(input, type_chain)?;
                 let from_impl_block_token_stream_iter = Some(from_impl_block_token_stream);
 
                 from_impl_blocks_token_stream.extend(from_impl_block_token_stream_iter);

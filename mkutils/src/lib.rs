@@ -45,6 +45,9 @@ mod read_value;
 #[cfg(feature = "tui")]
 mod rgb;
 
+#[cfg(feature = "rope")]
+mod rope;
+
 #[cfg(feature = "ropey")]
 mod rope_builder;
 
@@ -84,55 +87,52 @@ mod tracing;
 #[cfg(any(feature = "ropey", feature = "tui"))]
 mod transpose;
 
-#[cfg(feature = "misc")]
-pub use crate::active_vec::ActiveVec;
-#[cfg(feature = "tui")]
-pub use crate::content::Content;
-#[cfg(feature = "async")]
-pub use crate::event::Event;
 #[cfg(feature = "fmt")]
 pub use crate::fmt::{Debugged, OptionDisplay, ResultDisplay};
-#[cfg(feature = "misc")]
-pub use crate::indexed::Indexed;
-#[cfg(feature = "tui")]
-pub use crate::key_map::key_binding::KeyBinding;
-#[cfg(feature = "tui")]
-pub use crate::key_map::key_map::{KeyBindingTrie, KeyMap};
-#[cfg(feature = "tui")]
-pub use crate::key_map::key_map_session::KeyMapSession;
-#[cfg(feature = "tui")]
-pub use crate::key_map::key_map_state::{KeyMapIncSearch, KeyMapState};
 #[cfg(feature = "output")]
 pub use crate::output::Output;
 #[cfg(feature = "process")]
 pub use crate::process::{Process, ProcessBuilder};
-#[cfg(feature = "async")]
-pub use crate::read_value::ReadValue;
-#[cfg(feature = "tui")]
-pub use crate::rgb::Rgb;
+#[cfg(feature = "rope")]
+pub use crate::rope::{
+    atoms::{Atom, Atoms},
+    chunk::Chunk,
+    distance::{Distance, NumExtendedGraphemes, NumNewlines},
+    extended_grapheme_iter::ExtendedGraphemeIter,
+    line::Line,
+    lines::Lines,
+    rope::Rope,
+};
 #[cfg(feature = "ropey")]
 pub use crate::rope_builder::RopeBuilder;
-#[cfg(feature = "tui")]
-pub use crate::screen::{Screen, ScreenConfig, ScreenTerminal, Stdout};
-#[cfg(feature = "tui")]
-pub use crate::scroll_view::ScrollView;
-#[cfg(feature = "tui")]
-pub use crate::scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen};
 #[cfg(feature = "socket")]
 pub use crate::socket::{Request, Socket};
-#[cfg(feature = "tui")]
-pub use crate::terminal::Terminal;
-#[cfg(feature = "misc")]
-pub use crate::timestamped::Timestamped;
 #[cfg(feature = "tracing")]
 pub use crate::tracing::Tracing;
 pub use crate::utils::Utils;
+#[cfg(feature = "misc")]
+pub use crate::{active_vec::ActiveVec, indexed::Indexed, timestamped::Timestamped};
+#[cfg(feature = "tui")]
+pub use crate::{
+    content::Content,
+    key_map::{
+        key_binding::KeyBinding,
+        key_map::{KeyBindingTrie, KeyMap},
+        key_map_session::KeyMapSession,
+        key_map_state::{KeyMapIncSearch, KeyMapState},
+    },
+    rgb::Rgb,
+    screen::{Screen, ScreenConfig, ScreenTerminal, Stdout},
+    scroll_view::ScrollView,
+    scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen},
+    terminal::Terminal,
+};
+#[cfg(feature = "async")]
+pub use crate::{event::Event, read_value::ReadValue};
 #[cfg(any(feature = "ropey", feature = "tui"))]
 pub use crate::{
     geometry::{Orientation, Point, PointU16, PointUsize},
     transpose::Transpose,
 };
 #[cfg(feature = "mkutils-macros")]
-pub use mkutils_macros::{
-    Default, FromChain, Inner, SaturatingAdd, SaturatingSub, SetVariant, Toggle, TypeAssoc, context,
-};
+pub use mkutils_macros::{Default, FromChain, SaturatingAdd, SaturatingSub, SetVariant, Toggle, TypeAssoc, context};

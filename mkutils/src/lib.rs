@@ -100,7 +100,7 @@ pub use crate::{
         atoms::{Atom, Atoms},
         builder::RopeBuilder,
         chunk::Chunk,
-        distance::{Distance, NumExtendedGraphemes, NumNewlines},
+        chunk_summary::{Distance, NumExtendedGraphemes, NumNewlines},
         extended_grapheme_iter::ExtendedGraphemeIter,
         line::Line,
         lines::Lines,

@@ -1,8 +1,9 @@
 use crate::{
+    geometry::PointUsize,
     rope::{
         atoms::Atoms,
         chunk::Chunk,
-        distance::{NumExtendedGraphemes, NumNewlines},
+        chunk_summary::{NumExtendedGraphemes, NumNewlines},
         lines::Lines,
     },
     utils::Utils,
@@ -69,6 +70,16 @@ impl Rope {
         let extended_graphemes = extended_graphemes.map_range(NumExtendedGraphemes::from);
 
         Lines::new(self, lines, extended_graphemes)
+    }
+
+    #[must_use]
+    pub fn size(&self) -> PointUsize {
+        let chunk_summary = self.chunks.summary();
+
+        PointUsize::new(
+            chunk_summary.line_lengths().max().into(),
+            chunk_summary.length().newlines().into(),
+        )
     }
 }
 

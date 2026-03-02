@@ -1,7 +1,7 @@
 use crate::{
     rope::{
         atoms::Atoms,
-        distance::{NumExtendedGraphemes, NumNewlines},
+        chunk_summary::{NumExtendedGraphemes, NumNewlines},
         line::Line,
         rope::Rope,
     },
@@ -36,7 +36,7 @@ impl<'r> Lines<'r> {
             return None;
         }
 
-        while self.atoms.rope_offset().newlines < self.next_line_offset {
+        while self.atoms.rope_offset().newlines() < self.next_line_offset {
             self.atoms.advance_to_start_of_next_line();
         }
 

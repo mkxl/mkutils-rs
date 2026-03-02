@@ -1,7 +1,7 @@
 use crate::{
     rope::{
         chunk::Chunk,
-        distance::{Distance, NumExtendedGraphemes, NumNewlines},
+        chunk_summary::{ChunkSummary, Distance, NumExtendedGraphemes, NumNewlines},
         extended_grapheme_iter::ExtendedGraphemeIter,
         line::Line,
         rope::Rope,
@@ -12,7 +12,7 @@ use getset::CopyGetters;
 use mkutils_macros::Constructor;
 use zed_sum_tree::{Bias, Cursor, Dimensions};
 
-type Dims = Dimensions<NumNewlines, Distance>;
+type Dims = Dimensions<NumNewlines, ChunkSummary>;
 
 #[derive(Constructor, CopyGetters)]
 #[get_copy = "pub"]
@@ -38,12 +38,13 @@ impl<'r> Atoms<'r> {
 
         chunk_cursor.seek(&target_line_offset, Self::BIAS);
 
-        let &Dimensions(_line_offset, mut rope_offset, ()) = chunk_cursor.start();
+        let Dimensions(_line_offset, chunk_summary, ()) = chunk_cursor.start();
+        let mut rope_offset = chunk_summary.length();
 
         'outer: while let Some(chunk) = chunk_cursor.next_iter() {
             let mut chunk_extended_grapheme_iter = chunk.extended_grapheme_iter();
 
-            while rope_offset.newlines != target_line_offset {
+            while rope_offset.newlines() != target_line_offset {
                 if let Some(distance_advanced) = chunk_extended_grapheme_iter.advance_to_start_of_next_line() {
                     rope_offset.saturating_add_assign(&distance_advanced);
                 } else {
@@ -56,7 +57,7 @@ impl<'r> Atoms<'r> {
             return Self::new(chunk_extended_grapheme_iter.some(), chunk_cursor, rope_offset);
         }
 
-        Self::new(None, chunk_cursor, *chunk_sum_tree.summary())
+        Self::new(None, chunk_cursor, chunk_sum_tree.summary().length())
     }
 
     #[must_use]
@@ -85,14 +86,14 @@ impl<'r> Atoms<'r> {
                 Ok(distance_advanced) => {
                     self.rope_offset.saturating_add_assign(&distance_advanced);
                     total_distance_advanced.saturating_add_assign(&distance_advanced);
-                    num_extended_graphemes.saturating_sub_assign(&distance_advanced.extended_graphemes);
+                    num_extended_graphemes.saturating_sub_assign(&distance_advanced.extended_graphemes());
 
                     return total_distance_advanced.ok();
                 }
                 Err(distance_advanced) => {
                     self.rope_offset.saturating_add_assign(&distance_advanced);
                     total_distance_advanced.saturating_add_assign(&distance_advanced);
-                    num_extended_graphemes.saturating_sub_assign(&distance_advanced.extended_graphemes);
+                    num_extended_graphemes.saturating_sub_assign(&distance_advanced.extended_graphemes());
                 }
             }
 

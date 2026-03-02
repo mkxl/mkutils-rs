@@ -1,7 +1,7 @@
 pub mod atoms;
 pub mod builder;
 pub mod chunk;
-pub mod distance;
+pub mod chunk_summary;
 pub mod extended_grapheme_iter;
 pub mod line;
 pub mod lines;

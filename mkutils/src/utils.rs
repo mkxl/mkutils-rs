@@ -200,6 +200,13 @@ pub trait Utils {
         Arc::new(self)
     }
 
+    fn assign(&mut self, other: Self)
+    where
+        Self: Sized,
+    {
+        *self = other;
+    }
+
     async fn async_with<T>(self, next: impl Future<Output = T>) -> T
     where
         Self: Future + Sized,
@@ -1096,6 +1103,13 @@ pub trait Utils {
         let end = func(range.end);
 
         start..end
+    }
+
+    fn max_assign(&mut self, other: Self)
+    where
+        Self: Copy + Ord + Sized,
+    {
+        *self = self.immutable().copied().max(other);
     }
 
     fn mem_drop(self)

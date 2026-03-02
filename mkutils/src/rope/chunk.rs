@@ -1,11 +1,12 @@
 use crate::{
     rope::{
-        distance::{Distance, NumExtendedGraphemes, NumNewlines},
+        chunk_summary::{ChunkSummary, Distance, LineLengthSummary, NumExtendedGraphemes, NumNewlines},
         extended_grapheme_iter::ExtendedGraphemeIter,
     },
     utils::Utils,
 };
 use arrayvec::{ArrayString, ArrayVec, CapacityError};
+use num::traits::SaturatingSub;
 use std::ops::Range;
 use zed_sum_tree::{Item, Summary};
 
@@ -71,19 +72,6 @@ impl Chunk {
         &self.newline_extended_grapheme_offsets[index..]
     }
 
-    // TODO:
-    // - it's potentially the case that the last codepoint in self and the argument extended_grapheme don't have a
-    //   proper grapheme boundary; in that case, will need to repair the join boundary, without pushing to
-    //   [self.extended_grapheme_byte_offset_intervals]; see chatgpt
-    //   - consider the strings "foo" (split into ["f", "o", "o"]) and "bar" (split into ["b", "a", "r"]) and assume the
-    //     trailing "o" and the leading "b" don't have a proper boundary
-    //   - then after pushing the trailing "o" and the leading "b" i should repair chunk so that the contained graphemes
-    //     are ["f", "o", "ob", "a", "r"]
-    //   - silly example, but could be the case if i'm reading strings piece by piece from a large file and the reader
-    //     splits on code points?
-    //   - in that case, should probably just have a note to make sure that [rope.push_str()] is only called with
-    //     strings not split between extended graphemes
-    //   - (***) could have my own rope builder that maintains a grapheme cursor(?) to ensure this doesn't happen
     pub fn try_push_extended_grapheme<'a>(&mut self, extended_grapheme: &'a str) -> Result<(), CapacityError<&'a str>> {
         let extended_grapheme_byte_offset_interval_begin = self.string.len().convert::<NumExtendedGraphemes>();
         let extended_grapheme_offset = self.num_extended_graphemes();
@@ -105,12 +93,44 @@ impl Chunk {
 
         ().ok()
     }
+
+    #[must_use]
+    pub fn line_lengths(&self) -> LineLengthSummary {
+        let length = self.num_extended_graphemes();
+        let first_line_length = self
+            .newline_extended_grapheme_offsets
+            .first()
+            .copied()
+            .unwrap_or(length);
+        let last_line_length =
+            if let Some(last_newline_extended_grapheme_offset) = self.newline_extended_grapheme_offsets.last() {
+                length
+                    .saturating_sub(last_newline_extended_grapheme_offset)
+                    .decremented()
+            } else {
+                length
+            };
+        let mut max_line_length = first_line_length.max(last_line_length);
+
+        for window in self.newline_extended_grapheme_offsets.windows(2) {
+            let line_length = window[1].saturating_sub(&window[0]).decremented();
+
+            max_line_length.max_assign(line_length);
+        }
+
+        LineLengthSummary::new(first_line_length, last_line_length, max_line_length)
+    }
+
+    #[must_use]
+    pub fn chunk_summary(&self) -> ChunkSummary {
+        ChunkSummary::new(self.length(), self.line_lengths())
+    }
 }
 
 impl Item for Chunk {
-    type Summary = Distance;
+    type Summary = ChunkSummary;
 
     fn summary(&self, _context: <Self::Summary as Summary>::Context<'_>) -> Self::Summary {
-        self.length()
+        self.chunk_summary()
     }
 }

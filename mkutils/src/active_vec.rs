@@ -77,3 +77,9 @@ impl<T> ActiveVec<T> {
         self.cycle(-1)
     }
 }
+
+impl<T> From<T> for ActiveVec<T> {
+    fn from(value: T) -> Self {
+        Self::new(value)
+    }
+}

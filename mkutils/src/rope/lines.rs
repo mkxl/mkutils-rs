@@ -12,27 +12,31 @@ use std::{iter::Take, ops::Range};
 #[allow(clippy::struct_field_names)]
 pub struct Lines<'r> {
     atoms: Atoms<'r>,
-    lines: Range<NumNewlines>,
-    extended_graphemes: Range<NumExtendedGraphemes>,
+    line_offsets: Range<NumNewlines>,
+    extended_grapheme_offsets: Range<NumExtendedGraphemes>,
     next_line_offset: NumNewlines,
 }
 
 impl<'r> Lines<'r> {
     #[must_use]
-    pub fn new(rope: &'r Rope, lines: Range<NumNewlines>, extended_graphemes: Range<NumExtendedGraphemes>) -> Self {
-        let atoms = rope.atoms_at_line(lines.start.into());
-        let next_line_offset = lines.start;
+    pub fn new(
+        rope: &'r Rope,
+        line_offsets: Range<NumNewlines>,
+        extended_grapheme_offsets: Range<NumExtendedGraphemes>,
+    ) -> Self {
+        let atoms = rope.atoms_at_line(line_offsets.start.into());
+        let next_line_offset = line_offsets.start;
 
         Self {
             atoms,
-            lines,
-            extended_graphemes,
+            line_offsets,
+            extended_grapheme_offsets,
             next_line_offset,
         }
     }
 
     pub fn next_line<'l>(&'l mut self) -> Option<Take<Line<'r, 'l>>> {
-        if self.lines.end <= self.next_line_offset {
+        if self.line_offsets.end <= self.next_line_offset {
             return None;
         }
 
@@ -44,9 +48,9 @@ impl<'r> Lines<'r> {
 
         let mut line = self.atoms.line();
 
-        line.advance(self.extended_graphemes.start);
+        line.advance(self.extended_grapheme_offsets.start);
 
-        line.take(self.extended_graphemes.len_range().into()).some()
+        line.take(self.extended_grapheme_offsets.len_range().into()).some()
     }
 
     pub fn to_vec(&mut self) -> Vec<String> {

@@ -65,11 +65,11 @@ impl Rope {
     }
 
     #[must_use]
-    pub fn lines(&self, lines: Range<usize>, extended_graphemes: Range<usize>) -> Lines<'_> {
-        let lines = lines.map_range(NumNewlines::from);
-        let extended_graphemes = extended_graphemes.map_range(NumExtendedGraphemes::from);
+    pub fn lines(&self, line_offsets: Range<usize>, extended_grapheme_offsets: Range<usize>) -> Lines<'_> {
+        let line_offsets = line_offsets.map_range(NumNewlines::from);
+        let extended_grapheme_offsets = extended_grapheme_offsets.map_range(NumExtendedGraphemes::from);
 
-        Lines::new(self, lines, extended_graphemes)
+        Lines::new(self, line_offsets, extended_grapheme_offsets)
     }
 
     #[must_use]

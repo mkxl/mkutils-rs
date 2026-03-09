@@ -103,18 +103,26 @@ impl<'r> Atoms<'r> {
         total_distance_advanced.err()
     }
 
-    pub fn advance_to_start_of_next_line(&mut self) {
+    // NOTE: returns [Ok(...)] if we've successfully advanced to the start of the next line and [Err(...)] otherwise
+    pub fn advance_to_start_of_next_line(&mut self) -> Result<Distance, Distance> {
+        let mut total_distance_advanced = Distance::ZERO;
+
         while let Some(chunk_extended_grapheme_iter) = &mut self.chunk_extended_grapheme_iter {
             if let Some(distance_advanced) = chunk_extended_grapheme_iter.advance_to_start_of_next_line() {
                 self.rope_offset.saturating_add_assign(&distance_advanced);
+                total_distance_advanced.saturating_add_assign(&distance_advanced);
 
-                break;
+                return total_distance_advanced.ok();
             }
 
-            self.rope_offset
-                .saturating_add_assign(&chunk_extended_grapheme_iter.advance_to_end_of_chunk());
+            let distance_advanced = chunk_extended_grapheme_iter.advance_to_end_of_chunk();
+
+            self.rope_offset.saturating_add_assign(&distance_advanced);
+            total_distance_advanced.saturating_add_assign(&distance_advanced);
             self.next_chunk();
         }
+
+        total_distance_advanced.err()
     }
 
     pub const fn line<'a>(&'a mut self) -> Line<'r, 'a> {

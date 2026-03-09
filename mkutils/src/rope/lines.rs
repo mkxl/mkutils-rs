@@ -41,7 +41,9 @@ impl<'r> Lines<'r> {
         }
 
         while self.atoms.rope_offset().newlines() < self.next_line_offset {
-            self.atoms.advance_to_start_of_next_line();
+            if self.atoms.advance_to_start_of_next_line().is_err() {
+                return None;
+            }
         }
 
         self.next_line_offset.increment();

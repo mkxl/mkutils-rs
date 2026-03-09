@@ -13,16 +13,16 @@ type RatatuiTerminal = BaseRatatuiTerminal<CrosstermBackend<Vec<u8>>>;
 
 pub struct Terminal {
     ratatui_terminal: RatatuiTerminal,
-    byte_str: Vec<u8>,
+    bytes: Vec<u8>,
 }
 
 impl Terminal {
     pub fn new(size: PointU16) -> Result<Self, IoError> {
         let ratatui_terminal = Self::ratatui_terminal(size)?;
-        let byte_str = Vec::new();
+        let bytes = Vec::new();
         let terminal = Self {
             ratatui_terminal,
-            byte_str,
+            bytes,
         };
 
         terminal.ok()
@@ -57,7 +57,7 @@ impl Terminal {
     pub fn set_title<T: Display>(&mut self, title: T) -> Result<&mut Self, IoError> {
         let set_title = SetTitle(title);
 
-        self.byte_str.queue(set_title)?.flush()?;
+        self.bytes.queue(set_title)?.flush()?;
 
         self.ok()
     }
@@ -71,12 +71,12 @@ impl Terminal {
             .backend_mut()
             .writer_mut()
             .split_off(0)
-            .push_all_to(&mut self.byte_str);
+            .push_all_to(&mut self.bytes);
 
         self.ok()
     }
 
-    pub fn take_byte_str(&mut self) -> Vec<u8> {
-        self.byte_str.mem_take()
+    pub fn take_bytes(&mut self) -> Vec<u8> {
+        self.bytes.mem_take()
     }
 }

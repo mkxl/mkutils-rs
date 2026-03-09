@@ -1,139 +1,98 @@
 use crate::{rope::rope::Rope, utils::Utils};
-use std::{
-    io::{Error as IoError, ErrorKind as IoErrorKind},
-    marker::Unpin,
-    ops::Range,
-};
+use std::{io::Error as IoError, ops::Range};
 use tokio::io::AsyncReadExt;
 
-const DEFAULT_BUFFER_SIZE: usize = 8192;
-
-pub struct RopeBuilder<R, const N: usize = DEFAULT_BUFFER_SIZE> {
+pub struct RopeBuilder<R> {
     reader: R,
     rope: Rope,
-    buffer: [u8; N],
-    unprocessed_byte_offsets: Range<usize>,
-    seen_eof: bool,
+    bytes: Vec<u8>,
+    unprocessed_byte_indices: Range<usize>,
 }
 
-impl<R: AsyncReadExt + Unpin, const N: usize> RopeBuilder<R, N> {
-    pub const DEFAULT_BUFFER_SIZE: usize = DEFAULT_BUFFER_SIZE;
+impl<R: AsyncReadExt + Unpin> RopeBuilder<R> {
+    const DEFAULT_CAPACITY: usize = 8192;
+    const INITIAL_BYTE: u8 = 0;
+    const INITIAL_UNPROCESSED_BYTE_INDICES: Range<usize> = 0..0;
 
-    const INITIAL_BUFFER: [u8; N] = [0; N];
-    const INITIAL_SEEN_EOF: bool = false;
-    const INITIAL_UNPROCESSED_BYTE_OFFSETS: Range<usize> = 0..0;
-
-    pub fn new(reader: R) -> Self {
+    pub fn with_capacity(reader: R, capacity: usize) -> Self {
         let rope = Rope::new();
-        let buffer = Self::INITIAL_BUFFER;
-        let unprocessed_byte_offsets = Self::INITIAL_UNPROCESSED_BYTE_OFFSETS.clone();
-        let seen_eof = Self::INITIAL_SEEN_EOF;
+        let bytes = std::vec![Self::INITIAL_BYTE; capacity];
+        let unprocessed_byte_indices = Self::INITIAL_UNPROCESSED_BYTE_INDICES;
 
         Self {
             reader,
             rope,
-            buffer,
-            unprocessed_byte_offsets,
-            seen_eof,
+            bytes,
+            unprocessed_byte_indices,
         }
     }
 
-    fn io_error_invalid_utf8() -> IoError {
-        IoError::new(IoErrorKind::InvalidData, "input contained invalid utf-8")
+    pub fn new(reader: R) -> Self {
+        Self::with_capacity(reader, Self::DEFAULT_CAPACITY)
     }
 
-    fn io_error_unexpected_eof() -> IoError {
-        IoError::new(
-            IoErrorKind::UnexpectedEof,
-            "input ended in the middle of a utf-8 code point",
-        )
-    }
-
-    // NOTE: returns the byte index of the last extended grapheme boundary in [text] or 0 if the entire string is a
-    // single, potentially incomplete, extended grapheme.
-    fn last_extended_grapheme_byte_offset(text: &str) -> usize {
-        text.extended_grapheme_byte_offsets().last().unwrap_or(0)
-    }
-
-    fn feed(unprocessed_byte_offsets: &mut Range<usize>, rope: &mut Rope, text: &str, seen_eof: bool) {
-        // NOTE: when we've seen EOF there can be no further input that would extend the last
-        // grapheme, so we flush everything; otherwise, split before the last grapheme in case it
-        // straddles the buffer boundary
-        let flush_end = if seen_eof {
-            text.len()
-        } else {
-            Self::last_extended_grapheme_byte_offset(text)
+    fn extended_graphemes_except_last(text: &str) -> &str {
+        let Some(last_extended_grapheme_byte_index) = text.extended_grapheme_byte_indices().last() else {
+            return "";
         };
 
-        if 0 < flush_end {
-            rope.push_extended_graphemes(&text[..flush_end]);
-            unprocessed_byte_offsets.start += flush_end;
-        }
-
-        if unprocessed_byte_offsets.immutable().is_empty() {
-            *unprocessed_byte_offsets = Self::INITIAL_UNPROCESSED_BYTE_OFFSETS.clone();
-        }
-    }
-
-    async fn read(&mut self) -> Result<(), IoError> {
-        if self.seen_eof {
-            return ().ok();
-        }
-
-        if 0 < self.unprocessed_byte_offsets.start && self.unprocessed_byte_offsets.end == self.buffer.len() {
-            let unprocessed_length = self.unprocessed_byte_offsets.len();
-
-            if 0 < unprocessed_length {
-                self.buffer.copy_within(self.unprocessed_byte_offsets.clone(), 0);
-            }
-
-            self.unprocessed_byte_offsets = 0..unprocessed_length;
-        }
-
-        let io_res = self
-            .reader
-            .read(&mut self.buffer[self.unprocessed_byte_offsets.end..])
-            .await;
-
-        match io_res {
-            Ok(0) => self.seen_eof.set_true(),
-            Ok(num_bytes_read) => self.unprocessed_byte_offsets.end.saturating_add_assign(&num_bytes_read),
-            Err(io_error) => io_error.err()?,
-        }
-
-        ().ok()
+        &text[..last_extended_grapheme_byte_index]
     }
 
     pub async fn build(mut self) -> Result<Rope, IoError> {
         loop {
-            if self.unprocessed_byte_offsets.is_empty() {
-                if self.seen_eof {
-                    return self.rope.ok();
+            let read_bytes = &mut self.bytes[self.unprocessed_byte_indices.end..];
+            let num_bytes_read = self.reader.read(read_bytes).await?;
+
+            self.unprocessed_byte_indices.end.saturating_add_assign(&num_bytes_read);
+
+            let unprocessed_bytes = &self.bytes[self.unprocessed_byte_indices.clone()];
+
+            if num_bytes_read == 0 {
+                if !unprocessed_bytes.is_empty() {
+                    self.rope
+                        .push_extended_graphemes(unprocessed_bytes.as_utf8().io_result()?);
                 }
 
-                self.read().await?;
-            } else {
-                let byte_str = &self.buffer[self.unprocessed_byte_offsets.clone()];
+                return self.rope.ok();
+            }
 
-                match byte_str.as_utf8() {
-                    Ok(text) => Self::feed(&mut self.unprocessed_byte_offsets, &mut self.rope, text, self.seen_eof),
-                    Err(utf8_error) => {
-                        let end_byte_offset = utf8_error.valid_up_to();
-                        let byte_substr = &byte_str[..end_byte_offset];
-                        let text = unsafe { std::str::from_utf8_unchecked(byte_substr) };
-
-                        if 0 < end_byte_offset {
-                            Self::feed(&mut self.unprocessed_byte_offsets, &mut self.rope, text, false);
-                        } else if utf8_error.error_len().is_some() {
-                            return Self::io_error_invalid_utf8().err();
-                        } else if self.seen_eof {
-                            return Self::io_error_unexpected_eof().err();
-                        } else {
-                            self.read().await?;
-                        }
+            let utf8_bytes_len = match unprocessed_bytes.as_utf8() {
+                Ok(text) => text.len(),
+                Err(utf8_err) => {
+                    // NOTE: if [utf8_err.error_len()] is [Some(..)] then there is explicitly an invalid utf-8
+                    // character and we need to raise immediately, wheraes if it's [None], then the supplied bytes are
+                    // short some bytes which may be provided by a later call to [.read()]
+                    if utf8_err.error_len().is_some() {
+                        return utf8_err.io_error().err();
                     }
+
+                    utf8_err.valid_up_to()
+                }
+            };
+
+            if utf8_bytes_len.is_positive() {
+                // NOTE: use all but the last extended grapheme, as it might continue on in the next read
+                let utf8_bytes_indices = self.unprocessed_byte_indices.start.range_from_len(utf8_bytes_len);
+                let utf8_bytes = &self.bytes[utf8_bytes_indices];
+                let text = unsafe { std::str::from_utf8_unchecked(utf8_bytes) };
+                let extended_graphemes = Self::extended_graphemes_except_last(text);
+
+                if !extended_graphemes.is_empty() {
+                    self.rope.push_extended_graphemes(extended_graphemes);
+                    self.unprocessed_byte_indices
+                        .start
+                        .saturating_add_assign(&extended_graphemes.len());
                 }
             }
+
+            let num_unprocessed_bytes = self.unprocessed_byte_indices.len();
+
+            if num_unprocessed_bytes.is_positive() {
+                self.bytes.copy_within(self.unprocessed_byte_indices.clone(), 0);
+            }
+
+            self.unprocessed_byte_indices = 0..num_unprocessed_bytes;
         }
     }
 }

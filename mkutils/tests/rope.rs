@@ -1,6 +1,8 @@
-#![cfg(feature = "rope")]
+#![cfg(feature = "tui")]
 
 use mkutils::{Atom, Rope, Utils};
+use std::io::Error as IoError;
+use tokio_test::io::Builder as MockBuilder;
 
 fn test_atoms<'a>(mut atoms: impl Iterator<Item = Atom<'a>>, expected_string: &str) {
     let actual_string = atoms.collect_atoms();
@@ -93,6 +95,26 @@ fn atoms_seek_line_at_chunk_boundary() {
     let atoms = rope.atoms_at_line(1);
 
     test_atoms(atoms, "second line");
+}
+
+// ============================================================================
+// test_rope_builder
+// ============================================================================
+
+#[tokio::test(start_paused = true)]
+async fn test_rope_builder() -> Result<(), IoError> {
+    let expected_str = "hello, world!";
+    let rope = MockBuilder::new()
+        .read(expected_str.as_bytes())
+        .build()
+        .rope_builder()
+        .build()
+        .await?;
+    let actual_str = rope.atoms().collect_atoms();
+
+    assert_eq!(actual_str, expected_str);
+
+    ().ok()
 }
 
 // // ============================================================================

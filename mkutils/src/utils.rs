@@ -15,7 +15,7 @@ use crate::{
 use crate::{into_stream::IntoStream, process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
 #[cfg(feature = "tui")]
 use crate::{
-    rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
+    rope::{atoms::Atom, builder::RopeBuilder},
     transpose::Transpose,
 };
 use anyhow::{Context, Error as AnyhowError};
@@ -119,7 +119,6 @@ pub type BoxError = Box<dyn StdError + Send + Sync>;
 #[allow(async_fn_in_trait)]
 pub trait Utils {
     const CRLF: &str = "\r\n";
-    const DEFAULT_ROPE_BUILDER_BUFFER_SIZE: usize = 8192; // TODO: remove
     const IS_EXTENDED: bool = true;
     const LF: &str = "\n";
     const READ_FROM_CLIPBOARD_COMMAND: &str = "pbpaste";
@@ -576,15 +575,15 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn extended_grapheme_byte_offsets(&self) -> impl Iterator<Item = usize>
+    fn extended_grapheme_byte_indices(&self) -> impl Iterator<Item = usize>
     where
         Self: AsRef<str>,
     {
-        self.extended_grapheme_and_byte_offset_pairs().map(Utils::into_first)
+        self.extended_grapheme_and_byte_index_pairs().map(Utils::into_first)
     }
 
     #[cfg(feature = "tui")]
-    fn extended_grapheme_and_byte_offset_pairs(&self) -> GraphemeIndices<'_>
+    fn extended_grapheme_and_byte_index_pairs(&self) -> GraphemeIndices<'_>
     where
         Self: AsRef<str>,
     {
@@ -597,12 +596,12 @@ pub trait Utils {
         Self: AsRef<str>,
     {
         let string = self.as_ref();
-        let mut extended_grapheme_byte_offsets = string.extended_grapheme_byte_offsets().skip(range.start);
-        let Some(begin_byte_offset) = extended_grapheme_byte_offsets.next() else { return "" };
-        let mut extended_grapheme_byte_offsets = extended_grapheme_byte_offsets.skip(range.len());
-        let end_byte_offset = extended_grapheme_byte_offsets.next().unwrap_or(string.len());
+        let mut extended_grapheme_byte_indices = string.extended_grapheme_byte_indices().skip(range.start);
+        let Some(begin_byte_index) = extended_grapheme_byte_indices.next() else { return "" };
+        let mut extended_grapheme_byte_indices = extended_grapheme_byte_indices.skip(range.len());
+        let end_byte_index = extended_grapheme_byte_indices.next().unwrap_or(string.len());
 
-        &string[begin_byte_offset..end_byte_offset]
+        &string[begin_byte_index..end_byte_index]
     }
 
     #[cfg(feature = "async")]
@@ -1438,16 +1437,11 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    async fn rope<const N: usize>(&self) -> Result<Rope, IoError>
+    fn rope_builder(self) -> RopeBuilder<Self>
     where
-        Self: AsRef<Path>,
+        Self: AsyncRead + Sized + Unpin,
     {
-        self.open_async()
-            .await?
-            .buf_reader_async()
-            .pipe_into(RopeBuilder::<_, N>::new)
-            .build()
-            .await
+        RopeBuilder::new(self)
     }
 
     #[cfg(feature = "async")]
@@ -1605,8 +1599,8 @@ pub trait Utils {
     {
         let string = self.as_ref();
         let prefix_len = string
-            .extended_grapheme_byte_offsets()
-            .take_while(|byte_offset| *byte_offset < max_prefix_size)
+            .extended_grapheme_byte_indices()
+            .take_while(|byte_index| *byte_index < max_prefix_size)
             .last()
             .unwrap_or(0);
 
@@ -1657,10 +1651,10 @@ pub trait Utils {
     where
         Self: AsRef<[u8]>,
     {
-        let byte_str = self.as_ref();
+        let bytes = self.as_ref();
         let predicate = |substr| substr == query;
         let query_len = query.len();
-        let begin = byte_str.windows(query_len).position(predicate)?;
+        let begin = bytes.windows(query_len).position(predicate)?;
         let end = begin + query_len;
 
         (begin, end).some()
@@ -1711,7 +1705,7 @@ pub trait Utils {
     }
 
     #[cfg(feature = "serde-extra")]
-    fn to_json_byte_str(&self) -> Result<Vec<u8>, SerdeJsonError>
+    fn to_json_bytes(&self) -> Result<Vec<u8>, SerdeJsonError>
     where
         Self: Serialize,
     {
@@ -1735,7 +1729,7 @@ pub trait Utils {
     }
 
     #[cfg(feature = "serde-extra")]
-    fn to_rmp_byte_str(&self) -> Result<Vec<u8>, RmpEncodeError>
+    fn to_rmp_bytes(&self) -> Result<Vec<u8>, RmpEncodeError>
     where
         Self: Serialize,
     {
@@ -1924,19 +1918,19 @@ pub trait Utils {
         serde_json::to_writer(writer, self)
     }
 
-    fn write_all_then(&mut self, byte_str: &[u8]) -> Result<&mut Self, IoError>
+    fn write_all_then(&mut self, bytes: &[u8]) -> Result<&mut Self, IoError>
     where
         Self: Write,
     {
-        self.write_all(byte_str)?.with(self).ok()
+        self.write_all(bytes)?.with(self).ok()
     }
 
     #[cfg(feature = "async")]
-    async fn write_all_then_async(&mut self, byte_str: &[u8]) -> Result<&mut Self, IoError>
+    async fn write_all_then_async(&mut self, bytes: &[u8]) -> Result<&mut Self, IoError>
     where
         Self: AsyncWriteExt + Unpin,
     {
-        self.write_all(byte_str).await?.with(self).ok()
+        self.write_all(bytes).await?.with(self).ok()
     }
 }
 

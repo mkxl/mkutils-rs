@@ -102,7 +102,7 @@ impl<'r> Iterator for ExtendedGraphemeIter<'r> {
         let extended_grapheme_offset = self.chunk_offset.extended_graphemes().convert::<usize>();
         let extended_grapheme = self
             .chunk
-            .extended_grapheme_byte_offset_intervals()
+            .extended_grapheme_byte_index_intervals()
             .get(extended_grapheme_offset)?
             .clone()
             .map_range(usize::from)

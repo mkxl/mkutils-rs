@@ -66,7 +66,7 @@ impl<T: Serialize> Sink<T> for Socket {
     }
 
     fn start_send(mut self: Pin<&mut Self>, item: T) -> Result<(), Self::Error> {
-        self.frames.start_send_unpin(item.to_rmp_byte_str()?.into())?.ok()
+        self.frames.start_send_unpin(item.to_rmp_bytes()?.into())?.ok()
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, context: &mut Context) -> Poll<Result<(), Self::Error>> {

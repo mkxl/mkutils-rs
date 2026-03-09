@@ -14,7 +14,7 @@ use zed_sum_tree::{Item, Summary};
 #[derive(Clone, Default)]
 pub struct Chunk {
     string: ArrayString<{ Self::CAPACITY }>,
-    extended_grapheme_byte_offset_intervals: ArrayVec<Range<NumExtendedGraphemes>, { Self::CAPACITY }>,
+    extended_grapheme_byte_index_intervals: ArrayVec<Range<NumExtendedGraphemes>, { Self::CAPACITY }>,
     newline_extended_grapheme_offsets: ArrayVec<NumExtendedGraphemes, { Self::CAPACITY }>,
 }
 
@@ -28,7 +28,7 @@ impl Chunk {
 
     #[must_use]
     pub const fn num_extended_graphemes(&self) -> NumExtendedGraphemes {
-        NumExtendedGraphemes::new(self.extended_grapheme_byte_offset_intervals.len())
+        NumExtendedGraphemes::new(self.extended_grapheme_byte_index_intervals.len())
     }
 
     #[must_use]
@@ -52,8 +52,8 @@ impl Chunk {
     }
 
     #[must_use]
-    pub fn extended_grapheme_byte_offset_intervals(&self) -> &[Range<NumExtendedGraphemes>] {
-        &self.extended_grapheme_byte_offset_intervals
+    pub fn extended_grapheme_byte_index_intervals(&self) -> &[Range<NumExtendedGraphemes>] {
+        &self.extended_grapheme_byte_index_intervals
     }
 
     #[must_use]
@@ -73,19 +73,19 @@ impl Chunk {
     }
 
     pub fn try_push_extended_grapheme<'a>(&mut self, extended_grapheme: &'a str) -> Result<(), CapacityError<&'a str>> {
-        let extended_grapheme_byte_offset_interval_begin = self.string.len().convert::<NumExtendedGraphemes>();
+        let extended_grapheme_byte_index_interval_begin = self.string.len().convert::<NumExtendedGraphemes>();
         let extended_grapheme_offset = self.num_extended_graphemes();
 
         // NOTE:
-        // - [self.string] will always be weakly longer than [self.extended_grapheme_byte_offset_intervals] (with
+        // - [self.string] will always be weakly longer than [self.extended_grapheme_byte_index_intervals] (with
         //   equality only when each extended grapheme is a single byte) and because we only push to
-        //   [self.extended_grapheme_byte_offset_intervals] after successfully pushing to [self.string], we will never
+        //   [self.extended_grapheme_byte_index_intervals] after successfully pushing to [self.string], we will never
         //   panic
         // - same holds for [self.newline_extended_grapheme_offsets]
         self.string.try_push_str(extended_grapheme)?;
-        extended_grapheme_byte_offset_interval_begin
+        extended_grapheme_byte_index_interval_begin
             .range_from_len(extended_grapheme.len().into())
-            .push_to(&mut self.extended_grapheme_byte_offset_intervals);
+            .push_to(&mut self.extended_grapheme_byte_index_intervals);
 
         if extended_grapheme.is_newline() {
             self.newline_extended_grapheme_offsets.push(extended_grapheme_offset);

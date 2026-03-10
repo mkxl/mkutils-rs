@@ -13,10 +13,10 @@ impl Timer {
         Self { instant }
     }
 
-    pub fn log(&mut self, message: &str) {
+    pub fn log(&mut self, event: &str) {
         let begin = self.instant.mem_replace(Instant::now());
         let duration = self.instant - begin;
 
-        tracing::info!(message, time.busy = ?duration);
+        tracing::info!(message = "close", event, time.busy = ?duration);
     }
 }

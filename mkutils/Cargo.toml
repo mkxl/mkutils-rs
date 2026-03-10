@@ -20,7 +20,7 @@ derive_more = { version = "2.0.1", features = ["add", "constructor", "from", "in
 futures = { version = "0.3.31", optional = true }
 getset = { version = "0.1.6" }
 home = { version = "0.5.12" }
-mkutils-macros = { version = "0.1.93", path = "../mkutils-macros" }
+mkutils-macros = { version = "0.1.94", path = "../mkutils-macros" }
 num = { version = "0.4.3" }
 palette = { version = "0.7.6", optional = true }
 poem = { version = "3.1.12", features = ["anyhow", "websocket"], optional = true }

@@ -1728,7 +1728,7 @@ pub trait Utils {
         serde_json::to_string(self)
     }
 
-    fn to_owned<T: ToOwned>(&self) -> Option<T::Owned>
+    fn to_owned_opt<T: ToOwned>(&self) -> Option<T::Owned>
     where
         Self: Borrow<Option<T>>,
     {

@@ -1728,6 +1728,13 @@ pub trait Utils {
         serde_json::to_string(self)
     }
 
+    fn to_owned<T: ToOwned>(&self) -> Option<T::Owned>
+    where
+        Self: Borrow<Option<T>>,
+    {
+        self.borrow().as_ref().map(T::to_owned)
+    }
+
     #[cfg(feature = "serde-extra")]
     fn to_rmp_bytes(&self) -> Result<Vec<u8>, RmpEncodeError>
     where
@@ -1861,7 +1868,6 @@ pub trait Utils {
 
     fn unit(&self) {}
 
-    // Future<Option<T>>(). wait_for_some
     async fn wait_then_unwrap_or_pending<T>(self) -> T
     where
         Self: Future<Output = Option<T>> + Sized,
@@ -1872,7 +1878,6 @@ pub trait Utils {
         }
     }
 
-    // wait_if_some
     async fn unwrap_or_pending_then_wait<F: Future + Unpin>(&mut self) -> F::Output
     where
         Self: BorrowMut<Option<F>>,

@@ -66,6 +66,9 @@ mod status;
 mod terminal;
 
 #[cfg(feature = "tracing")]
+mod timer;
+
+#[cfg(feature = "tracing")]
 mod tracing;
 
 #[cfg(feature = "tui")]
@@ -75,8 +78,6 @@ mod transpose;
 pub use crate::output::Output;
 #[cfg(all(feature = "async", feature = "unstable", feature = "serde-extra"))]
 pub use crate::socket::{Request, Socket};
-#[cfg(feature = "tracing")]
-pub use crate::tracing::Tracing;
 pub use crate::{
     active_vec::ActiveVec,
     fmt::{Debugged, OptionDisplay, ResultDisplay},
@@ -117,4 +118,6 @@ pub use crate::{
     event::Event,
     process::{Process, ProcessBuilder},
 };
+#[cfg(feature = "tracing")]
+pub use crate::{timer::Timer, tracing::Tracing};
 pub use mkutils_macros::{Default, FromChain, SaturatingAdd, SaturatingSub, SetVariant, Toggle, TypeAssoc, context};

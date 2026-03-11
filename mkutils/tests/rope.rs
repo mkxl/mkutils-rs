@@ -107,8 +107,7 @@ async fn test_rope_builder() -> Result<(), IoError> {
     let rope = MockBuilder::new()
         .read(expected_str.as_bytes())
         .build()
-        .rope_builder()
-        .build()
+        .rope_async()
         .await?;
     let actual_str = rope.atoms().collect_atoms();
 

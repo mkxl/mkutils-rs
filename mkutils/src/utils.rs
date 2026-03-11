@@ -15,7 +15,7 @@ use crate::{
 use crate::{into_stream::IntoStream, process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
 #[cfg(feature = "tui")]
 use crate::{
-    rope::{atoms::Atom, builder::RopeBuilder},
+    rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
     transpose::Transpose,
 };
 use anyhow::{Context, Error as AnyhowError};
@@ -1437,11 +1437,35 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn rope_builder(self) -> RopeBuilder<Self>
+    fn rope(&mut self) -> Result<Rope, IoError>
     where
-        Self: AsyncRead + Sized + Unpin,
+        Self: Read,
     {
-        RopeBuilder::new(self)
+        let mut rope_builder = RopeBuilder::default();
+
+        while let Some(buffer) = rope_builder.buffer_mut() {
+            let num_bytes_read = self.read(buffer)?;
+
+            rope_builder.on_read(num_bytes_read)?;
+        }
+
+        rope_builder.build().ok()
+    }
+
+    #[cfg(feature = "tui")]
+    async fn rope_async(&mut self) -> Result<Rope, IoError>
+    where
+        Self: AsyncRead + Unpin,
+    {
+        let mut rope_builder = RopeBuilder::default();
+
+        while let Some(buffer) = rope_builder.buffer_mut() {
+            let num_bytes_read = self.read(buffer).await?;
+
+            rope_builder.on_read(num_bytes_read)?;
+        }
+
+        rope_builder.build().ok()
     }
 
     #[cfg(feature = "async")]

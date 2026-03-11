@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
 use syn::{ItemFn, LitStr};
 
-pub fn context(args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
-    let context = syn::parse_macro_input!(args_token_stream as LitStr);
+pub fn context(attr_args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
+    let context = syn::parse_macro_input!(attr_args_token_stream as LitStr);
     let ItemFn { attrs, vis, sig, block } = syn::parse_macro_input!(input_token_stream);
     let output = &sig.output;
     let block_tokens = if sig.asyncness.is_some() {

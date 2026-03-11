@@ -4,6 +4,7 @@ mod context;
 mod default;
 mod error;
 mod from_chain;
+mod main_attribute_macro;
 mod set_variant;
 mod toggle;
 mod type_assoc;
@@ -17,8 +18,8 @@ use proc_macro::TokenStream;
 
 // TODO: add documentation
 #[proc_macro_attribute]
-pub fn context(args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
-    crate::context::context(args_token_stream, input_token_stream)
+pub fn context(attr_args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
+    crate::context::context(attr_args_token_stream, input_token_stream)
 }
 
 /// Implement `::std::convert::From` through a chain of intermediate types.
@@ -266,4 +267,19 @@ pub fn saturating_sub(input_token_stream: TokenStream) -> TokenStream {
 #[proc_macro_derive(Constructor, attributes(new))]
 pub fn constructor(input_token_stream: TokenStream) -> TokenStream {
     Constructor::derive(input_token_stream)
+}
+
+/// # Example
+///
+/// ```rust
+/// const THREAD_STACK_SIZE = lits::bytes!("8 MiB");
+///
+/// #[mkutils_macros::main(thread_stack_size = THREAD_STACK_SIZE)]
+/// fn main() {
+///     ...
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn main(attr_args_token_stream: TokenStream, item_token_stream: TokenStream) -> TokenStream {
+    crate::main_attribute_macro::main(attr_args_token_stream, item_token_stream)
 }

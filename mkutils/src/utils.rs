@@ -1398,19 +1398,19 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn render_to(self, frame: &mut Frame, rect: Rect)
+    fn render_to(self, frame: &mut Frame, area: Rect)
     where
         Self: Widget + Sized,
     {
-        frame.render_widget(self, rect);
+        frame.render_widget(self, area);
     }
 
     #[cfg(feature = "tui")]
-    fn render_with_state(self, frame: &mut Frame, rect: Rect, state: &mut Self::State)
+    fn render_with_state(self, frame: &mut Frame, area: Rect, state: &mut Self::State)
     where
         Self: StatefulWidget + Sized,
     {
-        frame.render_stateful_widget(self, rect, state);
+        frame.render_stateful_widget(self, area, state);
     }
 
     fn repeat(self) -> Repeat<Self>

@@ -14,9 +14,6 @@ mod utils;
 #[cfg(feature = "tracing")]
 mod as_valuable;
 
-#[cfg(feature = "tui")]
-mod content;
-
 #[cfg(feature = "async")]
 mod event;
 
@@ -86,9 +83,13 @@ pub use crate::{
     timestamped::Timestamped,
     utils::Utils,
 };
+#[cfg(feature = "async")]
+pub use crate::{
+    event::Event,
+    process::{Process, ProcessBuilder},
+};
 #[cfg(feature = "tui")]
 pub use crate::{
-    content::Content,
     geometry::{Orientation, Point, PointU16, PointUsize},
     key_map::{
         key_binding::KeyBinding,
@@ -112,11 +113,6 @@ pub use crate::{
     scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen},
     terminal::Terminal,
     transpose::Transpose,
-};
-#[cfg(feature = "async")]
-pub use crate::{
-    event::Event,
-    process::{Process, ProcessBuilder},
 };
 #[cfg(feature = "tracing")]
 pub use crate::{timer::Timer, tracing::Tracing};

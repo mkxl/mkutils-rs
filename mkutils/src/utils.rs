@@ -48,7 +48,7 @@ use poem_openapi::payload::{Binary as PoemBinary, Json as PoemJson};
 use ratatui::{
     Frame,
     layout::Rect,
-    style::Styled,
+    style::{Style, Styled},
     text::{Line, Span},
     widgets::{Block, StatefulWidget, Widget},
 };
@@ -1640,6 +1640,14 @@ pub trait Utils {
         let suffix = &string[index..];
 
         (prefix, suffix)
+    }
+
+    #[cfg(feature = "tui")]
+    fn stylize<T: Styled>(self, content: T) -> T::Item
+    where
+        Self: Into<Style>,
+    {
+        content.set_style(self.into())
     }
 
     #[cfg(feature = "tui")]

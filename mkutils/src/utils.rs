@@ -1,8 +1,8 @@
-#[cfg(feature = "tracing")]
+#[cfg(all(feature = "serde", feature = "tracing"))]
 use crate::as_valuable::AsValuable;
 #[cfg(feature = "unstable")]
 use crate::output::Output;
-#[cfg(all(feature = "async", feature = "unstable", feature = "serde-extra"))]
+#[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
 use crate::socket::{Request, Socket};
 #[cfg(feature = "tracing")]
 use crate::status::Status;
@@ -40,7 +40,7 @@ use palette::IntoColor;
 use poem::Body as PoemBody;
 #[cfg(feature = "http")]
 use poem::{Endpoint, IntoResponse, web::websocket::Message as PoemMessage};
-#[cfg(all(feature = "http", feature = "serde-extra"))]
+#[cfg(all(feature = "http", feature = "serde"))]
 use poem_openapi::error::ParseRequestPayloadError;
 #[cfg(feature = "http")]
 use poem_openapi::payload::{Binary as PoemBinary, Json as PoemJson};
@@ -54,16 +54,16 @@ use ratatui::{
 };
 #[cfg(feature = "http")]
 use reqwest::{RequestBuilder, Response};
-#[cfg(feature = "serde-extra")]
+#[cfg(feature = "serde")]
 use rmp_serde::{decode::Error as RmpDecodeError, encode::Error as RmpEncodeError};
-#[cfg(any(feature = "http", feature = "serde-extra"))]
+#[cfg(any(feature = "http", feature = "serde"))]
 use serde::Serialize;
-#[cfg(feature = "serde-extra")]
+#[cfg(feature = "serde")]
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer};
-#[cfg(feature = "serde-extra")]
+#[cfg(feature = "serde")]
 use serde_json::{Error as SerdeJsonError, Value as Json, value::Index as SerdeJsonIndex};
-#[cfg(feature = "serde-extra")]
+#[cfg(feature = "serde")]
 use serde_yaml_ng::Error as SerdeYamlError;
 use std::{
     borrow::{Borrow, BorrowMut, Cow},
@@ -111,7 +111,7 @@ use tuplities_remove::TupleRemove;
 use typenum::{U0, U1, U2};
 #[cfg(feature = "tui")]
 use unicode_segmentation::{GraphemeIndices, Graphemes, UnicodeSegmentation};
-#[cfg(feature = "tracing")]
+#[cfg(all(feature = "serde", feature = "tracing"))]
 use valuable::Value;
 
 pub type BoxError = Box<dyn StdError + Send + Sync>;
@@ -206,6 +206,13 @@ pub trait Utils {
         *self = other;
     }
 
+    fn assign_to(self, other: &mut Self)
+    where
+        Self: Sized,
+    {
+        other.assign(self);
+    }
+
     async fn async_with<T>(self, next: impl Future<Output = T>) -> T
     where
         Self: Future + Sized,
@@ -248,7 +255,7 @@ pub trait Utils {
         self.as_ref()
     }
 
-    #[cfg(feature = "tracing")]
+    #[cfg(all(feature = "serde", feature = "tracing"))]
     fn as_valuable(&self) -> Value<'_>
     where
         Self: AsValuable,
@@ -887,7 +894,7 @@ pub trait Utils {
     }
 
     // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]
-    #[cfg(all(feature = "http", feature = "serde-extra"))]
+    #[cfg(all(feature = "http", feature = "serde"))]
     fn into_parse_request_payload_result<T>(self) -> Result<T, ParseRequestPayloadError>
     where
         Self: Is<Result<T, SerdeJsonError>>,
@@ -938,7 +945,7 @@ pub trait Utils {
         }
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn into_value_from_json<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
     where
         Self: Is<Json>,
@@ -1452,7 +1459,7 @@ pub trait Utils {
         rope_builder.build().ok()
     }
 
-    #[cfg(feature = "tui")]
+    #[cfg(all(feature = "async", feature = "tui"))]
     async fn rope_async(&mut self) -> Result<Rope, IoError>
     where
         Self: AsyncRead + Unpin,
@@ -1503,7 +1510,7 @@ pub trait Utils {
         string.strip_prefix(prefix).unwrap_or(string)
     }
 
-    #[cfg(all(feature = "async", feature = "unstable", feature = "serde-extra"))]
+    #[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
     async fn respond_to<T: Request<Response = Self>>(
         &self,
         mut socket: impl BorrowMut<Socket>,
@@ -1692,7 +1699,7 @@ pub trait Utils {
         (begin, end).some()
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn take_json<T: DeserializeOwned>(&mut self, index: impl SerdeJsonIndex) -> Result<T, SerdeJsonError>
     where
         Self: BorrowMut<Json>,
@@ -1728,7 +1735,7 @@ pub trait Utils {
         *bool_value = !*bool_value;
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_json(&self) -> Result<Json, SerdeJsonError>
     where
         Self: Serialize,
@@ -1736,7 +1743,7 @@ pub trait Utils {
         serde_json::to_value(self)
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_json_bytes(&self) -> Result<Vec<u8>, SerdeJsonError>
     where
         Self: Serialize,
@@ -1744,7 +1751,7 @@ pub trait Utils {
         serde_json::to_vec(self)
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_json_object(&self, key: &str) -> Json
     where
         Self: Serialize,
@@ -1752,7 +1759,7 @@ pub trait Utils {
         serde_json::json!({key: self})
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_json_str(&self) -> Result<String, SerdeJsonError>
     where
         Self: Serialize,
@@ -1767,7 +1774,7 @@ pub trait Utils {
         self.borrow().as_ref().map(T::to_owned)
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_rmp_bytes(&self) -> Result<Vec<u8>, RmpEncodeError>
     where
         Self: Serialize,
@@ -1782,7 +1789,7 @@ pub trait Utils {
         Self::URI_PREFIX.cat(self.absolute_utf8()?).ok()
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_value_from_json_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeJsonError>
     where
         Self: AsRef<[u8]>,
@@ -1790,7 +1797,7 @@ pub trait Utils {
         serde_json::from_slice(self.as_ref())
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_value_from_json_reader<T: DeserializeOwned>(self) -> Result<T, SerdeJsonError>
     where
         Self: Read + Sized,
@@ -1798,7 +1805,7 @@ pub trait Utils {
         serde_json::from_reader(self)
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_value_from_rmp_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, RmpDecodeError>
     where
         Self: AsRef<[u8]>,
@@ -1806,7 +1813,7 @@ pub trait Utils {
         rmp_serde::from_slice(self.as_ref())
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_value_from_value<T: DeserializeOwned>(&self) -> Result<T, SerdeJsonError>
     where
         Self: Serialize,
@@ -1814,7 +1821,7 @@ pub trait Utils {
         self.to_json()?.into_value_from_json()
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_value_from_yaml_slice<'a, T: Deserialize<'a>>(&'a self) -> Result<T, SerdeYamlError>
     where
         Self: AsRef<[u8]>,
@@ -1822,7 +1829,7 @@ pub trait Utils {
         serde_yaml_ng::from_slice(self.as_ref())
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn to_value_from_yaml_reader<T: DeserializeOwned>(self) -> Result<T, SerdeYamlError>
     where
         Self: Read + Sized,
@@ -1947,7 +1954,7 @@ pub trait Utils {
         string
     }
 
-    #[cfg(feature = "serde-extra")]
+    #[cfg(feature = "serde")]
     fn write_as_json_to<T: Write>(&self, writer: T) -> Result<(), SerdeJsonError>
     where
         Self: Serialize,

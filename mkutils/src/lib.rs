@@ -11,7 +11,7 @@ mod seq_visitor;
 mod timestamped;
 mod utils;
 
-#[cfg(feature = "tracing")]
+#[cfg(all(feature = "serde", feature = "tracing"))]
 mod as_valuable;
 
 #[cfg(feature = "async")]
@@ -53,7 +53,7 @@ mod scroll_view;
 #[cfg(feature = "tui")]
 mod scroll_view_state;
 
-#[cfg(all(feature = "async", feature = "unstable", feature = "serde-extra"))]
+#[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
 mod socket;
 
 #[cfg(feature = "tracing")]
@@ -73,7 +73,7 @@ mod transpose;
 
 #[cfg(feature = "unstable")]
 pub use crate::output::Output;
-#[cfg(all(feature = "async", feature = "unstable", feature = "serde-extra"))]
+#[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
 pub use crate::socket::{Request, Socket};
 pub use crate::{
     active_vec::ActiveVec,

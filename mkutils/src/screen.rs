@@ -3,8 +3,8 @@ use crossterm::{
     QueueableCommand,
     cursor::{Hide, Show},
     event::{
-        DisableMouseCapture, EnableMouseCapture, KeyboardEnhancementFlags, PopKeyboardEnhancementFlags,
-        PushKeyboardEnhancementFlags,
+        DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture, KeyboardEnhancementFlags,
+        PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
     },
     terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -17,13 +17,21 @@ pub type ScreenTerminal<'a> = Terminal<CrosstermBackend<&'a mut Stdout>>;
 #[derive(Default)]
 pub struct ScreenConfig {
     mouse_capture: bool,
+    bracketed_paste: bool,
 }
 
 impl ScreenConfig {
-    #[allow(clippy::needless_update)]
     #[must_use]
     pub const fn with_mouse_capture(self, mouse_capture: bool) -> Self {
         Self { mouse_capture, ..self }
+    }
+
+    #[must_use]
+    pub const fn with_bracketed_paste(self, bracketed_paste: bool) -> Self {
+        Self {
+            bracketed_paste,
+            ..self
+        }
     }
 
     pub fn build(self) -> Result<Screen, IoError> {
@@ -62,6 +70,10 @@ impl Screen {
             self.stdout.queue(EnableMouseCapture)?;
         }
 
+        if self.config.bracketed_paste {
+            self.stdout.queue(EnableBracketedPaste)?;
+        }
+
         self.stdout
             .queue(EnterAlternateScreen)?
             .queue(Self::PUSH_KEYBOARD_ENHANCEMENT_FLAGS)?
@@ -76,6 +88,10 @@ impl Screen {
 
         if self.config.mouse_capture {
             self.stdout.queue(DisableMouseCapture)?;
+        }
+
+        if self.config.bracketed_paste {
+            self.stdout.queue(DisableBracketedPaste)?;
         }
 
         self.stdout

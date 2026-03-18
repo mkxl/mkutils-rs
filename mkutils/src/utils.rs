@@ -1436,7 +1436,7 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn rope(&mut self) -> Result<Rope, IoError>
+    fn to_rope(&mut self) -> Result<Rope, IoError>
     where
         Self: Read,
     {
@@ -1452,7 +1452,7 @@ pub trait Utils {
     }
 
     #[cfg(all(feature = "async", feature = "tui"))]
-    async fn rope_async(&mut self) -> Result<Rope, IoError>
+    async fn to_rope_async(&mut self) -> Result<Rope, IoError>
     where
         Self: AsyncRead + Unpin,
     {

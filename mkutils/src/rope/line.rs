@@ -1,7 +1,7 @@
 use crate::{
     rope::{
         atoms::{Atom, Atoms},
-        chunk_summary::NumExtendedGraphemes,
+        chunk_summary::LengthExtendedGraphemes,
     },
     utils::Utils,
 };
@@ -20,14 +20,14 @@ impl<'r, 'a> Line<'r, 'a> {
         Self { atoms, seen_newline }
     }
 
-    pub fn advance(&mut self, num_extended_graphemes: NumExtendedGraphemes) {
+    pub fn advance(&mut self, len_extended_graphemes: LengthExtendedGraphemes) {
         if self.seen_newline {
             return;
         }
 
-        let distance_advanced = self.atoms.advance_within_line(num_extended_graphemes).into_ok_err();
+        let length_advanced = self.atoms.advance_within_line(len_extended_graphemes).into_ok_err();
 
-        if distance_advanced.newlines().is_positive() {
+        if length_advanced.lines().is_positive() {
             self.seen_newline.set_true();
         }
     }

@@ -1038,14 +1038,6 @@ pub trait Utils {
         range.end.saturating_sub(&range.start)
     }
 
-    #[cfg(feature = "tui")]
-    fn len_extended_graphemes(&self) -> usize
-    where
-        Self: AsRef<str>,
-    {
-        self.as_ref().extended_graphemes().count()
-    }
-
     #[cfg(feature = "tracing")]
     fn level<T, E>(&self) -> Level
     where

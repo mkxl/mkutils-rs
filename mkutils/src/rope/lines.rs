@@ -1,7 +1,7 @@
 use crate::{
     rope::{
         atoms::Atoms,
-        chunk_summary::{NumExtendedGraphemes, NumNewlines},
+        chunk_summary::{LengthExtendedGraphemes, LengthLines},
         line::Line,
         rope::Rope,
     },
@@ -12,17 +12,17 @@ use std::{iter::Take, ops::Range};
 #[allow(clippy::struct_field_names)]
 pub struct Lines<'r> {
     atoms: Atoms<'r>,
-    line_offsets: Range<NumNewlines>,
-    extended_grapheme_offsets: Range<NumExtendedGraphemes>,
-    next_line_offset: NumNewlines,
+    line_offsets: Range<LengthLines>,
+    extended_grapheme_offsets: Range<LengthExtendedGraphemes>,
+    next_line_offset: LengthLines,
 }
 
 impl<'r> Lines<'r> {
     #[must_use]
     pub fn new(
         rope: &'r Rope,
-        line_offsets: Range<NumNewlines>,
-        extended_grapheme_offsets: Range<NumExtendedGraphemes>,
+        line_offsets: Range<LengthLines>,
+        extended_grapheme_offsets: Range<LengthExtendedGraphemes>,
     ) -> Self {
         let atoms = rope.atoms_at_line(line_offsets.start.into());
         let next_line_offset = line_offsets.start;
@@ -40,7 +40,7 @@ impl<'r> Lines<'r> {
             return None;
         }
 
-        while self.atoms.rope_offset().newlines() < self.next_line_offset {
+        while self.atoms.rope_offset().lines() < self.next_line_offset {
             if self.atoms.advance_to_start_of_next_line().is_err() {
                 return None;
             }

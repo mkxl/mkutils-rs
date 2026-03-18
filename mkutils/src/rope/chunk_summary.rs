@@ -37,13 +37,13 @@ macro_rules! dimension_type_impls {
             pub const ONE: Self = Self::new(1);
         }
 
-        impl From<$dimension_type> for Distance {
+        impl From<$dimension_type> for Length {
             fn from(dimension_value: $dimension_type) -> Self {
-                let mut distance = Self::default();
+                let mut length = Self::default();
 
-                distance.$dimension_field = dimension_value;
+                length.$dimension_field = dimension_value;
 
-                distance
+                length
             }
         }
 
@@ -73,7 +73,7 @@ macro_rules! dimension_type_impls {
                 chunk_summary: &'a ChunkSummary,
                 _context: <ChunkSummary as ::zed_sum_tree::Summary>::Context<'a>,
             ) {
-                self.saturating_add_assign(&chunk_summary.length.$dimension_field);
+                self.saturating_add_assign(&chunk_summary.len.$dimension_field);
             }
         }
     };
@@ -82,30 +82,30 @@ macro_rules! dimension_type_impls {
 #[derive(Add, Clone, Constructor, Copy, CopyGetters, Default, MutGetters, SaturatingAdd, SaturatingSub, Sub)]
 #[get_copy = "pub"]
 #[get_mut = "pub"]
-pub struct Distance {
-    newlines: NumNewlines,
-    extended_graphemes: NumExtendedGraphemes,
+pub struct Length {
+    lines: LengthLines,
+    extended_graphemes: LengthExtendedGraphemes,
 }
 
-impl Distance {
-    pub const ZERO: Self = Self::new(NumNewlines::ZERO, NumExtendedGraphemes::ZERO);
+impl Length {
+    pub const ZERO: Self = Self::new(LengthLines::ZERO, LengthExtendedGraphemes::ZERO);
 
     #[must_use]
     pub fn from_extended_grapheme(extended_grapheme: &str) -> Self {
-        Self::new(extended_grapheme.is_newline().into(), NumExtendedGraphemes::ONE)
+        Self::new(extended_grapheme.is_newline().into(), LengthExtendedGraphemes::ONE)
     }
 }
 
 #[derive(Clone, Constructor, Copy, CopyGetters, Default)]
 pub struct LineLengthSummary {
-    first: NumExtendedGraphemes,
-    last: NumExtendedGraphemes,
+    first: LengthExtendedGraphemes,
+    last: LengthExtendedGraphemes,
     #[get_copy = "pub"]
-    max: NumExtendedGraphemes,
+    max: LengthExtendedGraphemes,
 }
 
 impl LineLengthSummary {
-    const fn set_all(&mut self, width: NumExtendedGraphemes) {
+    const fn set_all(&mut self, width: LengthExtendedGraphemes) {
         self.first = width;
         self.last = width;
         self.max = width;
@@ -117,7 +117,7 @@ impl LineLengthSummary {
 #[derive(Clone, Constructor, CopyGetters, Default, MutGetters)]
 #[get_copy = "pub"]
 pub struct ChunkSummary {
-    length: Distance,
+    len: Length,
     line_lengths: LineLengthSummary,
 }
 
@@ -127,7 +127,7 @@ impl ContextLessSummary for ChunkSummary {
     }
 
     fn add_summary(&mut self, other: &Self) {
-        match (self.length.newlines.is_positive(), other.length.newlines.is_positive()) {
+        match (self.len.lines.is_positive(), other.len.lines.is_positive()) {
             // NOTE
             // - [other] (single line) is being appended to [self] (single line)
             // - [self.line_lengths.first == self.line_lengths.last == self.line_lengths.max]
@@ -171,9 +171,9 @@ impl ContextLessSummary for ChunkSummary {
             }
         }
 
-        self.length.saturating_add_assign(&other.length);
+        self.len.saturating_add_assign(&other.len);
     }
 }
 
-dimension_type_impls!(NumNewlines, newlines);
-dimension_type_impls!(NumExtendedGraphemes, extended_graphemes);
+dimension_type_impls!(LengthLines, lines);
+dimension_type_impls!(LengthExtendedGraphemes, extended_graphemes);

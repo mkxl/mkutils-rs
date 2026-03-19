@@ -95,6 +95,7 @@ impl Rope {
         self
     }
 
+    // TODO: figure out how to rename this [split_at()] and not have it conflict with [Utils::split_at()]
     #[must_use]
     fn split(&self, extended_grapheme_offset: LengthExtendedGraphemes) -> (Self, Self) {
         let mut chunks_cursor = self.chunk_sum_tree.cursor::<LengthExtendedGraphemes>(Self::CONTEXT);
@@ -175,11 +176,7 @@ impl Rope {
 
 impl From<&str> for Rope {
     fn from(string: &str) -> Self {
-        let mut rope = Self::new();
-
-        rope.push_extended_graphemes(string);
-
-        rope
+        string.once().collect()
     }
 }
 

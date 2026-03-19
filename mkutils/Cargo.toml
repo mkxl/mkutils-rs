@@ -19,7 +19,7 @@ crossterm = { version = "0.29.0", features = ["event-stream", "libc", "serde", "
 derive_more = { version = "2.0.1", features = ["add", "constructor", "from", "into", "is_variant", "mul"] }
 futures = { version = "0.3.31", optional = true }
 getset = { version = "0.1.6" }
-home = { version = "0.5.11" }
+home = { version = "=0.5.11" }  # TODO: remove pin
 mkutils-macros = { workspace = true }
 num = { version = "0.4.3" }
 palette = { version = "0.7.6", optional = true }

@@ -28,7 +28,10 @@ impl ScrollBar {
             .height
             .interpolate(0, self.content_size.y, 0, render_content_area.height)
             .max(Self::VERTICAL_THUMB_AREA_MIN_HEIGHT);
-        let max_thumb_area_y = render_content_area.bottom().saturating_sub(thumb_area_height);
+        let max_thumb_area_y = render_content_area
+            .bottom()
+            .saturating_sub(thumb_area_height)
+            .decremented();
         let thumb_area_y =
             self.scroll_offset
                 .y

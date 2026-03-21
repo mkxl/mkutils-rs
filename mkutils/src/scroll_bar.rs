@@ -1,10 +1,14 @@
 use crate::{
-    geometry::{Orientation, PointUsize},
+    geometry::{Orientation, Point, PointUsize},
     transpose::Transpose,
     utils::Utils,
 };
 use derive_more::Constructor;
-use ratatui::{buffer::Buffer, layout::Rect, style::Style};
+use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    symbols::line::{THICK_HORIZONTAL, THICK_VERTICAL},
+};
 
 #[derive(Constructor)]
 pub struct ScrollBar {
@@ -17,7 +21,7 @@ pub struct ScrollBar {
 impl ScrollBar {
     const VERTICAL_THUMB_AREA_WIDTH: u16 = 1;
     const VERTICAL_THUMB_AREA_MIN_HEIGHT: u16 = 1;
-    const STYLE: Style = Style::new().on_dark_gray();
+    const SYMBOLS: Point<&'static str> = Point::new(THICK_HORIZONTAL, THICK_VERTICAL);
 
     fn vertical_thumb_area(&self, render_content_area: Rect) -> Rect {
         let thumb_area_height = render_content_area
@@ -59,9 +63,11 @@ impl ScrollBar {
     // of the content this is a scroll bar for and not for the area of the scroll
     // bar itself
     pub fn render(&self, render_content_area: Rect, buffer: &mut Buffer) {
+        let symbol = Self::SYMBOLS.get(self.orientation);
+
         for position in self.thumb_area(render_content_area).positions() {
             if let Some(cell) = buffer.cell_mut(position) {
-                cell.set_style(Self::STYLE);
+                cell.set_symbol(symbol);
             }
         }
     }

@@ -1050,6 +1050,17 @@ pub trait Utils {
         }
     }
 
+    #[cfg(feature = "tracing")]
+    #[must_use]
+    fn log(self) -> Self
+    where
+        Self: Display + Sized,
+    {
+        tracing::info!(value = %self);
+
+        self
+    }
+
     #[cfg(any(feature = "tracing", feature = "tui"))]
     fn log_error(&self)
     where

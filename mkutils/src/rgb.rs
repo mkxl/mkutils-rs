@@ -1,7 +1,7 @@
 use crate::utils::Utils;
 use derive_more::From;
 use palette::{Lighten, Okhsl, Srgb};
-use ratatui::style::Color;
+use ratatui::style::{Color, Style};
 use serde::{Deserialize, Deserializer, de::Error};
 use std::str::FromStr;
 
@@ -36,6 +36,12 @@ impl FromStr for Rgb {
 impl From<Rgb> for Color {
     fn from(rgb: Rgb) -> Self {
         Self::Rgb(rgb.srgb.red, rgb.srgb.green, rgb.srgb.blue)
+    }
+}
+
+impl From<Rgb> for Style {
+    fn from(rgb: Rgb) -> Self {
+        rgb.convert::<Color>().into()
     }
 }
 

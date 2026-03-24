@@ -3,7 +3,7 @@ use mkutils_macros::Default as MkutilsDefault;
 use std::{
     collections::{
         BTreeMap,
-        btree_map::{Range as BTreeMapRange, Values as BTreeMapValues},
+        btree_map::{IntoIter as BTreeMapIntoIter, Range as BTreeMapRange, Values as BTreeMapValues},
     },
     iter::Map,
 };
@@ -165,6 +165,15 @@ impl<T: Interval> IntervalSet<T> {
         }
 
         self
+    }
+}
+
+impl<T: Interval> IntoIterator for IntervalSet<T> {
+    type Item = T;
+    type IntoIter = Map<BTreeMapIntoIter<T::Point, T>, fn((T::Point, T)) -> T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.intervals.into_iter().map(Utils::into_second)
     }
 }
 

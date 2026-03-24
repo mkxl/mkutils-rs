@@ -157,12 +157,14 @@ impl<T: Interval> IntervalSet<T> {
         self.assign(lt_interval_set);
     }
 
-    pub fn insert(&mut self, interval: T) {
+    pub fn insert(&mut self, interval: T) -> &mut Self {
         if interval.is_empty() {
             self.insert_empty_interval(interval);
         } else {
             self.insert_non_empty_interval(interval);
         }
+
+        self
     }
 }
 

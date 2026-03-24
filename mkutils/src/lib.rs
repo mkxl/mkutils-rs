@@ -4,6 +4,7 @@
 mod active_vec;
 mod fmt;
 mod indexed;
+mod interval_set;
 mod is;
 mod macros;
 mod read_value;
@@ -79,6 +80,7 @@ pub use crate::{
     active_vec::ActiveVec,
     fmt::{Debugged, OptionDisplay, ResultDisplay},
     indexed::Indexed,
+    interval_set::{Interval, IntervalSet},
     read_value::ReadValue,
     timestamped::Timestamped,
     utils::Utils,

@@ -1125,11 +1125,13 @@ pub trait Utils {
         start..end
     }
 
-    fn max_assign(&mut self, other: Self)
+    fn max_assign(&mut self, mut other: Self)
     where
-        Self: Copy + Ord + Sized,
+        Self: Ord + Sized,
     {
-        *self = self.immutable().copied().max(other);
+        if self < &mut other {
+            *self = other;
+        }
     }
 
     fn mem_drop(self)
@@ -1161,6 +1163,15 @@ pub trait Utils {
         Self: AsRef<Path>,
     {
         tokio::fs::metadata(self).await
+    }
+
+    fn min_assign(&mut self, mut other: Self)
+    where
+        Self: Ord + Sized,
+    {
+        if &mut other < self {
+            *self = other;
+        }
     }
 
     // NOTE: [https://doc.rust-lang.org/stable/std/vec/struct.Vec.html#method.push_mut]

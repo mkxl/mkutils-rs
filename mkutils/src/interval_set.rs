@@ -1,5 +1,6 @@
 use crate::utils::Utils;
 use mkutils_macros::Default as MkutilsDefault;
+use num::{Zero, traits::SaturatingAdd};
 use std::{
     collections::{
         BTreeMap,
@@ -8,29 +9,21 @@ use std::{
     iter::Map,
 };
 
-// NOTE: must take care that [.inf() <= .sup()] and [.inf_mut() <= .sup_mut()] always hold
 pub trait Interval {
-    type Point: Clone + Ord + PartialEq;
+    type Point: Ord + PartialEq + SaturatingAdd + Zero;
 
-    fn inf(&self) -> &Self::Point;
+    fn begin(&self) -> Self::Point;
 
-    fn sup(&self) -> &Self::Point;
+    fn len(&self) -> Self::Point;
 
-    fn inf_mut(&mut self) -> &mut Self::Point;
-
-    fn sup_mut(&mut self) -> &mut Self::Point;
+    fn expand_to_cover(&mut self, other: &Self);
 
     fn is_empty(&self) -> bool {
-        self.inf() == self.sup()
+        self.len().is_zero()
     }
 
     fn is_touching_or_contains(&self, point: &Self::Point) -> bool {
-        (self.inf()..=self.sup()).contains(&point)
-    }
-
-    fn merge_with(&mut self, other: &Self) {
-        self.inf_mut().min_assign(other.inf().clone());
-        self.sup_mut().max_assign(other.sup().clone());
+        self.begin().range_from_len(self.len()).contains(point)
     }
 }
 
@@ -93,7 +86,7 @@ impl<T: Interval> IntervalSet<T> {
     }
 
     #[allow(clippy::type_complexity)]
-    fn intervals_with_inf_leq<'a>(
+    fn intervals_with_begin_leq<'a>(
         &'a self,
         point: &T::Point,
     ) -> Map<BTreeMapRange<'a, T::Point, T>, fn((&'a T::Point, &'a T)) -> &'a T> {
@@ -101,7 +94,7 @@ impl<T: Interval> IntervalSet<T> {
     }
 
     pub fn is_touching_or_contains(&self, point: &T::Point) -> bool {
-        if let Some(furthest_leq_interval) = self.intervals_with_inf_leq(point).next_back() {
+        if let Some(furthest_leq_interval) = self.intervals_with_begin_leq(point).next_back() {
             furthest_leq_interval.is_touching_or_contains(point)
         } else {
             false
@@ -109,13 +102,13 @@ impl<T: Interval> IntervalSet<T> {
     }
 
     fn insert_empty_interval(&mut self, empty_interval: T) {
-        let inf = empty_interval.inf();
+        let begin = empty_interval.begin();
 
-        if self.is_touching_or_contains(inf) {
+        if self.is_touching_or_contains(&begin) {
             return;
         }
 
-        self.intervals.insert(inf.clone(), empty_interval);
+        self.intervals.insert(begin, empty_interval);
     }
 
     pub fn split(self, point: &T::Point) -> (Self, Self) {
@@ -128,22 +121,22 @@ impl<T: Interval> IntervalSet<T> {
     }
 
     fn insert_non_empty_interval(&mut self, mut interval: T) {
-        let (mut lt_interval_set, mut geq_interval_set) = self.mem_take().split(interval.inf());
+        let (mut lt_interval_set, mut geq_interval_set) = self.mem_take().split(&interval.begin());
 
         // NOTE: if [furthest_lt_interval] touches or overlaps [interval], then merge it with [interval] and remove
         // [furthest_lt_interval]
         if let Some(furthest_lt_interval) = lt_interval_set.last()
-            && interval.inf() <= furthest_lt_interval.sup()
+            && furthest_lt_interval.is_touching_or_contains(&interval.begin())
         {
-            interval.merge_with(furthest_lt_interval);
+            interval.expand_to_cover(furthest_lt_interval);
             lt_interval_set.pop_last();
         }
 
         while let Some(nearest_geq_interval) = geq_interval_set.first() {
             // NOTE: if [nearest_geq_interval] is touching or overlaps with [interval], then merge them and remove
             // [nearest_geq_interval]
-            if interval.is_touching_or_contains(nearest_geq_interval.inf()) {
-                interval.merge_with(nearest_geq_interval);
+            if interval.is_touching_or_contains(&nearest_geq_interval.begin()) {
+                interval.expand_to_cover(nearest_geq_interval);
                 geq_interval_set.pop_first();
 
                 continue;
@@ -152,7 +145,7 @@ impl<T: Interval> IntervalSet<T> {
             break;
         }
 
-        lt_interval_set.intervals.insert(interval.inf().clone(), interval);
+        lt_interval_set.intervals.insert(interval.begin(), interval);
         lt_interval_set.intervals.append(&mut geq_interval_set.intervals);
         self.assign(lt_interval_set);
     }

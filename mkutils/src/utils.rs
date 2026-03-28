@@ -76,7 +76,7 @@ use std::{
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
     iter::{Once, Peekable, Repeat},
     mem::ManuallyDrop,
-    ops::{Add, ControlFlow, Index, IndexMut, Range},
+    ops::{ControlFlow, Index, IndexMut, Range},
     path::{Path, PathBuf},
     pin::Pin,
     str::Utf8Error,
@@ -1375,9 +1375,9 @@ pub trait Utils {
 
     fn range_from_len(self, len: Self) -> Range<Self>
     where
-        Self: Add<Output = Self> + Copy,
+        Self: SaturatingAdd,
     {
-        let end = self + len;
+        let end = self.saturating_add(&len);
 
         self..end
     }

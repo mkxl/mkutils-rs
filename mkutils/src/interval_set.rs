@@ -14,13 +14,17 @@ pub trait Interval {
 
     fn begin(&self) -> Self::Point;
 
-    fn len(&self) -> Self::Point;
+    fn end(&self) -> Self::Point {
+        self.begin().saturating_add(self.len())
+    }
 
-    fn expand_to_cover(&mut self, other: &Self);
+    fn len(&self) -> Self::Point;
 
     fn is_empty(&self) -> bool {
         self.len().is_zero()
     }
+
+    fn expand_to_cover(&mut self, other: &Self);
 
     fn is_touching_or_contains(&self, point: &Self::Point) -> bool {
         self.begin().range_from_len(self.len()).contains(point)

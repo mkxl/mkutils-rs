@@ -27,7 +27,7 @@ pub trait Interval {
     }
 
     fn is_touching_or_contains(&self, point: &Self::Point) -> bool {
-        self.begin().range_from_len(self.len()).contains(point)
+        (self.begin()..=self.end()).contains(point)
     }
 }
 

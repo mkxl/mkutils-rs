@@ -64,10 +64,12 @@ impl ScrollViewState {
     fn scroll(&mut self, scroll_count_type: ScrollCountType, orientation: Orientation, add: bool) {
         let scroll_count = self.scroll_count(scroll_count_type, orientation);
         let max_scroll_offset = self.max_scroll_offset().get(orientation).copied();
+        let scroll_offset = self.scroll_offset.get_mut(orientation);
 
-        self.scroll_offset
-            .get_mut(orientation)
-            .saturating_add_or_sub_in_place_with_max(scroll_count, max_scroll_offset, add);
+        scroll_offset
+            .saturating_add_or_sub(&scroll_count, add)
+            .min(max_scroll_offset)
+            .assign_to(scroll_offset);
     }
 
     #[must_use]

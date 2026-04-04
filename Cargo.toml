@@ -3,7 +3,7 @@ resolver = "3"
 members = ["mkutils", "mkutils-macros"]
 
 [workspace.package]
-version = "0.1.118"
+version = "0.1.119"
 edition = "2024"
 description = "Utility methods, traits, and types."
 readme = "README.md"
@@ -13,7 +13,7 @@ keywords = ["utilities"]
 categories = ["development-tools"]
 
 [workspace.dependencies]
-mkutils-macros = { path = "mkutils-macros", version = "0.1.117" }
+mkutils-macros = { path = "mkutils-macros", version = "0.1.119" }
 
 [workspace.lints.rust]
 warnings = "deny"

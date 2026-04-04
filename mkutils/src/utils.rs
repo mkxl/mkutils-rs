@@ -1550,17 +1550,16 @@ pub trait Utils {
         *self = self.saturating_add(rhs);
     }
 
-    fn saturating_add_or_sub_in_place_with_max(&mut self, rhs: Self, max_value: Self, add: bool)
+    #[must_use]
+    fn saturating_add_or_sub(&mut self, rhs: &Self, add: bool) -> Self
     where
-        Self: Ord + SaturatingAdd + SaturatingSub + Sized,
+        Self: SaturatingAdd + SaturatingSub,
     {
-        let value = if add {
-            self.saturating_add(&rhs)
+        if add {
+            self.saturating_add(rhs)
         } else {
-            self.saturating_sub(&rhs)
-        };
-
-        *self = value.min(max_value);
+            self.saturating_sub(rhs)
+        }
     }
 
     fn saturating_sub_assign(&mut self, rhs: &Self)

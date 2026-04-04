@@ -26,8 +26,8 @@ impl Parse for BuilderCalls {
     }
 }
 
-pub fn main(attr_args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
-    let BuilderCalls { builder_calls } = syn::parse_macro_input!(attr_args_token_stream as BuilderCalls);
+pub fn tokio_main(attr_args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
+    let BuilderCalls { builder_calls } = syn::parse_macro_input!(attr_args_token_stream);
     let ItemFn {
         attrs,
         vis,
@@ -38,7 +38,7 @@ pub fn main(attr_args_token_stream: TokenStream, input_token_stream: TokenStream
     sig.asyncness = None;
 
     // NOTE: [https://docs.rs/tokio/latest/tokio/attr.main.html#using-the-multi-threaded-runtime]
-    let main_fn_token_stream = quote::quote! {
+    let tokio_main_fn_token_stream = quote::quote! {
         #(#attrs)*
         #vis #sig {
             ::tokio::runtime::Builder::new_multi_thread()
@@ -50,5 +50,5 @@ pub fn main(attr_args_token_stream: TokenStream, input_token_stream: TokenStream
         }
     };
 
-    main_fn_token_stream.into()
+    tokio_main_fn_token_stream.into()
 }

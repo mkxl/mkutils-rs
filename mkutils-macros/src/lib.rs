@@ -4,9 +4,9 @@ mod context;
 mod default;
 mod error;
 mod from_chain;
-mod main_attribute_macro;
 mod set_variant;
 mod toggle;
+mod tokio_main;
 mod type_assoc;
 mod utils;
 
@@ -274,12 +274,12 @@ pub fn constructor(input_token_stream: TokenStream) -> TokenStream {
 /// ```rust
 /// const THREAD_STACK_SIZE = lits::bytes!("8 MiB");
 ///
-/// #[mkutils_macros::main(thread_stack_size = THREAD_STACK_SIZE)]
+/// #[mkutils_macros::tokio_main(thread_stack_size = THREAD_STACK_SIZE)]
 /// fn main() {
 ///     ...
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn main(attr_args_token_stream: TokenStream, item_token_stream: TokenStream) -> TokenStream {
-    crate::main_attribute_macro::main(attr_args_token_stream, item_token_stream)
+pub fn tokio_main(attr_args_token_stream: TokenStream, item_token_stream: TokenStream) -> TokenStream {
+    crate::tokio_main::tokio_main(attr_args_token_stream, item_token_stream)
 }

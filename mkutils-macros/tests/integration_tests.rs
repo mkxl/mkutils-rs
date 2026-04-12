@@ -1,4 +1,4 @@
-use mkutils_macros::{Constructor, SetVariant, Toggle};
+use mkutils_macros::{ConstAssoc, Constructor, SetVariant, Toggle};
 
 #[derive(Debug, PartialEq, SetVariant, Toggle)]
 enum MyEnum {
@@ -73,4 +73,27 @@ fn test_constructor_pub_visibility() {
     let val = PubConstructorStruct::new(255);
 
     std::assert_eq!(val.0, 255);
+}
+
+#[derive(ConstAssoc)]
+#[const_assoc(pub MAX_SIZE: usize = 1024)]
+#[const_assoc(DEFAULT_NAME: &str = "unnamed")]
+struct ConstAssocStruct;
+
+#[test]
+fn test_const_assoc() {
+    std::assert_eq!(ConstAssocStruct::MAX_SIZE, 1024);
+    std::assert_eq!(ConstAssocStruct::DEFAULT_NAME, "unnamed");
+}
+
+#[derive(ConstAssoc)]
+#[const_assoc(pub(crate) SCALE_FACTOR: f64 = 2.5)]
+enum ConstAssocEnum {
+    A,
+    B,
+}
+
+#[test]
+fn test_const_assoc_enum() {
+    std::assert_eq!(ConstAssocEnum::SCALE_FACTOR, 2.5);
 }

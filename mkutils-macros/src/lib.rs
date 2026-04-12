@@ -1,4 +1,5 @@
 mod basic;
+mod const_assoc;
 mod constructor;
 mod context;
 mod default;
@@ -11,8 +12,8 @@ mod type_assoc;
 mod utils;
 
 use crate::{
-    basic::Basic, constructor::Constructor, default::Default, from_chain::FromChain, set_variant::SetVariant,
-    toggle::Toggle, type_assoc::TypeAssoc,
+    basic::Basic, const_assoc::ConstAssoc, constructor::Constructor, default::Default, from_chain::FromChain,
+    set_variant::SetVariant, toggle::Toggle, type_assoc::TypeAssoc,
 };
 use proc_macro::TokenStream;
 
@@ -68,6 +69,31 @@ pub fn from_chain(input_token_stream: TokenStream) -> TokenStream {
 #[proc_macro_derive(TypeAssoc, attributes(type_assoc))]
 pub fn type_assoc(input_token_stream: TokenStream) -> TokenStream {
     TypeAssoc::derive(input_token_stream)
+}
+
+/// Adds associated constants to a type via an inherent impl block.
+///
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(ConstAssoc)]
+/// #[const_assoc(pub MAX_SIZE: usize = 1024)]
+/// #[const_assoc(DEFAULT_NAME: &str = "unnamed")]
+/// struct MyStruct;
+/// ```
+///
+/// adds
+///
+/// ```rust
+/// impl MyStruct {
+///     pub const MAX_SIZE: usize = 1024;
+///     const DEFAULT_NAME: &str = "unnamed";
+/// }
+/// ```
+#[proc_macro_derive(ConstAssoc, attributes(const_assoc))]
+pub fn const_assoc(input_token_stream: TokenStream) -> TokenStream {
+    ConstAssoc::derive(input_token_stream)
 }
 
 /// Implements `Default` for a struct, using `Default::default()` for each field

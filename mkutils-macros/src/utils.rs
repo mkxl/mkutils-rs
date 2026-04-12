@@ -5,24 +5,31 @@ use syn::{
     punctuated::Punctuated,
 };
 
-pub struct Cat3<X, Y, Z>(pub X, pub Y, pub Z);
+macro_rules! declare_cat_type {
+    ($name:ident < $($T:ident),+ >) => {
+        pub struct $name<$($T),+>($(pub $T),+);
 
-// TODO: use [derive_more::Into]?
-impl<X, Y, Z> Cat3<X, Y, Z> {
-    pub fn into_tuple(self) -> (X, Y, Z) {
-        (self.0, self.1, self.2)
-    }
+        impl<$($T),+> $name<$($T),+> {
+            #[allow(non_snake_case)]
+            pub fn into_tuple(self) -> ($($T),+) {
+                let Self($($T),+) = self;
+
+                ($($T),+)
+            }
+        }
+
+        impl<$($T: Parse),+> Parse for $name<$($T),+> {
+            fn parse(parse_stream: ParseStream) -> Result<Self, SynError> {
+                Ok(Self(
+                    $(parse_stream.parse::<$T>()?),+
+                ))
+            }
+        }
+    };
 }
 
-impl<X: Parse, Y: Parse, Z: Parse> Parse for Cat3<X, Y, Z> {
-    fn parse(parse_stream: ParseStream) -> Result<Self, SynError> {
-        Ok(Self(
-            parse_stream.parse()?,
-            parse_stream.parse()?,
-            parse_stream.parse()?,
-        ))
-    }
-}
+declare_cat_type!(Cat3<X, Y, Z>);
+declare_cat_type!(Cat6<U, V, W, X, Y, Z>);
 
 pub type Assignment<L, R> = Cat3<L, Token![=], R>;
 pub type IdentAssignment<T> = Assignment<Ident, T>;

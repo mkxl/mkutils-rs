@@ -1,8 +1,5 @@
 use crate::{
-    rope::{
-        chunk_summary::{ChunkSummary, Length, LengthExtendedGraphemes, LineLengthSummary},
-        extended_grapheme_iter::ExtendedGraphemeIter,
-    },
+    rope::{extended_grapheme_iter::ExtendedGraphemeIter, length_summary::LengthSummary},
     utils::Utils,
 };
 use arrayvec::{ArrayString, ArrayVec, CapacityError};
@@ -14,8 +11,8 @@ use zed_sum_tree::{Item, Summary};
 #[derive(Clone, Default)]
 pub struct Chunk {
     string: ArrayString<{ Self::CAPACITY }>,
-    extended_grapheme_byte_index_intervals: ArrayVec<Range<LengthExtendedGraphemes>, { Self::CAPACITY }>,
-    newline_extended_grapheme_offsets: ArrayVec<LengthExtendedGraphemes, { Self::CAPACITY }>,
+    extended_grapheme_byte_index_intervals: ArrayVec<Range<usize>, { Self::CAPACITY }>,
+    newline_extended_grapheme_offsets: ArrayVec<usize, { Self::CAPACITY }>,
 }
 
 impl Chunk {
@@ -27,11 +24,38 @@ impl Chunk {
     }
 
     #[must_use]
-    pub fn len(&self) -> Length {
-        Length::new(
-            self.newline_extended_grapheme_offsets.len().into(),
-            self.extended_grapheme_byte_index_intervals.len().into(),
-        )
+    pub fn length_summary(&self) -> LengthSummary {
+        std::todo!()
+        // LengthSummary::new(
+        // )
+    }
+
+    #[must_use]
+    pub fn line_lengths(&self) -> LengthSummary {
+        let newlines = self.newline_extended_grapheme_offsets.len();
+        let extended_graphemes = self.extended_grapheme_byte_index_intervals.len();
+        let first_line = self
+            .newline_extended_grapheme_offsets
+            .first()
+            .copied()
+            .unwrap_or(extended_graphemes);
+        let last_line =
+            if let Some(last_newline_extended_grapheme_offset) = self.newline_extended_grapheme_offsets.last() {
+                extended_graphemes
+                    .saturating_sub(last_newline_extended_grapheme_offset.copied())
+                    .decremented()
+            } else {
+                extended_graphemes
+            };
+        let mut max_line = first_line.max(last_line);
+
+        for [curr_newline_offset, next_newline_offset] in self.newline_extended_grapheme_offsets.array_windows::<2>() {
+            let line_length = next_newline_offset.saturating_sub(curr_newline_offset).decremented();
+
+            max_line.max_assign(line_length);
+        }
+
+        LengthSummary::new(newlines, extended_graphemes, first_line, last_line, max_line)
     }
 
     #[must_use]
@@ -45,15 +69,12 @@ impl Chunk {
     }
 
     #[must_use]
-    pub fn extended_grapheme_byte_index_intervals(&self) -> &[Range<LengthExtendedGraphemes>] {
+    pub fn extended_grapheme_byte_index_intervals(&self) -> &[Range<usize>] {
         &self.extended_grapheme_byte_index_intervals
     }
 
     #[must_use]
-    pub fn newline_extended_grapheme_offsets_geq(
-        &self,
-        extended_grapheme_offset: LengthExtendedGraphemes,
-    ) -> &[LengthExtendedGraphemes] {
+    pub fn newline_extended_grapheme_offsets_geq(&self, extended_grapheme_offset: usize) -> &[usize] {
         // NOTE: [index] is the index of the first [newline_extended_grapheme_offset] that is greater than or equal to
         // [extended_grapheme_offset]
         let index = self
@@ -69,8 +90,8 @@ impl Chunk {
         &mut self,
         extended_grapheme: &'a str,
     ) -> Result<&mut Self, CapacityError<&'a str>> {
-        let extended_grapheme_byte_index_interval_begin = self.string.len().convert::<LengthExtendedGraphemes>();
-        let extended_grapheme_offset = self.len().extended_graphemes();
+        let extended_grapheme_byte_index_interval_begin = self.string.len().convert::<usize>();
+        let extended_grapheme_offset = self.length_summary().extended_graphemes;
 
         // NOTE:
         // - [self.string] will always be weakly longer than [self.extended_grapheme_byte_index_intervals] (with
@@ -101,45 +122,13 @@ impl Chunk {
     }
 
     #[must_use]
-    pub fn line_lengths(&self) -> LineLengthSummary {
-        let length = self.len().extended_graphemes();
-        let first_line_length = self
-            .newline_extended_grapheme_offsets
-            .first()
-            .copied()
-            .unwrap_or(length);
-        let last_line_length =
-            if let Some(last_newline_extended_grapheme_offset) = self.newline_extended_grapheme_offsets.last() {
-                length
-                    .saturating_sub(last_newline_extended_grapheme_offset)
-                    .decremented()
-            } else {
-                length
-            };
-        let mut max_line_length = first_line_length.max(last_line_length);
-
-        for window in self.newline_extended_grapheme_offsets.windows(2) {
-            let line_length = window[1].saturating_sub(&window[0]).decremented();
-
-            max_line_length.max_assign(line_length);
-        }
-
-        LineLengthSummary::new(first_line_length, last_line_length, max_line_length)
-    }
-
-    #[must_use]
-    pub fn chunk_summary(&self) -> ChunkSummary {
-        ChunkSummary::new(self.len(), self.line_lengths())
-    }
-
-    #[must_use]
     #[allow(clippy::missing_panics_doc)]
-    pub fn split(&self, extended_grapheme_offset: LengthExtendedGraphemes) -> (Self, Self) {
+    pub fn split(&self, extended_grapheme_offset: usize) -> (Self, Self) {
         if extended_grapheme_offset.is_zero() {
             return Self::empty().pair(self.clone());
         }
 
-        if self.len().extended_graphemes() <= extended_grapheme_offset {
+        if self.length_summary().extended_graphemes <= extended_grapheme_offset {
             return self.clone().pair(Self::empty());
         }
 
@@ -167,9 +156,9 @@ impl FromStr for Chunk {
 }
 
 impl Item for Chunk {
-    type Summary = ChunkSummary;
+    type Summary = LengthSummary;
 
     fn summary(&self, _context: <Self::Summary as Summary>::Context<'_>) -> Self::Summary {
-        self.chunk_summary()
+        self.length_summary()
     }
 }

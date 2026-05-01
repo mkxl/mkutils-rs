@@ -1,7 +1,7 @@
 use crate::{
     rope::{
         chunk::Chunk,
-        chunk_summary::{Length, LengthExtendedGraphemes, LengthLines},
+        length_summary::{LengthExtendedGraphemes, LengthNewlines, LengthSummary},
     },
     utils::Utils,
 };
@@ -9,11 +9,11 @@ use num::traits::SaturatingSub;
 
 pub struct ExtendedGraphemeIter<'c> {
     chunk: &'c Chunk,
-    chunk_offset: Length,
+    chunk_offset: LengthSummary,
 }
 
 impl<'c> ExtendedGraphemeIter<'c> {
-    const INITIAL_CHUNK_OFFSET: Length = Length::ZERO;
+    const INITIAL_CHUNK_OFFSET: LengthSummary = LengthSummary::ZERO;
 
     #[must_use]
     pub const fn new(chunk: &'c Chunk) -> Self {
@@ -24,10 +24,10 @@ impl<'c> ExtendedGraphemeIter<'c> {
 
     fn newline_extended_grapheme_offsets_geq(&self) -> &'c [LengthExtendedGraphemes] {
         self.chunk
-            .newline_extended_grapheme_offsets_geq(self.chunk_offset.extended_graphemes())
+            .newline_extended_grapheme_offsets_geq(self.chunk_offset.extended_graphemes)
     }
 
-    pub fn advance_to_start_of_next_line(&mut self) -> Option<Length> {
+    pub fn advance_to_start_of_next_line(&mut self) -> Option<LengthSummary> {
         let start_of_next_line_extended_grapheme_offset =
             self.newline_extended_grapheme_offsets_geq().first()?.incremented();
 
@@ -39,34 +39,34 @@ impl<'c> ExtendedGraphemeIter<'c> {
             .chunk_offset
             .extended_graphemes_mut()
             .translate_to(start_of_next_line_extended_grapheme_offset);
-        let length_advanced = Length::new(LengthLines::ONE, len_extended_graphemes_advanced);
+        let length_advanced = LengthSummary::new(LengthNewlines::ONE, len_extended_graphemes_advanced);
 
         self.chunk_offset.lines_mut().increment();
 
         length_advanced.some()
     }
 
-    pub fn advance_to_end_of_chunk(&mut self) -> Length {
+    pub fn advance_to_end_of_chunk(&mut self) -> LengthSummary {
         let len_lines_advanced = self.chunk_offset.lines_mut().translate_to(self.chunk.len().lines());
         let len_extended_graphemes_advanced = self
             .chunk_offset
             .extended_graphemes_mut()
             .translate_to(self.chunk.len().extended_graphemes());
 
-        Length::new(len_lines_advanced, len_extended_graphemes_advanced)
+        LengthSummary::new(len_lines_advanced, len_extended_graphemes_advanced)
     }
 
     // NOTE: returns [Ok(...)] if we've advanced the given number of extended graphemes or we've hit the end of a line
     // and [Err(...)] otherwise (we've hit the end of the chunk without advancing the the given number of extended graphemes)
-    pub fn advance_within_line(&mut self, len_extended_graphemes: LengthExtendedGraphemes) -> Result<Length, Length> {
+    pub fn advance_within_line(&mut self, len_extended_graphemes: usize) -> Result<LengthSummary, LengthSummary> {
         if let Some(newline_extended_grapheme_offset) = self.newline_extended_grapheme_offsets_geq().first() {
             let start_of_next_line_extended_grapheme_offset = newline_extended_grapheme_offset.incremented();
             let len_extended_graphemes_to_start_of_next_line =
                 start_of_next_line_extended_grapheme_offset.saturating_sub(&self.chunk_offset.extended_graphemes());
             let length = if len_extended_graphemes < len_extended_graphemes_to_start_of_next_line {
-                Length::new(LengthLines::ZERO, len_extended_graphemes)
+                LengthSummary::new(0, len_extended_graphemes)
             } else {
-                Length::new(LengthLines::ONE, len_extended_graphemes_to_start_of_next_line)
+                LengthSummary::new(1, len_extended_graphemes_to_start_of_next_line)
             };
 
             self.chunk_offset.saturating_add_assign(&length);
@@ -84,13 +84,13 @@ impl<'c> ExtendedGraphemeIter<'c> {
                     .extended_graphemes_mut()
                     .saturating_add_assign(&len_extended_graphemes);
 
-                len_extended_graphemes.convert::<Length>().ok()
+                len_extended_graphemes.convert::<LengthSummary>().ok()
             } else {
                 self.chunk_offset
                     .extended_graphemes_mut()
                     .saturating_add_assign(&len_extended_graphemes_to_end_of_chunk);
 
-                len_extended_graphemes_to_end_of_chunk.convert::<Length>().err()
+                len_extended_graphemes_to_end_of_chunk.convert::<LengthSummary>().err()
             }
         }
     }

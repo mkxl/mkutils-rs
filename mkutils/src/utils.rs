@@ -15,7 +15,8 @@ use crate::{
 use crate::{into_stream::IntoStream, process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
 #[cfg(feature = "tui")]
 use crate::{
-    rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
+    // TODO-rope-cc89cb
+    // rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
     transpose::Transpose,
 };
 use anyhow::{Context, Error as AnyhowError};
@@ -382,13 +383,13 @@ pub trait Utils {
         num::clamp(self, min, max)
     }
 
-    #[cfg(feature = "tui")]
-    fn collect_atoms<'a>(&mut self) -> String
-    where
-        Self: Iterator<Item = Atom<'a>>,
-    {
-        self.map(|atom| atom.extended_grapheme()).collect()
-    }
+    // #[cfg(feature = "tui")]
+    // fn collect_atoms<'a>(&mut self) -> String
+    // where
+    //     Self: Iterator<Item = Atom<'a>>,
+    // {
+    //     self.map(|atom| atom.extended_grapheme()).collect()
+    // }
 
     fn convert<T: From<Self>>(self) -> T
     where
@@ -1468,37 +1469,39 @@ pub trait Utils {
         y.pair(x)
     }
 
-    #[cfg(feature = "tui")]
-    fn to_rope(&mut self) -> Result<Rope, IoError>
-    where
-        Self: Read,
-    {
-        let mut rope_builder = RopeBuilder::default();
+    // TODO-rope-cc89cb
+    // #[cfg(feature = "tui")]
+    // fn to_rope(&mut self) -> Result<Rope, IoError>
+    // where
+    //     Self: Read,
+    // {
+    //     let mut rope_builder = RopeBuilder::default();
 
-        while let Some(buffer) = rope_builder.buffer_mut() {
-            let num_bytes_read = self.read(buffer)?;
+    //     while let Some(buffer) = rope_builder.buffer_mut() {
+    //         let num_bytes_read = self.read(buffer)?;
 
-            rope_builder.on_read(num_bytes_read)?;
-        }
+    //         rope_builder.on_read(num_bytes_read)?;
+    //     }
 
-        rope_builder.build().ok()
-    }
+    //     rope_builder.build().ok()
+    // }
 
-    #[cfg(all(feature = "async", feature = "tui"))]
-    async fn to_rope_async(&mut self) -> Result<Rope, IoError>
-    where
-        Self: AsyncRead + Unpin,
-    {
-        let mut rope_builder = RopeBuilder::default();
+    // TODO-rope-cc89cb
+    // #[cfg(all(feature = "async", feature = "tui"))]
+    // async fn to_rope_async(&mut self) -> Result<Rope, IoError>
+    // where
+    //     Self: AsyncRead + Unpin,
+    // {
+    //     let mut rope_builder = RopeBuilder::default();
 
-        while let Some(buffer) = rope_builder.buffer_mut() {
-            let num_bytes_read = self.read(buffer).await?;
+    //     while let Some(buffer) = rope_builder.buffer_mut() {
+    //         let num_bytes_read = self.read(buffer).await?;
 
-            rope_builder.on_read(num_bytes_read)?;
-        }
+    //         rope_builder.on_read(num_bytes_read)?;
+    //     }
 
-        rope_builder.build().ok()
-    }
+    //     rope_builder.build().ok()
+    // }
 
     #[cfg(feature = "async")]
     async fn run_for(mut self, duration: Duration) -> Result<Self, RunForError<Self::Output>>

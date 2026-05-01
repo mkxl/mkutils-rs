@@ -1,7 +1,7 @@
 use crate::{
     rope::{
         atoms::Atoms,
-        chunk_summary::{LengthExtendedGraphemes, LengthLines},
+        length_summary::{LengthExtendedGraphemes, LengthNewlines},
         line::Line,
         rope::Rope,
     },
@@ -12,16 +12,16 @@ use std::{iter::Take, ops::Range};
 #[allow(clippy::struct_field_names)]
 pub struct Lines<'r> {
     atoms: Atoms<'r>,
-    line_offsets: Range<LengthLines>,
+    line_offsets: Range<LengthNewlines>,
     extended_grapheme_offsets: Range<LengthExtendedGraphemes>,
-    next_line_offset: LengthLines,
+    next_line_offset: LengthNewlines,
 }
 
 impl<'r> Lines<'r> {
     #[must_use]
     pub fn new(
         rope: &'r Rope,
-        line_offsets: Range<LengthLines>,
+        line_offsets: Range<LengthNewlines>,
         extended_grapheme_offsets: Range<LengthExtendedGraphemes>,
     ) -> Self {
         let atoms = rope.atoms_at_line(line_offsets.start.into());

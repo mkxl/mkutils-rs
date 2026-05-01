@@ -1,7 +1,7 @@
 use crate::{
     rope::{
         atoms::{Atom, Atoms},
-        chunk_summary::LengthExtendedGraphemes,
+        length_summary::LengthExtendedGraphemes,
     },
     utils::Utils,
 };

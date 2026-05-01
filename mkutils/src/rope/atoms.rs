@@ -1,8 +1,8 @@
 use crate::{
     rope::{
         chunk::Chunk,
-        chunk_summary::{ChunkSummary, Length, LengthExtendedGraphemes, LengthLines},
         extended_grapheme_iter::ExtendedGraphemeIter,
+        length_summary::{LengthNewlines, LengthSummary},
         line::Line,
         rope::Rope,
     },
@@ -12,57 +12,57 @@ use getset::CopyGetters;
 use mkutils_macros::Constructor;
 use zed_sum_tree::{Bias, Cursor, Dimensions};
 
-type Dims = Dimensions<LengthLines, ChunkSummary>;
+type Dims = Dimensions<LengthNewlines, LengthSummary>;
 
 #[derive(Constructor, CopyGetters)]
 #[get_copy = "pub"]
 pub struct Atom<'r> {
     extended_grapheme: &'r str,
-    offset: Length,
+    length_summary: LengthSummary,
 }
 
 #[derive(Constructor)]
 pub struct Atoms<'r> {
     chunk_extended_grapheme_iter: Option<ExtendedGraphemeIter<'r>>,
     chunk_cursor: Cursor<'r, 'static, Chunk, Dims>,
-    rope_offset: Length,
+    length_summary: LengthSummary,
 }
 
 impl<'r> Atoms<'r> {
     const BIAS: Bias = Bias::Left;
 
     #[must_use]
-    pub fn from_rope(rope: &'r Rope, target_line_offset: LengthLines) -> Self {
+    pub fn from_rope(rope: &'r Rope, target_line_offset: usize) -> Self {
         let chunk_sum_tree = rope.sum_tree();
         let mut chunk_cursor = chunk_sum_tree.cursor::<Dims>(Rope::CONTEXT);
+        let target_line_offset_dim = target_line_offset.convert::<LengthNewlines>();
 
-        chunk_cursor.seek(&target_line_offset, Self::BIAS);
+        chunk_cursor.seek(&target_line_offset_dim, Self::BIAS);
 
-        let Dimensions(_line_offset, chunk_summary, ()) = chunk_cursor.start();
-        let mut rope_offset = chunk_summary.len();
+        let Dimensions(_line_offset, mut length_summary, ()) = chunk_cursor.start();
 
         'outer: while let Some(chunk) = chunk_cursor.next_iter() {
             let mut chunk_extended_grapheme_iter = chunk.extended_grapheme_iter();
 
-            while rope_offset.lines() != target_line_offset {
-                if let Some(length_advanced) = chunk_extended_grapheme_iter.advance_to_start_of_next_line() {
-                    rope_offset.saturating_add_assign(&length_advanced);
+            while length_summary.newlines != target_line_offset {
+                if let Some(distance_advanced) = chunk_extended_grapheme_iter.advance_to_start_of_next_line() {
+                    length_summary.saturating_add_assign(&distance_advanced);
                 } else {
-                    rope_offset.saturating_add_assign(&chunk_extended_grapheme_iter.advance_to_end_of_chunk());
+                    length_summary.saturating_add_assign(&chunk_extended_grapheme_iter.advance_to_end_of_chunk());
 
                     continue 'outer;
                 }
             }
 
-            return Self::new(chunk_extended_grapheme_iter.some(), chunk_cursor, rope_offset);
+            return Self::new(chunk_extended_grapheme_iter.some(), chunk_cursor, length_summary);
         }
 
-        Self::new(None, chunk_cursor, chunk_sum_tree.summary().len())
+        Self::new(None, chunk_cursor, chunk_sum_tree.summary().clone())
     }
 
     #[must_use]
-    pub const fn rope_offset(&self) -> Length {
-        self.rope_offset
+    pub const fn length_summary(&self) -> LengthSummary {
+        self.length_summary
     }
 
     fn next_chunk(&mut self) {
@@ -75,54 +75,51 @@ impl<'r> Atoms<'r> {
         self.chunk_extended_grapheme_iter = chunk.extended_grapheme_iter().some();
     }
 
-    pub fn advance_within_line(
-        &mut self,
-        mut len_extended_graphemes: LengthExtendedGraphemes,
-    ) -> Result<Length, Length> {
-        let mut total_length_advanced = Length::ZERO;
+    pub fn advance_within_line(&mut self, mut len_extended_graphemes: usize) -> Result<LengthSummary, LengthSummary> {
+        let mut total_distance_advanced = LengthSummary::ZERO;
 
         while let Some(chunk_extended_grapheme_iter) = &mut self.chunk_extended_grapheme_iter {
             match chunk_extended_grapheme_iter.advance_within_line(len_extended_graphemes) {
-                Ok(length_advanced) => {
-                    self.rope_offset.saturating_add_assign(&length_advanced);
-                    total_length_advanced.saturating_add_assign(&length_advanced);
-                    len_extended_graphemes.saturating_sub_assign(&length_advanced.extended_graphemes());
+                Ok(distance_advanced) => {
+                    self.length_summary.saturating_add_assign(&distance_advanced);
+                    total_distance_advanced.saturating_add_assign(&distance_advanced);
+                    len_extended_graphemes.saturating_sub_assign(&distance_advanced.extended_graphemes);
 
-                    return total_length_advanced.ok();
+                    return total_distance_advanced.ok();
                 }
-                Err(length_advanced) => {
-                    self.rope_offset.saturating_add_assign(&length_advanced);
-                    total_length_advanced.saturating_add_assign(&length_advanced);
-                    len_extended_graphemes.saturating_sub_assign(&length_advanced.extended_graphemes());
+                Err(distance_advanced) => {
+                    self.length_summary.saturating_add_assign(&distance_advanced);
+                    total_distance_advanced.saturating_add_assign(&distance_advanced);
+                    len_extended_graphemes.saturating_sub_assign(&distance_advanced.extended_graphemes);
                 }
             }
 
             self.next_chunk();
         }
 
-        total_length_advanced.err()
+        total_distance_advanced.err()
     }
 
     // NOTE: returns [Ok(...)] if we've successfully advanced to the start of the next line and [Err(...)] otherwise
-    pub fn advance_to_start_of_next_line(&mut self) -> Result<Length, Length> {
-        let mut total_length_advanced = Length::ZERO;
+    pub fn advance_to_start_of_next_line(&mut self) -> Result<LengthSummary, LengthSummary> {
+        let mut total_distance_advanced = LengthSummary::ZERO;
 
         while let Some(chunk_extended_grapheme_iter) = &mut self.chunk_extended_grapheme_iter {
-            if let Some(length_advanced) = chunk_extended_grapheme_iter.advance_to_start_of_next_line() {
-                self.rope_offset.saturating_add_assign(&length_advanced);
-                total_length_advanced.saturating_add_assign(&length_advanced);
+            if let Some(distance_advanced) = chunk_extended_grapheme_iter.advance_to_start_of_next_line() {
+                self.length_summary.saturating_add_assign(&distance_advanced);
+                total_distance_advanced.saturating_add_assign(&distance_advanced);
 
-                return total_length_advanced.ok();
+                return total_distance_advanced.ok();
             }
 
-            let length_advanced = chunk_extended_grapheme_iter.advance_to_end_of_chunk();
+            let distance_advanced = chunk_extended_grapheme_iter.advance_to_end_of_chunk();
 
-            self.rope_offset.saturating_add_assign(&length_advanced);
-            total_length_advanced.saturating_add_assign(&length_advanced);
+            self.length_summary.saturating_add_assign(&distance_advanced);
+            total_distance_advanced.saturating_add_assign(&distance_advanced);
             self.next_chunk();
         }
 
-        total_length_advanced.err()
+        total_distance_advanced.err()
     }
 
     pub const fn line<'a>(&'a mut self) -> Line<'r, 'a> {
@@ -136,10 +133,10 @@ impl<'r> Iterator for Atoms<'r> {
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(chunk_extended_grapheme_iter) = &mut self.chunk_extended_grapheme_iter {
             if let Some(extended_grapheme) = chunk_extended_grapheme_iter.next() {
-                let length_advanced = Length::from_extended_grapheme(extended_grapheme);
-                let atom = Atom::new(extended_grapheme, self.rope_offset).some();
+                let distance_advanced = LengthSummary::from_extended_grapheme(extended_grapheme);
+                let atom = Atom::new(extended_grapheme, self.length_summary).some();
 
-                self.rope_offset.saturating_add_assign(&length_advanced);
+                self.length_summary.saturating_add_assign(&distance_advanced);
 
                 return atom;
             }

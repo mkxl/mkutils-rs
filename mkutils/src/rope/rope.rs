@@ -3,7 +3,7 @@ use crate::{
     rope::{
         atoms::Atoms,
         chunk::Chunk,
-        chunk_summary::{Length, LengthExtendedGraphemes, LengthLines},
+        length_summary::{LengthExtendedGraphemes, LengthNewlines, LengthSummary},
         lines::Lines,
     },
     utils::Utils,
@@ -67,7 +67,7 @@ impl Rope {
 
     #[must_use]
     pub fn lines(&self, line_offsets: Range<usize>, extended_grapheme_offsets: Range<usize>) -> Lines<'_> {
-        let line_offsets = line_offsets.map_range(LengthLines::from);
+        let line_offsets = line_offsets.map_range(LengthNewlines::from);
         let extended_grapheme_offsets = extended_grapheme_offsets.map_range(LengthExtendedGraphemes::from);
 
         Lines::new(self, line_offsets, extended_grapheme_offsets)
@@ -169,7 +169,7 @@ impl Rope {
     }
 
     #[must_use]
-    pub fn len(&self) -> Length {
+    pub fn len(&self) -> LengthSummary {
         self.chunk_sum_tree.summary().len()
     }
 }

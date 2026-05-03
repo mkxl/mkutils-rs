@@ -2,7 +2,7 @@ use crate::utils::Utils;
 use derive_more::IsVariant;
 use std::{
     convert::Infallible,
-    ops::{ControlFlow, FromResidual, Try},
+    ops::{ControlFlow, FromResidual, Residual, Try},
 };
 
 #[derive(Debug, IsVariant)]
@@ -21,11 +21,11 @@ impl<T, E> Output<T, E> {
         }
     }
 
-    pub fn into_control_flow(self) -> ControlFlow<Result<(), E>, T> {
+    pub fn into_control_flow(self) -> ControlFlow<Output<Infallible, E>, T> {
         match self {
             Self::Ok(ok) => ok.into_continue(),
-            Self::EndOk => ().ok().into_break(),
-            Self::EndErr(err) => err.err().into_break(),
+            Self::EndOk => Output::EndOk.into_break(),
+            Self::EndErr(err) => err.end_err().into_break(),
         }
     }
 
@@ -83,9 +83,13 @@ impl<T, E> From<Result<T, E>> for Output<T, E> {
     }
 }
 
+impl<T, E> Residual<T> for Output<Infallible, E> {
+    type TryType = Output<T, E>;
+}
+
 impl<T, E> Try for Output<T, E> {
     type Output = T;
-    type Residual = Result<(), E>;
+    type Residual = Output<Infallible, E>;
 
     fn from_output(output: Self::Output) -> Self {
         output.into()
@@ -103,12 +107,12 @@ impl<T, E> Try for Output<T, E> {
 //   required implementation per
 //   [https://doc.rust-lang.org/stable/std/ops/trait.FromResidual.html]
 //   and is a specific case of the below impl when [E = E2]
-// - [<Output<_, E2> as Try>::Residual = Result<(), E2>] per above
-impl<T, E2, E: From<E2>> FromResidual<Result<(), E2>> for Output<T, E> {
-    fn from_residual(residual: Result<(), E2>) -> Self {
+// - [<Output<_, E2> as Try>::Residual = Output<Infallible, E2>] per above
+impl<T, E2, E: From<E2>> FromResidual<Output<Infallible, E2>> for Output<T, E> {
+    fn from_residual(residual: Output<Infallible, E2>) -> Self {
         match residual {
-            Ok(()) => Self::EndOk,
-            Err(err) => Self::EndErr(err.into()),
+            Output::EndOk => Self::EndOk,
+            Output::EndErr(err) => err.convert::<E>().end_err(),
         }
     }
 }
@@ -121,7 +125,7 @@ impl<T, E2, E: From<E2>> FromResidual<Result<(), E2>> for Output<T, E> {
 impl<T, E2, E: From<E2>> FromResidual<Result<Infallible, E2>> for Output<T, E> {
     fn from_residual(residual: Result<Infallible, E2>) -> Self {
         match residual {
-            Err(err) => Self::EndErr(err.into()),
+            Err(err) => err.convert::<E>().end_err(),
         }
     }
 }

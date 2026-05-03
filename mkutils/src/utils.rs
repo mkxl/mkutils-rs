@@ -80,7 +80,7 @@ use std::{
     ops::{ControlFlow, Index, IndexMut, Range},
     path::{Path, PathBuf},
     pin::Pin,
-    str::Utf8Error,
+    str::{FromStr, Utf8Error},
     string::FromUtf8Error,
     sync::Arc,
     task::Poll,
@@ -803,6 +803,10 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
+    fn into_fn_ptr<X, Y>(func: fn(X) -> Y) -> fn(X) -> Y {
+        func
+    }
+
     fn into_first(self) -> Self::Type
     where
         Self: Sized + TupleRemove<U0>,
@@ -1249,6 +1253,14 @@ pub trait Utils {
         (self, rhs)
     }
 
+    fn parse_unchecked<T: FromStr>(&self) -> T
+    where
+        Self: AsRef<str>,
+        <T as FromStr>::Err: Debug,
+    {
+        self.as_ref().parse().unwrap()
+    }
+
     fn pin(self) -> Pin<Box<Self>>
     where
         Self: Sized,
@@ -1315,6 +1327,13 @@ pub trait Utils {
         Self: Is<String>,
     {
         PoemMessage::Text(self.into_self())
+    }
+
+    fn predicate_lt(&self) -> impl Fn(&Self) -> bool
+    where
+        Self: PartialOrd,
+    {
+        |other| other < self
     }
 
     fn println(&self)

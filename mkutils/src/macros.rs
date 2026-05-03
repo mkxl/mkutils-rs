@@ -14,3 +14,11 @@ macro_rules! loop_select {
         }
     }
 }
+
+#[macro_export]
+macro_rules! max {
+    ($value:expr $(,)?) => { $value };
+    ($head:expr, $($tail:expr),+ $(,)?) => {
+        ::std::cmp::max($head, $crate::max!($($tail),+))
+    };
+}

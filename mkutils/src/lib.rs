@@ -1,5 +1,9 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(feature = "unstable", feature(associated_type_defaults, try_trait_v2))]
+#![cfg_attr(feature = "unstable", feature(try_trait_v2, try_trait_v2_residual))]
+#![cfg_attr(
+    all(feature = "async", feature = "unstable", feature = "serde"),
+    feature(associated_type_defaults)
+)] // NOTE-socket-c8f04c
 
 mod active_vec;
 mod fmt;
@@ -41,6 +45,9 @@ mod rgb;
 // #[cfg(feature = "tui")]
 // mod rope;
 
+#[cfg(feature = "tui")]
+mod rope2;
+
 #[cfg(feature = "async")]
 mod run_for;
 
@@ -56,6 +63,7 @@ mod scroll_view;
 #[cfg(feature = "tui")]
 mod scroll_view_state;
 
+// NOTE-socket-c8f04c
 #[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
 mod socket;
 
@@ -76,7 +84,7 @@ mod transpose;
 
 #[cfg(feature = "unstable")]
 pub use crate::output::Output;
-#[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
+#[cfg(all(feature = "async", feature = "unstable", feature = "serde"))] // NOTE-socket-c8f04c
 pub use crate::socket::{Request, Socket};
 pub use crate::{
     active_vec::ActiveVec,

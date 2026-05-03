@@ -42,7 +42,7 @@ impl<'c> ChunkExtendedGraphemeIter<'c> {
         self.advance_to(index)
     }
 
-    pub fn get(&self) -> Option<&str> {
+    pub fn get(&self) -> Option<&'c str> {
         self.chunk
             .byte_index_intervals()
             .get(self.offset.length.extended_graphemes)?
@@ -79,14 +79,14 @@ impl<'c> ChunkExtendedGraphemeIter<'c> {
     }
 }
 
-// impl<'r> Iterator for ChunkExtendedGraphemeIter<'r> {
-//     type Item = &'r str;
+impl<'c> Iterator for ChunkExtendedGraphemeIter<'c> {
+    type Item = &'c str;
 
-//     fn next(&mut self) -> Option<Self::Item> {
-//         let extended_grapheme = self.get();
+    fn next(&mut self) -> Option<Self::Item> {
+        let extended_grapheme = self.get();
 
-//         self.advance_forward(1);
+        self.advance_forward(1);
 
-//         extended_grapheme
-//     }
-// }
+        extended_grapheme
+    }
+}

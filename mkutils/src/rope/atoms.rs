@@ -1,72 +1,72 @@
 use crate::{
     rope::{
         chunk::Chunk,
-        extended_grapheme_iter::ExtendedGraphemeIter,
-        length_summary::{LengthNewlines, LengthSummary},
+        chunk_extended_grapheme_iter::ChunkExtendedGraphemeIter,
         line::Line,
         rope::Rope,
+        text_summary::{LengthNewlines, TextSummary},
     },
     utils::Utils,
 };
-use getset::CopyGetters;
-use mkutils_macros::Constructor;
+use derive_more::Constructor;
 use zed_sum_tree::{Bias, Cursor, Dimensions};
 
-type Dims = Dimensions<LengthNewlines, LengthSummary>;
+type Dims = Dimensions<LengthNewlines, TextSummary>;
 
-#[derive(Constructor, CopyGetters)]
-#[get_copy = "pub"]
+#[derive(Constructor)]
 pub struct Atom<'r> {
-    extended_grapheme: &'r str,
-    length_summary: LengthSummary,
+    pub extended_grapheme: &'r str,
+    pub offset: TextSummary,
 }
 
 #[derive(Constructor)]
 pub struct Atoms<'r> {
-    chunk_extended_grapheme_iter: Option<ExtendedGraphemeIter<'r>>,
+    chunk_extended_grapheme_iter: Option<ChunkExtendedGraphemeIter<'r>>,
     chunk_cursor: Cursor<'r, 'static, Chunk, Dims>,
-    length_summary: LengthSummary,
+    offset: TextSummary,
 }
 
 impl<'r> Atoms<'r> {
     const BIAS: Bias = Bias::Left;
 
     #[must_use]
-    pub fn from_rope(rope: &'r Rope, target_line_offset: usize) -> Self {
-        let chunk_sum_tree = rope.sum_tree();
+    pub fn from_rope(rope: &'r Rope, line_index: usize) -> Self {
+        let chunk_sum_tree = rope.chunk_sum_tree();
         let mut chunk_cursor = chunk_sum_tree.cursor::<Dims>(Rope::CONTEXT);
-        let target_line_offset_dim = target_line_offset.convert::<LengthNewlines>();
+        let line_index_dim = line_index.convert::<LengthNewlines>();
 
-        chunk_cursor.seek(&target_line_offset_dim, Self::BIAS);
+        chunk_cursor.seek(&line_index_dim, Self::BIAS);
 
-        let Dimensions(_line_offset, mut length_summary, ()) = chunk_cursor.start();
+        let Dimensions(_line_index, offset, _unit) = chunk_cursor.start();
+        let mut offset = offset.clone();
 
-        'outer: while let Some(chunk) = chunk_cursor.next_iter() {
+        'outer: while let Some(chunk) = chunk_cursor.iter_next() {
             let mut chunk_extended_grapheme_iter = chunk.extended_grapheme_iter();
 
-            while length_summary.newlines != target_line_offset {
+            while offset.length.newlines != line_index {
                 if let Some(distance_advanced) = chunk_extended_grapheme_iter.advance_to_start_of_next_line() {
-                    length_summary.saturating_add_assign(&distance_advanced);
+                    offset.saturating_add_assign(&distance_advanced);
                 } else {
-                    length_summary.saturating_add_assign(&chunk_extended_grapheme_iter.advance_to_end_of_chunk());
+                    offset.saturating_add_assign(&chunk_extended_grapheme_iter.advance_to_end_of_chunk());
 
                     continue 'outer;
                 }
             }
 
-            return Self::new(chunk_extended_grapheme_iter.some(), chunk_cursor, length_summary);
+            return Self::new(chunk_extended_grapheme_iter.some(), chunk_cursor, offset);
         }
 
         Self::new(None, chunk_cursor, chunk_sum_tree.summary().clone())
     }
 
     #[must_use]
-    pub const fn length_summary(&self) -> LengthSummary {
-        self.length_summary
+    pub const fn offset(&self) -> &TextSummary {
+        &self.offset
     }
 
-    fn next_chunk(&mut self) {
-        let Some(chunk) = self.chunk_cursor.next_iter() else {
+    // NOTE: advance's [self.chunk_extended_grapheme_iter] but does not update [self.offset]
+    fn set_next_chunk_extended_grapheme_iter(&mut self) {
+        let Some(chunk) = self.chunk_cursor.iter_next() else {
             self.chunk_extended_grapheme_iter = None;
 
             return;
@@ -75,48 +75,45 @@ impl<'r> Atoms<'r> {
         self.chunk_extended_grapheme_iter = chunk.extended_grapheme_iter().some();
     }
 
-    pub fn advance_within_line(&mut self, mut len_extended_graphemes: usize) -> Result<LengthSummary, LengthSummary> {
-        let mut total_distance_advanced = LengthSummary::ZERO;
+    pub fn advance_within_line(&mut self, mut count: usize) -> Result<TextSummary, TextSummary> {
+        let mut total_distance_advanced = TextSummary::ZERO;
 
-        while let Some(chunk_extended_grapheme_iter) = &mut self.chunk_extended_grapheme_iter {
-            match chunk_extended_grapheme_iter.advance_within_line(len_extended_graphemes) {
+        while let Some(chunk_extended_grapheme_iter) = self.chunk_extended_grapheme_iter.ref_mut() {
+            match chunk_extended_grapheme_iter.advance_within_line(count) {
                 Ok(distance_advanced) => {
-                    self.length_summary.saturating_add_assign(&distance_advanced);
-                    total_distance_advanced.saturating_add_assign(&distance_advanced);
-                    len_extended_graphemes.saturating_sub_assign(&distance_advanced.extended_graphemes);
+                    distance_advanced
+                        .saturating_add_assign_to_both(self.offset.ref_mut(), total_distance_advanced.ref_mut());
+                    count.saturating_sub_assign(&distance_advanced.length.extended_graphemes);
 
                     return total_distance_advanced.ok();
                 }
                 Err(distance_advanced) => {
-                    self.length_summary.saturating_add_assign(&distance_advanced);
-                    total_distance_advanced.saturating_add_assign(&distance_advanced);
-                    len_extended_graphemes.saturating_sub_assign(&distance_advanced.extended_graphemes);
+                    distance_advanced
+                        .saturating_add_assign_to_both(self.offset.ref_mut(), total_distance_advanced.ref_mut());
+                    count.saturating_sub_assign(&distance_advanced.length.extended_graphemes);
+                    self.set_next_chunk_extended_grapheme_iter();
                 }
             }
-
-            self.next_chunk();
         }
 
         total_distance_advanced.err()
     }
 
-    // NOTE: returns [Ok(...)] if we've successfully advanced to the start of the next line and [Err(...)] otherwise
-    pub fn advance_to_start_of_next_line(&mut self) -> Result<LengthSummary, LengthSummary> {
-        let mut total_distance_advanced = LengthSummary::ZERO;
+    pub fn advance_to_start_of_next_line(&mut self) -> Result<TextSummary, TextSummary> {
+        let mut total_distance_advanced = TextSummary::ZERO;
 
-        while let Some(chunk_extended_grapheme_iter) = &mut self.chunk_extended_grapheme_iter {
+        while let Some(chunk_extended_grapheme_iter) = self.chunk_extended_grapheme_iter.ref_mut() {
             if let Some(distance_advanced) = chunk_extended_grapheme_iter.advance_to_start_of_next_line() {
-                self.length_summary.saturating_add_assign(&distance_advanced);
-                total_distance_advanced.saturating_add_assign(&distance_advanced);
+                distance_advanced
+                    .saturating_add_assign_to_both(self.offset.ref_mut(), total_distance_advanced.ref_mut());
 
                 return total_distance_advanced.ok();
             }
 
-            let distance_advanced = chunk_extended_grapheme_iter.advance_to_end_of_chunk();
-
-            self.length_summary.saturating_add_assign(&distance_advanced);
-            total_distance_advanced.saturating_add_assign(&distance_advanced);
-            self.next_chunk();
+            chunk_extended_grapheme_iter
+                .advance_to_end_of_chunk()
+                .saturating_add_assign_to_both(self.offset.ref_mut(), total_distance_advanced.ref_mut());
+            self.set_next_chunk_extended_grapheme_iter();
         }
 
         total_distance_advanced.err()
@@ -131,17 +128,17 @@ impl<'r> Iterator for Atoms<'r> {
     type Item = Atom<'r>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(chunk_extended_grapheme_iter) = &mut self.chunk_extended_grapheme_iter {
+        while let Some(chunk_extended_grapheme_iter) = self.chunk_extended_grapheme_iter.ref_mut() {
             if let Some(extended_grapheme) = chunk_extended_grapheme_iter.next() {
-                let distance_advanced = LengthSummary::from_extended_grapheme(extended_grapheme);
-                let atom = Atom::new(extended_grapheme, self.length_summary).some();
+                let distance_advanced = TextSummary::from_extended_grapheme(extended_grapheme);
+                let atom = Atom::new(extended_grapheme, self.offset.clone()).some();
 
-                self.length_summary.saturating_add_assign(&distance_advanced);
+                self.offset.saturating_add_assign(&distance_advanced);
 
                 return atom;
             }
 
-            self.next_chunk();
+            self.set_next_chunk_extended_grapheme_iter();
         }
 
         None

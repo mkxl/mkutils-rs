@@ -1,7 +1,8 @@
 use crate::{
-    rope2::{chunk::Chunk, text_summary::TextSummary},
+    rope::{chunk::Chunk, text_summary::TextSummary},
     utils::Utils,
 };
+use num::traits::ConstOne;
 
 pub struct ChunkExtendedGraphemeIter<'c> {
     chunk: &'c Chunk,
@@ -42,6 +43,7 @@ impl<'c> ChunkExtendedGraphemeIter<'c> {
         self.advance_to(index)
     }
 
+    #[must_use]
     pub fn get(&self) -> Option<&'c str> {
         self.chunk
             .byte_index_intervals()
@@ -65,6 +67,9 @@ impl<'c> ChunkExtendedGraphemeIter<'c> {
         self.advance_to(self.chunk.len_extended_graphemes())
     }
 
+    // NOTE: returns [Ok(...)] if we've advanced the given number of extended graphemes or we've hit the end of a line
+    // and [Err(...)] otherwise (we've hit the end of the chunk without advancing the the given number of extended
+    // graphemes)
     pub fn advance_within_line(&mut self, count: usize) -> Result<TextSummary, TextSummary> {
         // NOTE-fn-951d43
         let (into_result, max_end_index) = if let Some(start_of_next_line_index) = self.start_of_next_line_index() {
@@ -85,7 +90,7 @@ impl<'c> Iterator for ChunkExtendedGraphemeIter<'c> {
     fn next(&mut self) -> Option<Self::Item> {
         let extended_grapheme = self.get();
 
-        self.advance_forward(1);
+        self.advance_forward(usize::ONE);
 
         extended_grapheme
     }

@@ -16,7 +16,7 @@ impl RopeBuilder {
 
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
-        let rope = Rope::new();
+        let rope = Rope::empty();
         let bytes = std::vec![Self::INITIAL_BYTE; capacity];
         let unprocessed_bytes_indices = Self::INITIAL_UNPROCESSED_BYTE_INDICES;
         let finished = Self::INITIAL_FINISHED;

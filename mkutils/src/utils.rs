@@ -15,8 +15,7 @@ use crate::{
 use crate::{into_stream::IntoStream, process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
 #[cfg(feature = "tui")]
 use crate::{
-    // TODO-rope-cc89cb
-    // rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
+    rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
     transpose::Transpose,
 };
 use anyhow::{Context, Error as AnyhowError};
@@ -231,7 +230,7 @@ pub trait Utils {
     }
 
     fn as_immut(&mut self) -> &Self {
-        &*self
+        self
     }
 
     fn as_ptr(&self) -> *const Self {
@@ -383,13 +382,13 @@ pub trait Utils {
         num::clamp(self, min, max)
     }
 
-    // #[cfg(feature = "tui")]
-    // fn collect_atoms<'a>(&mut self) -> String
-    // where
-    //     Self: Iterator<Item = Atom<'a>>,
-    // {
-    //     self.map(|atom| atom.extended_grapheme()).collect()
-    // }
+    #[cfg(feature = "tui")]
+    fn collect_atoms<'a>(&mut self) -> String
+    where
+        Self: Iterator<Item = Atom<'a>>,
+    {
+        self.map(|atom| atom.extended_grapheme).collect()
+    }
 
     fn convert<T: From<Self>>(self) -> T
     where
@@ -686,15 +685,11 @@ pub trait Utils {
         if self.into_self() { true_value } else { false_value }
     }
 
-    fn immutable(&mut self) -> &Self {
-        self
-    }
-
     fn increment(&mut self)
     where
         Self: One + SaturatingAdd,
     {
-        *self = self.immutable().incremented();
+        *self = self.as_immut().incremented();
     }
 
     #[must_use]
@@ -1017,6 +1012,13 @@ pub trait Utils {
         (string == Self::CRLF) || (string == Self::LF)
     }
 
+    fn iter_next(&mut self) -> Option<Self::Item>
+    where
+        Self: Iterator,
+    {
+        self.next()
+    }
+
     #[cfg(feature = "async")]
     fn join_all(self) -> JoinAll<<Self as IntoIterator>::Item>
     where
@@ -1139,6 +1141,13 @@ pub trait Utils {
         }
     }
 
+    fn max_assign_to(self, other: &mut Self)
+    where
+        Self: Ord + Sized,
+    {
+        other.max_assign(self);
+    }
+
     fn mem_drop(self)
     where
         Self: Sized,
@@ -1189,13 +1198,6 @@ pub trait Utils {
         vec.push(item);
 
         vec.last_mut().unwrap()
-    }
-
-    fn next_iter(&mut self) -> Option<Self::Item>
-    where
-        Self: Iterator,
-    {
-        self.next()
     }
 
     fn none<T>(&self) -> Option<T> {
@@ -1488,39 +1490,37 @@ pub trait Utils {
         y.pair(x)
     }
 
-    // TODO-rope-cc89cb
-    // #[cfg(feature = "tui")]
-    // fn to_rope(&mut self) -> Result<Rope, IoError>
-    // where
-    //     Self: Read,
-    // {
-    //     let mut rope_builder = RopeBuilder::default();
+    #[cfg(feature = "tui")]
+    fn to_rope(&mut self) -> Result<Rope, IoError>
+    where
+        Self: Read,
+    {
+        let mut rope_builder = RopeBuilder::default();
 
-    //     while let Some(buffer) = rope_builder.buffer_mut() {
-    //         let num_bytes_read = self.read(buffer)?;
+        while let Some(buffer) = rope_builder.buffer_mut() {
+            let num_bytes_read = self.read(buffer)?;
 
-    //         rope_builder.on_read(num_bytes_read)?;
-    //     }
+            rope_builder.on_read(num_bytes_read)?;
+        }
 
-    //     rope_builder.build().ok()
-    // }
+        rope_builder.build().ok()
+    }
 
-    // TODO-rope-cc89cb
-    // #[cfg(all(feature = "async", feature = "tui"))]
-    // async fn to_rope_async(&mut self) -> Result<Rope, IoError>
-    // where
-    //     Self: AsyncRead + Unpin,
-    // {
-    //     let mut rope_builder = RopeBuilder::default();
+    #[cfg(all(feature = "async", feature = "tui"))]
+    async fn to_rope_async(&mut self) -> Result<Rope, IoError>
+    where
+        Self: AsyncRead + Unpin,
+    {
+        let mut rope_builder = RopeBuilder::default();
 
-    //     while let Some(buffer) = rope_builder.buffer_mut() {
-    //         let num_bytes_read = self.read(buffer).await?;
+        while let Some(buffer) = rope_builder.buffer_mut() {
+            let num_bytes_read = self.read(buffer).await?;
 
-    //         rope_builder.on_read(num_bytes_read)?;
-    //     }
+            rope_builder.on_read(num_bytes_read)?;
+        }
 
-    //     rope_builder.build().ok()
-    // }
+        rope_builder.build().ok()
+    }
 
     #[cfg(feature = "async")]
     async fn run_for(mut self, duration: Duration) -> Result<Self, RunForError<Self::Output>>
@@ -1570,6 +1570,14 @@ pub trait Utils {
         Self: SaturatingAdd,
     {
         *self = self.saturating_add(rhs);
+    }
+
+    fn saturating_add_assign_to_both(&self, other_1: &mut Self, other_2: &mut Self)
+    where
+        Self: SaturatingAdd,
+    {
+        other_1.saturating_add_assign(self);
+        other_2.saturating_add_assign(self);
     }
 
     #[must_use]

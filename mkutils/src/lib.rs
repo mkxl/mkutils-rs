@@ -41,12 +41,8 @@ mod process;
 #[cfg(feature = "tui")]
 mod rgb;
 
-// TODO-rope-cc89cb
-// #[cfg(feature = "tui")]
-// mod rope;
-
 #[cfg(feature = "tui")]
-mod rope2;
+mod rope;
 
 #[cfg(feature = "async")]
 mod run_for;
@@ -111,17 +107,16 @@ pub use crate::{
         key_map_state::{KeyMapIncSearch, KeyMapState},
     },
     rgb::Rgb,
-    // TODO-rope-cc89cb
-    // rope::{
-    //     atoms::{Atom, Atoms},
-    //     builder::RopeBuilder,
-    //     chunk::Chunk,
-    //     extended_grapheme_iter::ExtendedGraphemeIter,
-    //     length_summary::LengthSummary,
-    //     line::Line,
-    //     lines::Lines,
-    //     rope::Rope,
-    // },
+    rope::{
+        atoms::{Atom, Atoms},
+        builder::RopeBuilder,
+        chunk::Chunk,
+        chunk_extended_grapheme_iter::ChunkExtendedGraphemeIter,
+        line::Line,
+        lines::Lines,
+        rope::Rope,
+        text_summary::TextSummary,
+    },
     screen::{Screen, ScreenConfig, ScreenTerminal, Stdout},
     scroll_view::ScrollView,
     scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen},

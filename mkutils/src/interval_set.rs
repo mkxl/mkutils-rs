@@ -119,6 +119,7 @@ impl<T: Interval> IntervalSet<T> {
         self.intervals.insert(begin, empty_interval);
     }
 
+    // TODO-205a89
     pub fn split(self, point: &T::Point) -> (Self, Self) {
         let mut lt_intervals = self.intervals;
         let geq_intervals = lt_intervals.split_off(point);

@@ -1,7 +1,10 @@
 use crate::utils::Utils;
 use derive_more::{Add, Constructor};
 use mkutils_macros::{ConstAssoc, SaturatingAdd as MkutilsSaturatingAdd};
-use num::{Zero, traits::SaturatingAdd};
+use num::{
+    Zero,
+    traits::{ConstOne, ConstZero, SaturatingAdd},
+};
 use std::ops::Add;
 use zed_sum_tree::ContextLessSummary;
 
@@ -10,9 +13,16 @@ macro_rules! dimension_type_impls {
         #[derive(
             ::derive_more::Add,
             ::derive_more::Constructor,
+            ::derive_more::From,
+            ::derive_more::Into,
             ::mkutils_macros::ConstAssoc,
             ::mkutils_macros::SaturatingAdd,
             ::std::clone::Clone,
+            ::std::cmp::Eq,
+            ::std::cmp::Ord,
+            ::std::cmp::PartialEq,
+            ::std::cmp::PartialOrd,
+            ::std::marker::Copy,
         )]
         #[const_assoc(pub ZERO: Self = Self::new(0))]
         // #[const_assoc(pub ONE: Self = Self::new(1))]
@@ -69,6 +79,30 @@ pub struct TextSummary {
 }
 
 impl TextSummary {
+    #[must_use]
+    pub fn from_extended_grapheme(extended_grapheme: &str) -> Self {
+        let (newlines, first, last) = if extended_grapheme.is_newline() {
+            (usize::ONE, usize::ONE, usize::ZERO)
+        } else {
+            (usize::ZERO, usize::ONE, usize::ONE)
+        };
+        let max = first.max(last);
+        let length = Length::new(newlines, usize::ONE);
+        let line_lengths = LineLengthSet::new(first, last, max);
+
+        Self::new(length, line_lengths)
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.length.extended_graphemes.is_zero()
+    }
+
+    #[must_use]
+    pub fn is_not_empty(&self) -> bool {
+        !self.is_empty()
+    }
+
     fn add_ref(&self, other: &Self) -> Self {
         let length = self.length.saturating_add(&other.length);
         let first = if self.length.newlines.is_zero() {
@@ -87,6 +121,7 @@ impl TextSummary {
         Self::new(length, line_lengths)
     }
 
+    #[must_use]
     pub fn add_to(self, other: &mut Self) -> Self {
         other.saturating_add_assign(self.ref_immut());
 

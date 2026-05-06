@@ -3,7 +3,7 @@ resolver = "3"
 members = ["mkutils", "mkutils-macros"]
 
 [workspace.package]
-version = "0.1.120"
+version = "0.1.121"
 edition = "2024"
 description = "Utility methods, traits, and types."
 readme = "README.md"
@@ -13,11 +13,10 @@ keywords = ["utilities"]
 categories = ["development-tools"]
 
 [workspace.dependencies]
-mkutils-macros = { path = "mkutils-macros", version = "0.1.120" }
+mkutils-macros = { path = "mkutils-macros", version = "0.1.121" }
 
 [workspace.lints.rust]
 warnings = "deny"
-dead_code = { level = "allow", priority = 1 }  # TODO: remove
 
 [workspace.lints.clippy]
 all = "deny"

@@ -1018,6 +1018,13 @@ pub trait Utils {
         self.borrow_mut().peek().is_none()
     }
 
+    fn is_empty_or_whitespace(&self) -> bool
+    where
+        Self: AsRef<str>,
+    {
+        self.as_ref().trim().is_empty()
+    }
+
     #[allow(clippy::wrong_self_convention)]
     fn is_less_than<T: PartialOrd>(self, rhs: T) -> bool
     where

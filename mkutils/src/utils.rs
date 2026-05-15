@@ -9,13 +9,14 @@ use crate::{
     is::Is,
     seq_visitor::SeqVisitor,
 };
-#[cfg(feature = "async")]
-use crate::{into_stream::IntoStream, process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
 #[cfg(feature = "tui")]
 use crate::{
+    geometry::PointUsize,
     rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
     transpose::Transpose,
 };
+#[cfg(feature = "async")]
+use crate::{into_stream::IntoStream, process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
 use anyhow::{Context, Error as AnyhowError};
 #[cfg(feature = "async")]
 use bytes::Buf;
@@ -30,6 +31,8 @@ use futures::{
     future::{Either, JoinAll},
     stream::{Filter, FuturesUnordered},
 };
+#[cfg(feature = "tui")]
+use num::traits::ConstZero;
 use num::{
     Bounded, NumCast, One, ToPrimitive, Zero,
     traits::{SaturatingAdd, SaturatingSub},
@@ -411,6 +414,26 @@ pub trait Utils {
         for<'a> &'a K: PartialEq<Q>,
     {
         self.find_eq(query).is_some()
+    }
+
+    #[cfg(feature = "tui")]
+    fn content_size<'a>(&'a self) -> PointUsize
+    where
+        &'a Self: IntoIterator<Item = &'a Line<'a>>,
+    {
+        let mut height = usize::ZERO;
+        let mut width = usize::ZERO;
+
+        for line in self {
+            height.increment();
+            line.spans
+                .iter()
+                .map(|span| span.content.extended_graphemes().count())
+                .sum::<usize>()
+                .max_assign_to(width.ref_mut());
+        }
+
+        PointUsize::new(height, width)
     }
 
     fn context_path<T, E, C: 'static + Display + Send + Sync, P: AsRef<Path>>(

@@ -1,5 +1,5 @@
 use crate::{geometry::Orientation, scroll_view_state::ScrollViewState, utils::Utils};
-use ratatui::{Frame, layout::Rect};
+use ratatui::{Frame, layout::Rect, style::Style};
 
 pub trait ScrollView {
     fn scroll_view_state_mut(&mut self) -> &mut ScrollViewState;
@@ -8,18 +8,23 @@ pub trait ScrollView {
 
     fn render_misc(&self, _frame: &mut Frame, _scroll_view_area: Rect) {}
 
+    fn scroll_bar_style(&self) -> Style {
+        Style::default()
+    }
+
     fn render_scroll_bars(&mut self, frame: &mut Frame, content_area: Rect) {
+        let scroll_bar_style = self.scroll_bar_style();
         let max_scroll_offset = self.scroll_view_state_mut().max_scroll_offset();
 
         if max_scroll_offset.x.is_positive() {
             self.scroll_view_state_mut()
-                .scroll_bar(Orientation::Horizontal)
+                .scroll_bar(Orientation::Horizontal, scroll_bar_style)
                 .render(content_area, frame.buffer_mut());
         }
 
         if max_scroll_offset.y.is_positive() {
             self.scroll_view_state_mut()
-                .scroll_bar(Orientation::Vertical)
+                .scroll_bar(Orientation::Vertical, scroll_bar_style)
                 .render(content_area, frame.buffer_mut());
         }
     }

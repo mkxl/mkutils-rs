@@ -7,6 +7,7 @@ use derive_more::Constructor;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
+    style::Style,
     symbols::line::{THICK_HORIZONTAL, THICK_VERTICAL},
 };
 
@@ -16,6 +17,7 @@ pub struct ScrollBar {
     max_scroll_offset: PointUsize,
     content_size: PointUsize,
     orientation: Orientation,
+    style: Style,
 }
 
 impl ScrollBar {
@@ -71,6 +73,7 @@ impl ScrollBar {
         for position in self.thumb_area(render_content_area).positions() {
             if let Some(cell) = buffer.cell_mut(position) {
                 cell.set_symbol(symbol);
+                cell.set_style(self.style);
             }
         }
     }
@@ -83,6 +86,7 @@ impl Transpose for ScrollBar {
             self.max_scroll_offset.transpose(),
             self.content_size.transpose(),
             self.orientation.transpose(),
+            self.style,
         )
     }
 }

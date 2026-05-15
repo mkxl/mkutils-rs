@@ -5,6 +5,7 @@ use crate::{
 };
 use derive_more::From;
 use mkutils_macros::Toggle;
+use ratatui::style::Style;
 
 #[derive(Clone, Copy, Toggle)]
 pub enum ScrollWhen {
@@ -107,12 +108,13 @@ impl ScrollViewState {
     }
 
     #[must_use]
-    pub fn scroll_bar(&self, orientation: Orientation) -> ScrollBar {
+    pub fn scroll_bar(&self, orientation: Orientation, style: Style) -> ScrollBar {
         ScrollBar::new(
             self.scroll_offset(),
             self.max_scroll_offset(),
             self.latest_content_size(),
             orientation,
+            style,
         )
     }
 }

@@ -50,7 +50,7 @@ impl<T: Display, E: Display, R: Borrow<Result<T, E>>> Display for ResultDisplay<
     }
 }
 
-impl<T: Display, E: Display, R: Borrow<Result<T, E>>> Display for StatusDisplay<R, T, E> {
+impl<T, E: Display, R: Borrow<Result<T, E>>> Display for StatusDisplay<R, T, E> {
     fn fmt(&self, formatter: &mut Formatter) -> Result<(), FmtError> {
         match self.value.borrow() {
             Ok(_ok) => Display::fmt("ok", formatter),

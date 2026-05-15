@@ -2,6 +2,8 @@ use crate::{geometry::Orientation, scroll_view_state::ScrollViewState, utils::Ut
 use ratatui::{Frame, layout::Rect, style::Style};
 
 pub trait ScrollView {
+    fn scroll_view_state(&self) -> &ScrollViewState;
+
     fn scroll_view_state_mut(&mut self) -> &mut ScrollViewState;
 
     fn render_content(&self, frame: &mut Frame, content_area: Rect);

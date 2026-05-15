@@ -1036,6 +1036,17 @@ pub trait Utils {
         self.join_all().await.into_iter().collect()
     }
 
+    fn join_path(self, component: impl AsRef<Utf8Path>) -> Utf8PathBuf
+    where
+        Self: Into<Utf8PathBuf>,
+    {
+        let mut path = self.into();
+
+        path.push(component);
+
+        path
+    }
+
     fn len_range<T: SaturatingSub>(&self) -> T
     where
         Self: Borrow<Range<T>>,

@@ -22,6 +22,8 @@ use bytes::Buf;
 #[cfg(all(feature = "async", feature = "http"))]
 use bytes::Bytes;
 use camino::{Utf8Path, Utf8PathBuf};
+#[cfg(feature = "unstable")]
+use core::index::Clamp;
 #[cfg(feature = "async")]
 use futures::{
     Sink, SinkExt, Stream, StreamExt, TryFuture,
@@ -370,6 +372,14 @@ pub trait Utils {
         };
 
         anyhow::bail!("({status}) {text}")
+    }
+
+    #[cfg(feature = "unstable")]
+    fn clamp(self) -> Clamp<Self>
+    where
+        Self: Sized,
+    {
+        Clamp(self)
     }
 
     #[must_use]

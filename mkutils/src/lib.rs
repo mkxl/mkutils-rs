@@ -1,5 +1,8 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(feature = "unstable", feature(try_trait_v2, try_trait_v2_residual))]
+#![cfg_attr(
+    feature = "unstable",
+    feature(sliceindex_wrappers, try_trait_v2, try_trait_v2_residual)
+)]
 #![cfg_attr(
     all(feature = "async", feature = "unstable", feature = "serde"),
     feature(associated_type_defaults)

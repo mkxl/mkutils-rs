@@ -1,21 +1,39 @@
-use derive_more::Constructor;
-use std::fmt::{Debug, Display, Error as FmtError, Formatter};
+use std::{
+    borrow::Borrow,
+    fmt::{Debug, Display, Error as FmtError, Formatter},
+};
 
-#[derive(Constructor)]
-pub struct Debugged<'a, T>(&'a T);
+macro_rules! fmt_type {
+    ($name:ident, $value_type:ident $(, $phantom_types:ident)* $(,)?) => {
+        pub struct $name<$value_type $(, $phantom_types)*> {
+            value: $value_type,
+            phantom: ::std::marker::PhantomData<($($phantom_types,)*)>,
+        }
 
-impl<T: Debug> Display for Debugged<'_, T> {
+        impl<$value_type $(, $phantom_types)*> $name<$value_type $(, $phantom_types)*> {
+            pub const fn new(value: $value_type) -> Self {
+                let phantom = ::std::marker::PhantomData;
+
+                Self { value, phantom }
+            }
+        }
+    };
+}
+
+fmt_type!(Debugged, D, T);
+fmt_type!(OptionDisplay, O, T);
+fmt_type!(ResultDisplay, R, T, E);
+fmt_type!(StatusDisplay, R, T, E);
+
+impl<T: Debug, D: Borrow<T>> Display for Debugged<D, T> {
     fn fmt(&self, formatter: &mut Formatter) -> Result<(), FmtError> {
-        self.0.fmt(formatter)
+        self.value.borrow().fmt(formatter)
     }
 }
 
-#[derive(Constructor)]
-pub struct OptionDisplay<'a, T>(&'a Option<T>);
-
-impl<T: Display> Display for OptionDisplay<'_, T> {
+impl<T: Display, O: Borrow<Option<T>>> Display for OptionDisplay<O, T> {
     fn fmt(&self, formatter: &mut Formatter) -> Result<(), FmtError> {
-        if let Some(value) = &self.0 {
+        if let Some(value) = self.value.borrow() {
             value.fmt(formatter)
         } else {
             Display::fmt("none", formatter)
@@ -23,24 +41,18 @@ impl<T: Display> Display for OptionDisplay<'_, T> {
     }
 }
 
-#[derive(Constructor)]
-pub struct ResultDisplay<'a, T, E>(&'a Result<T, E>);
-
-impl<T: Display, E: Display> Display for ResultDisplay<'_, T, E> {
+impl<T: Display, E: Display, R: Borrow<Result<T, E>>> Display for ResultDisplay<R, T, E> {
     fn fmt(&self, formatter: &mut Formatter) -> Result<(), FmtError> {
-        match &self.0 {
+        match &self.value.borrow() {
             Ok(ok) => ok.fmt(formatter),
             Err(err) => err.fmt(formatter),
         }
     }
 }
 
-#[derive(Constructor)]
-pub struct StatusDisplay<'a, T, E>(&'a Result<T, E>);
-
-impl<T, E: Display> Display for StatusDisplay<'_, T, E> {
+impl<T: Display, E: Display, R: Borrow<Result<T, E>>> Display for StatusDisplay<R, T, E> {
     fn fmt(&self, formatter: &mut Formatter) -> Result<(), FmtError> {
-        match self.0 {
+        match self.value.borrow() {
             Ok(_ok) => Display::fmt("ok", formatter),
             Err(err) => std::write!(formatter, "error: {err}"),
         }

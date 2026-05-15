@@ -433,7 +433,7 @@ pub trait Utils {
                 .max_assign_to(width.ref_mut());
         }
 
-        PointUsize::new(height, width)
+        PointUsize::new(width, height)
     }
 
     fn context_path<T, E, C: 'static + Display + Send + Sync, P: AsRef<Path>>(

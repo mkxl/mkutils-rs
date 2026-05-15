@@ -488,9 +488,9 @@ pub trait Utils {
             .cast_or_max();
     }
 
-    fn debug(self) -> Debugged<Self>
+    fn debug(&self) -> Debugged<'_, Self>
     where
-        Self: Sized,
+        Self: Debug + Sized,
     {
         Debugged::new(self)
     }
@@ -1241,11 +1241,11 @@ pub trait Utils {
         TokioFile::open(self).await
     }
 
-    fn option_display(self) -> OptionDisplay<Self>
+    fn option_display<T: Display>(&self) -> OptionDisplay<'_, T>
     where
-        Self: Sized,
+        Self: Borrow<Option<T>>,
     {
-        OptionDisplay::new(self)
+        self.borrow().pipe_into(OptionDisplay::new)
     }
 
     #[cfg(feature = "unstable")]
@@ -1482,11 +1482,11 @@ pub trait Utils {
         std::iter::repeat(self)
     }
 
-    fn result_display(self) -> ResultDisplay<Self>
+    fn result_display<T, E>(&self) -> ResultDisplay<'_, T, E>
     where
-        Self: Sized,
+        Self: Borrow<Result<T, E>>,
     {
-        ResultDisplay::new(self)
+        self.borrow().pipe_into(ResultDisplay::new)
     }
 
     fn reversed<X, Y>(self) -> (Y, X)
@@ -1711,11 +1711,11 @@ pub trait Utils {
         (prefix, suffix)
     }
 
-    fn status_display(self) -> StatusDisplay<Self>
+    fn status_display<T, E: Display>(&self) -> StatusDisplay<'_, T, E>
     where
-        Self: Sized,
+        Self: Borrow<Result<T, E>>,
     {
-        StatusDisplay::new(self)
+        self.borrow().pipe_into(StatusDisplay::new)
     }
 
     #[cfg(feature = "tui")]

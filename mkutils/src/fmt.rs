@@ -34,3 +34,15 @@ impl<T: Display, E: Display> Display for ResultDisplay<Result<T, E>> {
         }
     }
 }
+
+#[derive(Constructor)]
+pub struct StatusDisplay<T>(T);
+
+impl<T, E: Display> Display for StatusDisplay<Result<T, E>> {
+    fn fmt(&self, formatter: &mut Formatter) -> Result<(), FmtError> {
+        match &self.0 {
+            Ok(_ok) => Display::fmt("ok", formatter),
+            Err(err) => std::write!(formatter, "error: {err}"),
+        }
+    }
+}

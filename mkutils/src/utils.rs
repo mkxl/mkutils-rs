@@ -4,10 +4,8 @@ use crate::as_valuable::AsValuable;
 use crate::output::Output;
 #[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
 use crate::socket::{Request, Socket};
-#[cfg(feature = "tracing")]
-use crate::status::Status;
 use crate::{
-    fmt::{Debugged, OptionDisplay, ResultDisplay},
+    fmt::{Debugged, OptionDisplay, ResultDisplay, StatusDisplay},
     is::Is,
     seq_visitor::SeqVisitor,
 };
@@ -424,6 +422,13 @@ pub trait Utils {
         Self: Copy + Sized,
     {
         *self
+    }
+
+    fn copy_to(&self, dst: impl AsRef<Path>) -> Result<u64, IoError>
+    where
+        Self: AsRef<Path>,
+    {
+        std::fs::copy(self, dst)
     }
 
     #[cfg(feature = "async")]
@@ -917,14 +922,6 @@ pub trait Utils {
             value = self => value.into_left(),
             value = rhs => value.into_right(),
         }
-    }
-
-    #[cfg(feature = "tracing")]
-    fn into_status<T, E>(self) -> Status<T, E>
-    where
-        Self: Is<Result<T, E>>,
-    {
-        Status::new(self.into_self())
     }
 
     #[cfg(feature = "async")]
@@ -1712,6 +1709,13 @@ pub trait Utils {
         let suffix = &string[index..];
 
         (prefix, suffix)
+    }
+
+    fn status_display(self) -> StatusDisplay<Self>
+    where
+        Self: Sized,
+    {
+        StatusDisplay::new(self)
     }
 
     #[cfg(feature = "tui")]

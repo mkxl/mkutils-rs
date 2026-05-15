@@ -63,9 +63,6 @@ mod scroll_view_state;
 #[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
 mod socket;
 
-#[cfg(feature = "tracing")]
-mod status;
-
 #[cfg(feature = "tui")]
 mod terminal;
 
@@ -84,7 +81,7 @@ pub use crate::output::Output;
 pub use crate::socket::{Request, Socket};
 pub use crate::{
     active_vec::ActiveVec,
-    fmt::{Debugged, OptionDisplay, ResultDisplay},
+    fmt::{Debugged, OptionDisplay, ResultDisplay, StatusDisplay},
     indexed::Indexed,
     interval_set::{Interval, IntervalSet},
     read_value::ReadValue,

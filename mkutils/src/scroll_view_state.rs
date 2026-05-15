@@ -22,32 +22,32 @@ pub struct ScrollViewState {
     scroll_offset: PointUsize,
     scroll_when: ScrollWhen,
     latest_content_size: PointUsize,
-    latest_content_render_size: PointUsize,
+    latest_scroll_view_area_size: PointUsize,
 }
 
 impl ScrollViewState {
     const INITIAL_SCROLL_OFFSET: PointUsize = PointUsize::ZERO;
     const INITIAL_LATEST_CONTENT_SIZE: PointUsize = PointUsize::ZERO;
-    const INITIAL_LATEST_RENDER_CONTENT_SIZE: PointUsize = PointUsize::ZERO;
+    const INITIAL_LATEST_SCROLL_VIEW_AREA_SIZE: PointUsize = PointUsize::ZERO;
 
     #[must_use]
     pub const fn new(scroll_when: ScrollWhen) -> Self {
         let scroll_offset = Self::INITIAL_SCROLL_OFFSET;
         let latest_content_size = Self::INITIAL_LATEST_CONTENT_SIZE;
-        let latest_content_render_size = Self::INITIAL_LATEST_RENDER_CONTENT_SIZE;
+        let latest_scroll_view_area_size = Self::INITIAL_LATEST_SCROLL_VIEW_AREA_SIZE;
 
         Self {
             scroll_offset,
             scroll_when,
             latest_content_size,
-            latest_content_render_size,
+            latest_scroll_view_area_size,
         }
     }
 
     fn scroll_count(&self, scroll_count_type: ScrollCountType, orientation: Orientation) -> usize {
         match scroll_count_type {
             ScrollCountType::Fixed(scroll_count) => scroll_count,
-            ScrollCountType::PageSize => self.latest_content_render_size.get(orientation).copied(),
+            ScrollCountType::PageSize => self.latest_scroll_view_area_size.get(orientation).copied(),
         }
     }
 
@@ -57,7 +57,7 @@ impl ScrollViewState {
             ScrollWhen::Always => self.latest_content_size.saturating_sub_scalar(&1),
             ScrollWhen::ForLargeContent => self
                 .latest_content_size
-                .saturating_sub(&self.latest_content_render_size),
+                .saturating_sub(&self.latest_scroll_view_area_size),
         }
     }
 
@@ -86,8 +86,8 @@ impl ScrollViewState {
         self.latest_content_size = latest_content_size;
     }
 
-    pub const fn set_latest_content_render_size(&mut self, latest_content_render_size: PointUsize) {
-        self.latest_content_render_size = latest_content_render_size;
+    pub const fn set_latest_scroll_view_area_size(&mut self, latest_scroll_view_area_size: PointUsize) {
+        self.latest_scroll_view_area_size = latest_scroll_view_area_size;
     }
 
     pub fn scroll_down(&mut self, scroll_count_type: impl Into<ScrollCountType>) {

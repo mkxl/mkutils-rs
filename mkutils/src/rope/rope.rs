@@ -6,6 +6,7 @@ use crate::{
         lines::Lines,
         text_summary::{Length, LengthExtendedGraphemes, LineLengthSet, TextSummary},
     },
+    saturating_add_signed::SaturatingAddSigned,
     utils::Utils,
 };
 use derive_more::{From, Into};
@@ -217,22 +218,34 @@ impl Rope {
         atoms.offset().length.extended_graphemes
     }
 
-    // TODO: returns the index that is delta.y lines and delta.x columns away from `index`
     #[must_use]
-    pub fn translated_index(&self, index: usize, delta: PointIsize) -> usize {
-        std::todo!("{index} {delta:?}")
+    pub fn translated_index(&self, index: usize, delta: &PointIsize) -> usize {
+        let point = self.point_from_index(index).saturating_add_signed(delta);
+
+        self.index_from_point(point)
     }
 
-    // TODO: returns the text summary of all the text up to the start of `line_index`
     #[must_use]
     pub fn line_offset(&self, line_index: usize) -> Option<TextSummary> {
-        std::todo!("{line_index}")
+        // TODO-e42061: should this be <
+        if line_index <= self.len_newlines() {
+            self.atoms_at_line(line_index).offset().clone().some()
+        } else {
+            None
+        }
     }
 
-    // TODO: returns the text summary of the text contained in line `line_index`
     #[must_use]
     pub fn line_summary(&self, line_index: usize) -> Option<TextSummary> {
-        std::todo!("{line_index}")
+        // TODO-e42061
+        if line_index <= self.len_newlines() {
+            self.atoms_at_line(line_index)
+                .advance_to_start_of_next_line()
+                .into_ok_err()
+                .some()
+        } else {
+            None
+        }
     }
 }
 

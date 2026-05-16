@@ -1,6 +1,6 @@
-use crate::utils::Utils;
-use derive_more::IsVariant;
-use num::traits::{ConstZero, SaturatingSub};
+use crate::{saturating_add_signed::SaturatingAddSigned, utils::Utils};
+use derive_more::{Add, IsVariant};
+use num::traits::{ConstZero, SaturatingAdd, SaturatingSub};
 use ratatui::layout::{Constraint, Layout, Size};
 use serde::{Deserialize, Serialize};
 
@@ -29,10 +29,32 @@ impl Orientation {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(Add, Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub struct Point<T> {
     pub x: T,
     pub y: T,
+}
+
+// TODO-7f8474
+impl<T: SaturatingAdd> SaturatingAdd for Point<T> {
+    fn saturating_add(&self, other: &Self) -> Self {
+        let x = self.x.saturating_add(&other.x);
+        let y = self.y.saturating_add(&other.y);
+
+        Self::new(x, y)
+    }
+}
+
+// TODO-c83e09
+impl<T: SaturatingAddSigned> SaturatingAddSigned for Point<T> {
+    type Signed = Point<<T as SaturatingAddSigned>::Signed>;
+
+    fn saturating_add_signed(&self, other: &Self::Signed) -> Self {
+        let x = self.x.saturating_add_signed(&other.x);
+        let y = self.y.saturating_add_signed(&other.y);
+
+        Self::new(x, y)
+    }
 }
 
 impl<T> Point<T> {

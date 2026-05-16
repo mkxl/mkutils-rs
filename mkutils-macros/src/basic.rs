@@ -77,6 +77,7 @@ impl Basic {
         Ok(impl_block_token_stream)
     }
 
+    // TODO-7f8474: add support for what trait bounds that need to be added to generics
     pub fn derive(input_token_stream: TokenStream, trait_path: &str, method: &str) -> TokenStream {
         let input = syn::parse_macro_input!(input_token_stream);
 

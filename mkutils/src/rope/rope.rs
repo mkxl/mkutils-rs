@@ -227,7 +227,6 @@ impl Rope {
 
     #[must_use]
     pub fn line_offset(&self, line_index: usize) -> Option<TextSummary> {
-        // TODO-e42061: should this be <
         if line_index <= self.len_newlines() {
             self.atoms_at_line(line_index).offset().clone().some()
         } else {
@@ -237,7 +236,6 @@ impl Rope {
 
     #[must_use]
     pub fn line_summary(&self, line_index: usize) -> Option<TextSummary> {
-        // TODO-e42061
         if line_index <= self.len_newlines() {
             self.atoms_at_line(line_index)
                 .advance_to_start_of_next_line()

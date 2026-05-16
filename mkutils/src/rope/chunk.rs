@@ -6,9 +6,19 @@ use crate::{
     utils::Utils,
 };
 use arrayvec::{ArrayString, ArrayVec, CapacityError};
-use num::Zero;
+use num::{Zero, traits::ConstZero};
 use std::{ops::Range, str::FromStr};
 use zed_sum_tree::{Item, Summary};
+
+macro_rules! get_byte_index {
+    ($self:expr, $index:expr, $default:expr) => {
+        if let Some(byte_index_interval) = $self.byte_index_intervals.get($index) {
+            byte_index_interval.start
+        } else {
+            $default
+        }
+    };
+}
 
 #[derive(Clone, Default)]
 pub struct Chunk {
@@ -59,8 +69,13 @@ impl Chunk {
     }
 
     #[must_use]
+    pub const fn len_bytes(&self) -> usize {
+        self.string.len()
+    }
+
+    #[must_use]
     pub const fn length(&self) -> Length {
-        Length::new(self.len_newlines(), self.len_extended_graphemes())
+        Length::new(self.len_newlines(), self.len_extended_graphemes(), self.len_bytes())
     }
 
     #[must_use]
@@ -127,8 +142,13 @@ impl Chunk {
     }
 
     #[must_use]
+    pub fn offset(&self, index: usize) -> TextSummary {
+        self.distance_between(usize::ZERO, index)
+    }
+
+    #[must_use]
     pub fn text_summary(&self) -> TextSummary {
-        self.distance_between(0, self.len_extended_graphemes())
+        self.offset(self.len_extended_graphemes())
     }
 
     // TODO-205a89
@@ -151,19 +171,27 @@ impl Chunk {
         prefix_chunk.pair(suffix_chunk)
     }
 
+    fn bytes_between(&self, begin_index: usize, end_index: usize) -> usize {
+        let end_byte_index = get_byte_index!(self, end_index, self.len_bytes());
+        let begin_byte_index = get_byte_index!(self, begin_index, self.len_bytes());
+
+        end_byte_index.saturating_sub(begin_byte_index)
+    }
+
     #[must_use]
-    pub fn distance_between(&self, begin: usize, end: usize) -> TextSummary {
-        let end = end.min(self.len_extended_graphemes());
-        let extended_graphemes = end.saturating_sub(begin);
-        let newline_indices = self.newline_indices_between(begin, end);
-        let length = Length::new(newline_indices.len(), extended_graphemes);
+    pub fn distance_between(&self, begin_index: usize, end_index: usize) -> TextSummary {
+        let end_index = end_index.min(self.len_extended_graphemes());
+        let extended_graphemes = end_index.saturating_sub(begin_index);
+        let newline_indices = self.newline_indices_between(begin_index, end_index);
+        let bytes = self.bytes_between(begin_index, end_index);
+        let length = Length::new(newline_indices.len(), extended_graphemes, bytes);
         let first = if let Some(first_newline_index) = newline_indices.first() {
-            first_newline_index.saturating_sub(begin)
+            first_newline_index.saturating_sub(begin_index)
         } else {
             extended_graphemes
         };
         let last = if let Some(last_newline_index) = newline_indices.last() {
-            end.saturating_sub(last_newline_index.copied()).decremented()
+            end_index.saturating_sub(last_newline_index.copied()).decremented()
         } else {
             extended_graphemes
         };

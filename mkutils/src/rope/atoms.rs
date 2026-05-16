@@ -4,14 +4,16 @@ use crate::{
         chunk_extended_grapheme_iter::ChunkExtendedGraphemeIter,
         line::Line,
         rope::Rope,
-        text_summary::{LengthNewlines, TextSummary},
+        text_summary::{LengthExtendedGraphemes, LengthNewlines, TextSummary},
     },
     utils::Utils,
 };
 use derive_more::Constructor;
 use zed_sum_tree::{Bias, Cursor, Dimensions};
 
-type Dims = Dimensions<LengthNewlines, TextSummary>;
+pub type NewlineDimensions = Dimensions<LengthNewlines, TextSummary>;
+pub type ExtendedGraphemeDimensions = Dimensions<LengthExtendedGraphemes, TextSummary>;
+// pub type ByteDimensions = Dimensions<LengthBytes, TextSummary>;
 
 #[derive(Constructor)]
 pub struct Atom<'r> {
@@ -22,7 +24,7 @@ pub struct Atom<'r> {
 #[derive(Constructor)]
 pub struct Atoms<'r> {
     chunk_extended_grapheme_iter: Option<ChunkExtendedGraphemeIter<'r>>,
-    chunk_cursor: Cursor<'r, 'static, Chunk, Dims>,
+    chunk_cursor: Cursor<'r, 'static, Chunk, NewlineDimensions>,
     offset: TextSummary,
 }
 
@@ -32,7 +34,7 @@ impl<'r> Atoms<'r> {
     #[must_use]
     pub fn from_rope(rope: &'r Rope, line_index: usize) -> Self {
         let chunk_sum_tree = rope.chunk_sum_tree();
-        let mut chunk_cursor = chunk_sum_tree.cursor::<Dims>(Rope::CONTEXT);
+        let mut chunk_cursor = chunk_sum_tree.cursor::<NewlineDimensions>(Rope::CONTEXT);
         let line_index_dim = line_index.convert::<LengthNewlines>();
 
         chunk_cursor.seek(&line_index_dim, Self::BIAS);

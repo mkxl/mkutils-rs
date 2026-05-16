@@ -1620,6 +1620,13 @@ pub trait Utils {
         *self = self.saturating_add(rhs);
     }
 
+    fn saturating_add_assign_to(&self, rhs: &mut Self)
+    where
+        Self: SaturatingAdd,
+    {
+        rhs.saturating_add_assign(self);
+    }
+
     fn saturating_add_assign_to_both(&self, other_1: &mut Self, other_2: &mut Self)
     where
         Self: SaturatingAdd,

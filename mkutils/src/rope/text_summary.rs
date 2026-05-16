@@ -24,8 +24,8 @@ macro_rules! dimension_type_impls {
             ::std::cmp::PartialOrd,
             ::std::marker::Copy,
         )]
-        #[const_assoc(pub ZERO: Self = Self::new(0))]
-        // #[const_assoc(pub ONE: Self = Self::new(1))]
+        #[const_assoc(pub ZERO: Self = Self::new(<usize as ::num::traits::ConstZero>::ZERO))]
+        #[const_assoc(pub ONE: Self = Self::new(<usize as ::num::traits::ConstOne>::ONE))]
         pub struct $dimension_type(usize);
 
         impl $dimension_type {
@@ -51,14 +51,15 @@ macro_rules! dimension_type_impls {
 }
 
 #[derive(Add, Clone, ConstAssoc, Constructor, MkutilsSaturatingAdd)]
-#[const_assoc(pub ZERO: Self = Self::new(0, 0))]
+#[const_assoc(pub ZERO: Self = Self::new(usize::ZERO, usize::ZERO, usize::ZERO))]
 pub struct Length {
     pub newlines: usize,
     pub extended_graphemes: usize,
+    pub bytes: usize,
 }
 
 #[derive(Clone, ConstAssoc, Constructor)]
-#[const_assoc(pub ZERO: Self = Self::uniform(0))]
+#[const_assoc(pub ZERO: Self = Self::uniform(usize::ZERO))]
 pub struct LineLengthSet {
     pub first: usize,
     pub last: usize,
@@ -87,7 +88,7 @@ impl TextSummary {
             (usize::ZERO, usize::ONE, usize::ONE)
         };
         let max = first.max(last);
-        let length = Length::new(newlines, usize::ONE);
+        let length = Length::new(newlines, usize::ONE, extended_grapheme.len());
         let line_lengths = LineLengthSet::new(first, last, max);
 
         Self::new(length, line_lengths)
@@ -155,3 +156,4 @@ impl ContextLessSummary for TextSummary {
 
 dimension_type_impls!(LengthNewlines, newlines);
 dimension_type_impls!(LengthExtendedGraphemes, extended_graphemes);
+dimension_type_impls!(LengthBytes, bytes);

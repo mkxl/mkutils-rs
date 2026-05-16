@@ -107,3 +107,4 @@ impl<T, X: From<T>, Y: From<T>> From<Point<T>> for (X, Y) {
 
 pub type PointU16 = Point<u16>;
 pub type PointUsize = Point<usize>;
+pub type PointIsize = Point<isize>;

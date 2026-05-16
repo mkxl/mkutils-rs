@@ -1,7 +1,7 @@
 use crate::{
-    geometry::PointUsize,
+    geometry::{PointIsize, PointUsize},
     rope::{
-        atoms::Atoms,
+        atoms::{Atoms, ExtendedGraphemeDimensions},
         chunk::Chunk,
         lines::Lines,
         text_summary::{Length, LengthExtendedGraphemes, LineLengthSet, TextSummary},
@@ -14,7 +14,7 @@ use std::{
     fmt::{Display, Error as FmtError, Formatter},
     ops::Range,
 };
-use zed_sum_tree::{Bias, Item, SumTree, Summary};
+use zed_sum_tree::{Bias, Dimensions, Item, SumTree, Summary};
 
 #[derive(Default, From, Into)]
 pub struct Rope {
@@ -185,6 +185,54 @@ impl Rope {
 
         prefix_rope.push_extended_graphemes(text);
         self.assign_joint(prefix_rope, suffix_rope);
+    }
+
+    #[must_use]
+    pub fn point_from_index(&self, extended_grapheme_index: usize) -> PointUsize {
+        let extended_grapheme_index = extended_grapheme_index.min(self.len_extended_graphemes());
+        let mut chunk_cursor = self.chunk_sum_tree.cursor::<ExtendedGraphemeDimensions>(Self::CONTEXT);
+        let extended_grapheme_index_dim = extended_grapheme_index.convert::<LengthExtendedGraphemes>();
+
+        chunk_cursor.seek(&extended_grapheme_index_dim, Self::BIAS);
+
+        let Dimensions(_extended_grapheme_index, offset, _unit) = chunk_cursor.start();
+        let mut offset = offset.clone();
+        let chunk_extended_grapheme_index = extended_grapheme_index.saturating_sub(offset.length.extended_graphemes);
+
+        if let Some(chunk) = chunk_cursor.item() {
+            chunk
+                .offset(chunk_extended_grapheme_index)
+                .saturating_add_assign_to(offset.ref_mut());
+        }
+
+        PointUsize::new(offset.line_lengths.last, offset.length.newlines)
+    }
+
+    #[must_use]
+    pub fn index_from_point(&self, point: PointUsize) -> usize {
+        let mut atoms = self.atoms_at_line(point.y);
+
+        atoms.advance_within_line(point.x).into_ok_err();
+
+        atoms.offset().length.extended_graphemes
+    }
+
+    // TODO: returns the index that is delta.y lines and delta.x columns away from `index`
+    #[must_use]
+    pub fn translated_index(&self, index: usize, delta: PointIsize) -> usize {
+        std::todo!("{index} {delta:?}")
+    }
+
+    // TODO: returns the text summary of all the text up to the start of `line_index`
+    #[must_use]
+    pub fn line_offset(&self, line_index: usize) -> Option<TextSummary> {
+        std::todo!("{line_index}")
+    }
+
+    // TODO: returns the text summary of the text contained in line `line_index`
+    #[must_use]
+    pub fn line_summary(&self, line_index: usize) -> Option<TextSummary> {
+        std::todo!("{line_index}")
     }
 }
 

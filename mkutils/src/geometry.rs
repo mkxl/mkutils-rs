@@ -31,8 +31,6 @@ impl Orientation {
 }
 
 #[derive(Add, Clone, Copy, Debug, Default, Deserialize, MkutilsSaturatingAdd, MkutilsSaturatingSub, Serialize, Sub)]
-#[saturating_add(bound = "T: ::num::traits::SaturatingAdd")]
-#[saturating_sub(bound = "T: ::num::traits::SaturatingSub")]
 pub struct Point<T> {
     pub x: T,
     pub y: T,

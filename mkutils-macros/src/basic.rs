@@ -3,7 +3,7 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{
     Data, DeriveInput, Error as SynError, Field, Fields, FieldsNamed, FieldsUnnamed, Generics, Ident, Index, LitStr,
-    Path, WherePredicate, meta::ParseNestedMeta, spanned::Spanned,
+    Path, TypeParamBound, WherePredicate, meta::ParseNestedMeta, spanned::Spanned,
 };
 
 pub struct Basic;
@@ -62,12 +62,19 @@ impl Basic {
         Ok(value)
     }
 
-    fn generics_with_trait_bounds(input: &DeriveInput, attribute_name: &str) -> Result<Generics, SynError> {
+    fn generics_with_trait_bounds(
+        input: &DeriveInput,
+        trait_path: &str,
+        attribute_name: &str,
+    ) -> Result<Generics, SynError> {
         let mut generics = input.generics.clone();
+        let mut use_default_trait_bound = true;
         let mut parse_nested_meta_callback = |parse_nested_meta: ParseNestedMeta| {
             if !parse_nested_meta.path.is_ident("bound") {
                 return Err(parse_nested_meta.error(Self::GENERICS_ATTRIBUTE_ERROR_MESSAGE));
             }
+
+            use_default_trait_bound = false;
 
             let trait_bounds = parse_nested_meta
                 .value()?
@@ -87,6 +94,15 @@ impl Basic {
             attribute.parse_nested_meta(&mut parse_nested_meta_callback)?;
         }
 
+        if use_default_trait_bound {
+            let default_trait_bound = quote::quote! { #trait_path };
+            let default_trait_bound = syn::parse2::<TypeParamBound>(default_trait_bound)?;
+
+            for type_param in generics.type_params_mut() {
+                type_param.bounds.push(default_trait_bound.clone());
+            }
+        }
+
         Ok(generics)
     }
 
@@ -97,7 +113,7 @@ impl Basic {
         attribute_name: &str,
     ) -> Result<TokenStream2, SynError> {
         let input_ident = &input.ident;
-        let generics = Self::generics_with_trait_bounds(input, attribute_name)?;
+        let generics = Self::generics_with_trait_bounds(input, trait_path, attribute_name)?;
         let (impl_generics, input_generics, input_where_clause) = generics.split_for_impl();
         let trait_path = syn::parse_str::<Path>(trait_path)?;
         let method = syn::parse_str::<Ident>(method)?;
@@ -113,7 +129,6 @@ impl Basic {
         Ok(impl_block_token_stream)
     }
 
-    // TODO-7f8474: add support for what trait bounds that need to be added to generics
     pub fn derive(
         input_token_stream: TokenStream,
         trait_path: &str,

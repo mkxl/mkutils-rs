@@ -3,7 +3,7 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{
     Data, DeriveInput, Error as SynError, Field, Fields, FieldsNamed, FieldsUnnamed, Generics, Ident, Index, LitStr,
-    Path, TypeParamBound, WherePredicate, meta::ParseNestedMeta, spanned::Spanned,
+    Path, WherePredicate, meta::ParseNestedMeta, spanned::Spanned,
 };
 
 pub struct Basic;
@@ -64,7 +64,7 @@ impl Basic {
 
     fn generics_with_trait_bounds(
         input: &DeriveInput,
-        trait_path: &str,
+        trait_path: &Path,
         attribute_name: &str,
     ) -> Result<Generics, SynError> {
         let mut generics = input.generics.clone();
@@ -95,12 +95,17 @@ impl Basic {
         }
 
         if use_default_trait_bound {
-            let default_trait_bound = quote::quote! { #trait_path };
-            let default_trait_bound = syn::parse2::<TypeParamBound>(default_trait_bound)?;
+            let mut default_trait_bounds = Vec::new();
 
-            for type_param in generics.type_params_mut() {
-                type_param.bounds.push(default_trait_bound.clone());
+            for type_param in generics.type_params() {
+                let type_param_ident = &type_param.ident;
+                let default_trait_bound =
+                    syn::parse2::<WherePredicate>(quote::quote! { #type_param_ident: #trait_path })?;
+
+                default_trait_bounds.push(default_trait_bound);
             }
+
+            generics.make_where_clause().predicates.extend(default_trait_bounds);
         }
 
         Ok(generics)
@@ -113,9 +118,9 @@ impl Basic {
         attribute_name: &str,
     ) -> Result<TokenStream2, SynError> {
         let input_ident = &input.ident;
-        let generics = Self::generics_with_trait_bounds(input, trait_path, attribute_name)?;
-        let (impl_generics, input_generics, input_where_clause) = generics.split_for_impl();
         let trait_path = syn::parse_str::<Path>(trait_path)?;
+        let generics = Self::generics_with_trait_bounds(input, &trait_path, attribute_name)?;
+        let (impl_generics, input_generics, input_where_clause) = generics.split_for_impl();
         let method = syn::parse_str::<Ident>(method)?;
         let value = Self::value(input, &trait_path, &method)?;
         let impl_block_token_stream = quote::quote! {

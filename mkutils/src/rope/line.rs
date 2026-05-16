@@ -24,7 +24,7 @@ impl<'r, 'a> Line<'r, 'a> {
 
         let distance_advanced = self.atoms.advance_within_line(count).into_ok_err();
 
-        if distance_advanced.is_not_empty() {
+        if distance_advanced.length.newlines.is_positive() {
             self.seen_newline.set_true();
         }
     }

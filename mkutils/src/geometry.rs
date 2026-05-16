@@ -1,6 +1,7 @@
 use crate::{saturating_add_signed::SaturatingAddSigned, utils::Utils};
-use derive_more::{Add, IsVariant};
-use num::traits::{ConstZero, SaturatingAdd, SaturatingSub};
+use derive_more::{Add, IsVariant, Sub};
+use mkutils_macros::{SaturatingAdd as MkutilsSaturatingAdd, SaturatingSub as MkutilsSaturatingSub};
+use num::traits::{ConstZero, SaturatingSub};
 use ratatui::layout::{Constraint, Layout, Size};
 use serde::{Deserialize, Serialize};
 
@@ -29,20 +30,12 @@ impl Orientation {
     }
 }
 
-#[derive(Add, Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(Add, Clone, Copy, Debug, Default, Deserialize, MkutilsSaturatingAdd, MkutilsSaturatingSub, Serialize, Sub)]
+#[saturating_add(bound = "T: ::num::traits::SaturatingAdd")]
+#[saturating_sub(bound = "T: ::num::traits::SaturatingSub")]
 pub struct Point<T> {
     pub x: T,
     pub y: T,
-}
-
-// TODO-7f8474
-impl<T: SaturatingAdd> SaturatingAdd for Point<T> {
-    fn saturating_add(&self, other: &Self) -> Self {
-        let x = self.x.saturating_add(&other.x);
-        let y = self.y.saturating_add(&other.y);
-
-        Self::new(x, y)
-    }
 }
 
 // TODO-c83e09
@@ -91,15 +84,7 @@ impl<T: ConstZero> Point<T> {
     pub const ZERO: Self = Self { x: T::ZERO, y: T::ZERO };
 }
 
-impl<T: Clone + SaturatingSub> Point<T> {
-    #[must_use]
-    pub fn saturating_sub(&self, rhs: &Self) -> Self {
-        let x = self.x.saturating_sub(&rhs.x);
-        let y = self.y.saturating_sub(&rhs.y);
-
-        Self::new(x, y)
-    }
-
+impl<T: SaturatingSub> Point<T> {
     #[must_use]
     pub fn saturating_sub_scalar(&self, rhs: &T) -> Self {
         let x = self.x.saturating_sub(rhs);

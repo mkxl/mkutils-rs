@@ -221,9 +221,14 @@ pub fn toggle(input_token_stream: TokenStream) -> TokenStream {
 ///     }
 /// }
 /// ```
-#[proc_macro_derive(SaturatingAdd)]
+#[proc_macro_derive(SaturatingAdd, attributes(saturating_add))]
 pub fn saturating_add(input_token_stream: TokenStream) -> TokenStream {
-    Basic::derive(input_token_stream, "::num::traits::SaturatingAdd", "saturating_add")
+    Basic::derive(
+        input_token_stream,
+        "::num::traits::SaturatingAdd",
+        "saturating_add",
+        "saturating_add",
+    )
 }
 
 /// Implements `num::traits::SaturatingSub` for a struct by delegating to each field.
@@ -244,9 +249,14 @@ pub fn saturating_add(input_token_stream: TokenStream) -> TokenStream {
 ///     }
 /// }
 /// ```
-#[proc_macro_derive(SaturatingSub)]
+#[proc_macro_derive(SaturatingSub, attributes(saturating_sub))]
 pub fn saturating_sub(input_token_stream: TokenStream) -> TokenStream {
-    Basic::derive(input_token_stream, "::num::traits::SaturatingSub", "saturating_sub")
+    Basic::derive(
+        input_token_stream,
+        "::num::traits::SaturatingSub",
+        "saturating_sub",
+        "saturating_sub",
+    )
 }
 
 /// Adds a `new()` constructor that accepts each field as a parameter.

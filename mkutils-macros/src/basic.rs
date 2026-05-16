@@ -1,14 +1,16 @@
-use crate::error::Error;
+use crate::{error::Error, utils::CommaPunctuated};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{
-    Data, DeriveInput, Error as SynError, Field, Fields, FieldsNamed, FieldsUnnamed, Ident, Index, Path,
-    spanned::Spanned,
+    Data, DeriveInput, Error as SynError, Field, Fields, FieldsNamed, FieldsUnnamed, Generics, Ident, Index, LitStr,
+    Path, WherePredicate, meta::ParseNestedMeta, spanned::Spanned,
 };
 
 pub struct Basic;
 
 impl Basic {
+    const GENERICS_ATTRIBUTE_ERROR_MESSAGE: &str = "unsupported attribute argument";
+
     fn field_assignment(field: &Field, trait_path: &Path, method: &Ident) -> Result<TokenStream2, SynError> {
         let Some(field_name) = &field.ident else {
             return Err(Error::c_struct_field_missing_name(field.span()));
@@ -60,9 +62,43 @@ impl Basic {
         Ok(value)
     }
 
-    fn derive_impl(input: &DeriveInput, trait_path: &str, method: &str) -> Result<TokenStream2, SynError> {
+    fn generics_with_trait_bounds(input: &DeriveInput, attribute_name: &str) -> Result<Generics, SynError> {
+        let mut generics = input.generics.clone();
+        let mut parse_nested_meta_callback = |parse_nested_meta: ParseNestedMeta| {
+            if !parse_nested_meta.path.is_ident("bound") {
+                return Err(parse_nested_meta.error(Self::GENERICS_ATTRIBUTE_ERROR_MESSAGE));
+            }
+
+            let trait_bounds = parse_nested_meta
+                .value()?
+                .parse::<LitStr>()?
+                .parse_with(CommaPunctuated::<WherePredicate>::parse_terminated)?;
+
+            generics.make_where_clause().predicates.extend(trait_bounds);
+
+            Ok(())
+        };
+
+        for attribute in &input.attrs {
+            if !attribute.path().is_ident(attribute_name) {
+                continue;
+            }
+
+            attribute.parse_nested_meta(&mut parse_nested_meta_callback)?;
+        }
+
+        Ok(generics)
+    }
+
+    fn derive_impl(
+        input: &DeriveInput,
+        trait_path: &str,
+        method: &str,
+        attribute_name: &str,
+    ) -> Result<TokenStream2, SynError> {
         let input_ident = &input.ident;
-        let (impl_generics, input_generics, input_where_clause) = input.generics.split_for_impl();
+        let generics = Self::generics_with_trait_bounds(input, attribute_name)?;
+        let (impl_generics, input_generics, input_where_clause) = generics.split_for_impl();
         let trait_path = syn::parse_str::<Path>(trait_path)?;
         let method = syn::parse_str::<Ident>(method)?;
         let value = Self::value(input, &trait_path, &method)?;
@@ -78,10 +114,15 @@ impl Basic {
     }
 
     // TODO-7f8474: add support for what trait bounds that need to be added to generics
-    pub fn derive(input_token_stream: TokenStream, trait_path: &str, method: &str) -> TokenStream {
+    pub fn derive(
+        input_token_stream: TokenStream,
+        trait_path: &str,
+        method: &str,
+        attribute_name: &str,
+    ) -> TokenStream {
         let input = syn::parse_macro_input!(input_token_stream);
 
-        Self::derive_impl(&input, trait_path, method)
+        Self::derive_impl(&input, trait_path, method, attribute_name)
             .unwrap_or_else(SynError::into_compile_error)
             .into()
     }

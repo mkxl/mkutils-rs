@@ -5,6 +5,7 @@ use crate::{
 };
 use derive_more::From;
 use mkutils_macros::Toggle;
+use num::traits::SaturatingSub;
 use ratatui::style::Style;
 
 #[derive(Clone, Copy, Toggle)]

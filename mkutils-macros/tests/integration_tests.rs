@@ -38,7 +38,7 @@ struct CStruct {
 }
 
 #[derive(Constructor)]
-struct TupleStruct(bool, usize);
+struct TupleStruct(&'static str, usize);
 
 #[derive(Constructor)]
 struct UnitStruct;
@@ -57,9 +57,9 @@ fn test_constructor_c_struct() {
 
 #[test]
 fn test_constructor_tuple_struct() {
-    let val = TupleStruct::new(true, 7);
+    let val = TupleStruct::new("true", 7);
 
-    std::assert_eq!(val.0, true);
+    std::assert_eq!(val.0, "true");
     std::assert_eq!(val.1, 7);
 }
 
@@ -87,13 +87,10 @@ fn test_const_assoc() {
 }
 
 #[derive(ConstAssoc)]
-#[const_assoc(pub(crate) SCALE_FACTOR: f64 = 2.5)]
-enum ConstAssocEnum {
-    A,
-    B,
-}
+#[const_assoc(pub(crate) SCALE_FACTOR: usize = 25)]
+enum ConstAssocEnum {}
 
 #[test]
 fn test_const_assoc_enum() {
-    std::assert_eq!(ConstAssocEnum::SCALE_FACTOR, 2.5);
+    std::assert_eq!(ConstAssocEnum::SCALE_FACTOR, 25);
 }

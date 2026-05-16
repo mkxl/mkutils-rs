@@ -1,7 +1,9 @@
 #![cfg(feature = "tui")]
 
 use mkutils::{Atom, Rope, Utils};
+#[cfg(feature = "async")]
 use std::io::Error as IoError;
+#[cfg(feature = "async")]
 use tokio_test::io::Builder as MockBuilder;
 
 fn test_atoms<'a>(mut atoms: impl Iterator<Item = Atom<'a>>, expected_string: &str) {
@@ -11,13 +13,17 @@ fn test_atoms<'a>(mut atoms: impl Iterator<Item = Atom<'a>>, expected_string: &s
 }
 
 fn test_rope(rope: &Rope, expected_string: &str) {
-    test_atoms(rope.atoms(), expected_string)
+    test_atoms(rope.atoms(), expected_string);
 }
 
 fn test_equality_impl(expected_string: &str) {
     let rope = Rope::from(expected_string);
 
     test_rope(&rope, expected_string);
+}
+
+fn collect_lines(rope: &Rope, lines: std::ops::Range<usize>, cols: std::ops::Range<usize>) -> Vec<String> {
+    rope.lines(lines, cols).into_vec()
 }
 
 fn test_collect_impl(strings: &[&str]) {
@@ -42,7 +48,7 @@ fn test_equality() {
 fn test_multi_chunk() {
     // Each ASCII character is one byte, so 2048 characters exceeds the 1024-byte chunk capacity.
     let string = (0u32..2048)
-        .map(|i| (b'a' as u32) + (i % 26))
+        .map(|i| b'a'.convert::<u32>() + (i % 26))
         .filter_map(char::from_u32)
         .collect::<String>();
 
@@ -51,7 +57,7 @@ fn test_multi_chunk() {
 
 #[test]
 fn test_multiple_pushes() {
-    test_collect_impl(&["abc", "def"])
+    test_collect_impl(&["abc", "def"]);
 }
 
 // ============================================================================
@@ -97,10 +103,18 @@ fn atoms_seek_line_at_chunk_boundary() {
     test_atoms(atoms, "second line");
 }
 
+#[test]
+fn lines_horizontally_scrolled_text_is_visible() {
+    let rope = Rope::from("abcdef\nuvwxyz");
+
+    assert_eq!(collect_lines(&rope, 0..2, 2..5), ["cde", "wxy"]);
+}
+
 // ============================================================================
 // test_rope_builder
 // ============================================================================
 
+#[cfg(feature = "async")]
 #[tokio::test(start_paused = true)]
 async fn test_rope_builder() -> Result<(), IoError> {
     let expected_str = "hello, world!";

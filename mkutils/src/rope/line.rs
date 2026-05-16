@@ -22,9 +22,9 @@ impl<'r, 'a> Line<'r, 'a> {
             return;
         }
 
-        let distsance_advanced = self.atoms.advance_within_line(count).into_ok_err();
+        let distance_advanced = self.atoms.advance_within_line(count).into_ok_err();
 
-        if distsance_advanced.is_not_empty() {
+        if distance_advanced.is_not_empty() {
             self.seen_newline.set_true();
         }
     }

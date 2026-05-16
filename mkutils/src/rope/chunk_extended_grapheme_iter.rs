@@ -77,10 +77,15 @@ impl<'c> ChunkExtendedGraphemeIter<'c> {
         } else {
             (Self::into_fn_ptr(Err), self.chunk.len_extended_graphemes())
         };
-        let end_index = self.index().saturating_add(count).min(max_end_index);
-        let distance = self.advance_to(end_index);
+        let requested_end_index = self.index().saturating_add(count);
+        let (into_result, end_index) = if requested_end_index <= max_end_index {
+            (Self::into_fn_ptr(Ok), requested_end_index)
+        } else {
+            (into_result, max_end_index)
+        };
+        let distance_advanced = self.advance_to(end_index);
 
-        into_result(distance)
+        into_result(distance_advanced)
     }
 }
 

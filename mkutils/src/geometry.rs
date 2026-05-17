@@ -1,6 +1,9 @@
 use crate::{saturating_add_signed::SaturatingAddSigned, utils::Utils};
 use derive_more::{Add, IsVariant, Sub};
-use mkutils_macros::{SaturatingAdd as MkutilsSaturatingAdd, SaturatingSub as MkutilsSaturatingSub};
+use mkutils_macros::{
+    SaturatingAdd as SaturatingAddImpl, SaturatingAddSigned as SaturatingAddSignedImpl,
+    SaturatingSub as SaturatingSubImpl,
+};
 use num::traits::{ConstZero, SaturatingSub};
 use ratatui::layout::{Constraint, Layout, Size};
 use serde::{Deserialize, Serialize};
@@ -30,22 +33,24 @@ impl Orientation {
     }
 }
 
-#[derive(Add, Clone, Copy, Debug, Default, Deserialize, MkutilsSaturatingAdd, MkutilsSaturatingSub, Serialize, Sub)]
+// NOTE-ee355f
+#[derive(
+    Add,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    Deserialize,
+    SaturatingAddImpl,
+    SaturatingSubImpl,
+    SaturatingAddSignedImpl,
+    Serialize,
+    Sub,
+)]
+#[saturating_add_signed(assoc(type Signed = Point<<T as SaturatingAddSigned>::Signed>))]
 pub struct Point<T> {
     pub x: T,
     pub y: T,
-}
-
-// TODO-c83e09
-impl<T: SaturatingAddSigned> SaturatingAddSigned for Point<T> {
-    type Signed = Point<<T as SaturatingAddSigned>::Signed>;
-
-    fn saturating_add_signed(&self, other: &Self::Signed) -> Self {
-        let x = self.x.saturating_add_signed(&other.x);
-        let y = self.y.saturating_add_signed(&other.y);
-
-        Self::new(x, y)
-    }
 }
 
 impl<T> Point<T> {

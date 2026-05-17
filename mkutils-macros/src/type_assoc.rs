@@ -7,7 +7,6 @@ use proc_macro2::TokenStream as TokenStream2;
 use syn::{
     DeriveInput, Error as SynError, Path, Type,
     parse::{Parse, ParseStream},
-    spanned::Spanned,
 };
 
 pub struct TypeAssoc {
@@ -33,7 +32,7 @@ impl TypeAssoc {
         }
 
         Err(Error::missing_expected_attribute(
-            input.span(),
+            input,
             Self::TYPE_ASSOC_ATTRIBUTE_NAME,
         ))
     }
@@ -70,7 +69,7 @@ impl Parse for TypeAssoc {
         let (trait_path_key, _equals, trait_path) = parse_stream.parse::<IdentAssignment<Path>>()?.into_tuple();
 
         if trait_path_key != Self::TRAIT_PATH_KEY {
-            return Err(Error::unexpected_value(trait_path_key.span(), Self::TRAIT_PATH_KEY));
+            return Err(Error::unexpected_value(&trait_path_key, Self::TRAIT_PATH_KEY));
         }
 
         parse_stream.parse::<Comma>()?;

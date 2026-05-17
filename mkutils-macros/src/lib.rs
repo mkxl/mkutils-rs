@@ -55,7 +55,7 @@ pub fn from_chain(input_token_stream: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// #[derive(TypeAssoc)]
-/// #[type_assoc(trait = Foo, Item = Vec<u8>)]
+/// #[type_assoc(impl_trait = Foo, Item = Vec<u8>)]
 /// struct MyStruct;
 /// ```
 ///
@@ -204,6 +204,7 @@ pub fn toggle(input_token_stream: TokenStream) -> TokenStream {
 }
 
 /// Implements `num::traits::SaturatingAdd` for a struct by delegating to each field.
+/// Supports setting bounds with `#[saturating_add(bound = "T: SomeTrait")]`
 ///
 /// # Example
 ///
@@ -227,11 +228,13 @@ pub fn saturating_add(input_token_stream: TokenStream) -> TokenStream {
         input_token_stream,
         "::num::traits::SaturatingAdd",
         "saturating_add",
+        "Self",
         "saturating_add",
     )
 }
 
 /// Implements `num::traits::SaturatingSub` for a struct by delegating to each field.
+/// Supports setting bounds with `#[saturating_sub(bound = "T: SomeTrait")]`
 ///
 /// # Example
 ///
@@ -255,7 +258,41 @@ pub fn saturating_sub(input_token_stream: TokenStream) -> TokenStream {
         input_token_stream,
         "::num::traits::SaturatingSub",
         "saturating_sub",
+        "Self",
         "saturating_sub",
+    )
+}
+
+/// Implements `mkutils::SaturatingAddSigned` for a struct by delegating to each field.
+/// Supports setting bounds with `#[saturating_add_signed(bound = "T: SomeTrait")]`
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(SaturatingAddSigned)]
+/// #[saturating_add_signed(assoc(type Signed = usize))]
+/// struct MyStruct(usize);
+/// ```
+///
+/// adds
+///
+/// ```rust
+/// impl mkutils::SaturatingAddSigned for MyStruct {
+///     type Signed = usize;
+///
+///     fn saturating_add_signed(&self, v: &Self::Signed) -> Self {
+///         Self(self.0.saturating_add_signed(&v.0))
+///     }
+/// }
+/// ```
+#[proc_macro_derive(SaturatingAddSigned, attributes(saturating_add_signed))]
+pub fn saturating_add_signed(input_token_stream: TokenStream) -> TokenStream {
+    Basic::derive(
+        input_token_stream,
+        "::mkutils::SaturatingAddSigned", // NOTE-ee355f
+        "saturating_add_signed",
+        "Self::Signed",
+        "saturating_add_signed",
     )
 }
 

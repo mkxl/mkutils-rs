@@ -1,10 +1,7 @@
 use crate::error::Error;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use syn::{
-    Data, DeriveInput, Error as SynError, Field, Fields, FieldsNamed, FieldsUnnamed, Ident, Visibility,
-    spanned::Spanned,
-};
+use syn::{Data, DeriveInput, Error as SynError, Field, Fields, FieldsNamed, FieldsUnnamed, Ident, Visibility};
 
 pub struct Constructor;
 
@@ -23,7 +20,7 @@ impl Constructor {
 
     fn ident_field_pair(field: &Field) -> Result<(&Ident, &Field), SynError> {
         let Some(ident) = &field.ident else {
-            return Err(Error::c_struct_field_missing_name(field.span()));
+            return Err(Error::c_struct_field_missing_name(field));
         };
         let ident_field_pair = (ident, field);
 
@@ -92,7 +89,7 @@ impl Constructor {
 
     fn constructor_method_block(input: &DeriveInput, visibility: &Visibility) -> Result<TokenStream2, SynError> {
         let Data::Struct(data_struct) = &input.data else {
-            return Err(Error::unsupported_item_type(input.span()));
+            return Err(Error::unsupported_item_type(input));
         };
         let constructor_method_block = match &data_struct.fields {
             Fields::Named(fields_named) => Self::constructor_method_block_for_c_struct(fields_named, visibility)?,

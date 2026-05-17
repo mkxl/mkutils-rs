@@ -1,7 +1,7 @@
 use crate::{error::Error, utils::CommaPunctuated};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use syn::{DeriveInput, Error as SynError, Type, spanned::Spanned};
+use syn::{DeriveInput, Error as SynError, Type};
 
 pub struct FromChain;
 
@@ -19,7 +19,7 @@ impl FromChain {
         let input_ident = &input.ident;
         let (impl_generics, input_generics, input_where_clause) = input.generics.split_for_impl();
         let Some(head_type) = type_chain.first() else {
-            Err(Error::empty_attribute(type_chain.span(), Self::ATTRIBUTE_NAME))?
+            Err(Error::empty_attribute(&type_chain, Self::ATTRIBUTE_NAME))?
         };
         let head_ident = quote::format_ident!("value");
         let mut value = quote::quote! { #head_ident };

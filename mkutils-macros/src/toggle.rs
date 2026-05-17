@@ -1,7 +1,7 @@
 use crate::error::Error;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use syn::{Data, DataEnum, DeriveInput, Error as SynError, Fields, Ident, Variant, spanned::Spanned};
+use syn::{Data, DataEnum, DeriveInput, Error as SynError, Fields, Ident, Variant};
 
 pub struct Toggle;
 
@@ -37,7 +37,7 @@ impl Toggle {
                 Fields::Unnamed(_fields_unnamed) => quote::quote! { Self::#from_variant_ident { .. } },
             };
             let Some(to_ident) = unit_variant_idents.get(index % num_unit_variants) else {
-                return Err(Error::no_unit_variants_syn_error(data_enum.variants.span()));
+                return Err(Error::no_unit_variants(&data_enum.variants));
             };
             let match_arm = quote::quote! { #lhs => Self::#to_ident, };
 

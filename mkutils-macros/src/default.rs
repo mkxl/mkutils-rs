@@ -1,7 +1,7 @@
 use crate::error::Error;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
-use syn::{Data, DeriveInput, Error as SynError, Expr, Field, Fields, FieldsNamed, FieldsUnnamed, spanned::Spanned};
+use syn::{Data, DeriveInput, Error as SynError, Expr, Field, Fields, FieldsNamed, FieldsUnnamed};
 
 pub struct Default;
 
@@ -27,7 +27,7 @@ impl Default {
 
     fn default_field_assignment(field: &Field) -> Result<TokenStream2, SynError> {
         let Some(field_name) = &field.ident else {
-            return Err(Error::c_struct_field_missing_name(field.span()));
+            return Err(Error::c_struct_field_missing_name(field));
         };
         let default_field_value = Self::default_field_value(field)?;
         let default_field_assignment = quote::quote! { #field_name: #default_field_value };
@@ -63,7 +63,7 @@ impl Default {
 
     fn default_value(input: &DeriveInput) -> Result<TokenStream2, SynError> {
         let Data::Struct(data_struct) = &input.data else {
-            return Err(Error::unsupported_item_type(input.span()));
+            return Err(Error::unsupported_item_type(input));
         };
         let default_value = match &data_struct.fields {
             Fields::Named(fields_named) => Self::default_value_for_c_struct(fields_named)?,

@@ -1,6 +1,6 @@
 use crate::utils::Utils;
 use derive_more::{Add, Constructor};
-use mkutils_macros::{ConstAssoc, SaturatingAdd as MkutilsSaturatingAdd};
+use mkutils_macros::{ConstAssoc, SaturatingAdd as SaturatingAddImpl};
 use num::{
     Zero,
     traits::{ConstOne, ConstZero, SaturatingAdd},
@@ -50,7 +50,7 @@ macro_rules! dimension_type_impls {
     };
 }
 
-#[derive(Add, Clone, ConstAssoc, Constructor, MkutilsSaturatingAdd)]
+#[derive(Add, Clone, ConstAssoc, Constructor, SaturatingAddImpl)]
 #[const_assoc(pub ZERO: Self = Self::new(usize::ZERO, usize::ZERO, usize::ZERO))]
 pub struct Length {
     pub newlines: usize,

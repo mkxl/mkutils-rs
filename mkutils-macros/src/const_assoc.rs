@@ -1,8 +1,8 @@
-use crate::utils::Cat6;
+use crate::utils::{Cat6, Colon, Equals};
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{
-    DeriveInput, Error as SynError, Expr, Ident, Token, Type, Visibility,
+    DeriveInput, Error as SynError, Expr, Ident, Type, Visibility,
     parse::{Parse, ParseStream},
 };
 
@@ -66,8 +66,8 @@ impl ConstAssoc {
 
 impl Parse for ConstAssoc {
     fn parse(parse_stream: ParseStream) -> Result<Self, SynError> {
-        let (visibility, ident, _colon, ty, _equal, expr) = parse_stream
-            .parse::<Cat6<Visibility, Ident, Token![:], Type, Token![=], Expr>>()?
+        let (visibility, ident, _colon, ty, _equals, expr) = parse_stream
+            .parse::<Cat6<Visibility, Ident, Colon, Type, Equals, Expr>>()?
             .into_tuple();
         let const_assoc = Self {
             visibility,

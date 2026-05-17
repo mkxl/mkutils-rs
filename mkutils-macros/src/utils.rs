@@ -5,6 +5,18 @@ use syn::{
     punctuated::Punctuated,
 };
 
+macro_rules! parse {
+    ($pattern:path, $expr:expr) => {{
+        let span = $expr.span();
+
+        if let $pattern(value) = $expr {
+            Ok(value)
+        } else {
+            Err(::syn::Error::new(span, "expected $pattern here"))
+        }
+    }};
+}
+
 macro_rules! declare_cat_type {
     ($name:ident < $($T:ident),+ >) => {
         pub struct $name<$($T),+>($(pub $T),+);
@@ -31,7 +43,11 @@ macro_rules! declare_cat_type {
 declare_cat_type!(Cat3<X, Y, Z>);
 declare_cat_type!(Cat6<U, V, W, X, Y, Z>);
 
-pub type Assignment<L, R> = Cat3<L, Token![=], R>;
+pub type Colon = Token![:];
+pub type Equals = Token![=];
+pub type Assignment<L, R> = Cat3<L, Equals, R>;
 pub type IdentAssignment<T> = Assignment<Ident, T>;
 pub type Comma = Token![,];
 pub type CommaPunctuated<T> = Punctuated<T, Comma>;
+
+pub(crate) use parse;

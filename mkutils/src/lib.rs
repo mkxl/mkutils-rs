@@ -8,6 +8,9 @@
     feature(associated_type_defaults)
 )] // NOTE-socket-c8f04c
 
+// NOTE-ee355f: this allows [::mkutils] to be used from inside this crate
+extern crate self as mkutils;
+
 mod active_vec;
 mod fmt;
 mod indexed;

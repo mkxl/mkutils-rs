@@ -1,5 +1,5 @@
 use crate::utils::Utils;
-use mkutils_macros::Default as MkutilsDefault;
+use mkutils_macros::Default as DefaultImpl;
 use num::{Zero, traits::SaturatingAdd};
 use std::{
     collections::{
@@ -36,13 +36,13 @@ pub trait Interval {
 }
 
 // NOTE:
-// - use [MkutilsDefault] as [std::default::Default] adds a [T: Default] trait bound
+// - use [DefaultImpl] instead of [std::default::Default] because the latter adds an uncessary [T: Default] trait bound
 // - maintains the below invariants
 //   - non-empty intervals are normalized: they never overlap or touch
 //   - inserting a non-empty interval merges any touching/overlapping non-empty intervals
 //   - an empty interval never coexists with a non-empty interval that it is touching or contains
 //     (see [Interval::is_touching_or_contains])
-#[derive(Clone, Debug, MkutilsDefault)]
+#[derive(Clone, Debug, DefaultImpl)]
 pub struct IntervalSet<T: Interval> {
     intervals: BTreeMap<T::Point, T>,
 }

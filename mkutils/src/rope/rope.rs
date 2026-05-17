@@ -4,7 +4,7 @@ use crate::{
         atoms::{Atoms, ExtendedGraphemeDimensions},
         chunk::Chunk,
         lines::Lines,
-        text_summary::{Length, LengthExtendedGraphemes, LineLengthSet, TextSummary},
+        text_summary::{DirectedTextSummary, Length, LengthExtendedGraphemes, LineLengthSet, TextSummary},
     },
     saturating_add_signed::SaturatingAddSigned,
     utils::Utils,
@@ -239,14 +239,15 @@ impl Rope {
     }
 
     #[must_use]
-    pub fn translated(&self, begin_index: usize, delta: &PointIsize) -> TextSummary {
+    pub fn translated(&self, begin_index: usize, delta: &PointIsize) -> DirectedTextSummary {
         let begin_point = self.point_from_index(begin_index);
         let begin_index = self.clamp_index(begin_index);
         let end_point = begin_point.saturating_add_signed(delta);
         let end_index = self.index_from_point(end_point);
-        let (begin_index, end_index) = begin_index.sorted(end_index);
+        let (is_forward, begin_index, end_index) = begin_index.sorted(end_index);
+        let text_summary = self.distance_between(begin_index, end_index);
 
-        self.distance_between(begin_index, end_index)
+        DirectedTextSummary::new(is_forward, text_summary)
     }
 
     #[must_use]

@@ -1739,11 +1739,15 @@ pub trait Utils {
         Some(self)
     }
 
-    fn sorted(self, other: Self) -> (Self, Self)
+    fn sorted(self, other: Self) -> (bool, Self, Self)
     where
         Self: PartialOrd + Sized,
     {
-        if self <= other { (self, other) } else { (other, self) }
+        if self <= other {
+            (true, self, other)
+        } else {
+            (false, other, self)
+        }
     }
 
     #[cfg(feature = "async")]

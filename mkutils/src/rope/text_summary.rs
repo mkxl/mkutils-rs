@@ -79,6 +79,13 @@ pub struct TextSummary {
     pub line_lengths: LineLengthSet,
 }
 
+#[derive(Clone, ConstAssoc, Constructor)]
+#[const_assoc(pub ZERO: Self = Self::new(true, TextSummary::ZERO))]
+pub struct DirectedTextSummary {
+    pub is_forward: bool,
+    pub text_summary: TextSummary,
+}
+
 impl TextSummary {
     #[must_use]
     pub fn from_extended_grapheme(extended_grapheme: &str) -> Self {

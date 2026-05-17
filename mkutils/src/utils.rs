@@ -11,7 +11,7 @@ use crate::{
 };
 #[cfg(feature = "tui")]
 use crate::{
-    geometry::PointUsize,
+    geometry::{Point, PointUsize},
     rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
     transpose::Transpose,
 };
@@ -885,21 +885,6 @@ pub trait Utils {
         self.into().into()
     }
 
-    fn into_manually_drop(self) -> ManuallyDrop<Self>
-    where
-        Self: Sized,
-    {
-        ManuallyDrop::new(self)
-    }
-
-    #[cfg(feature = "async")]
-    fn into_stream_reader<B: Buf, E: Into<IoError>>(self) -> StreamReader<Self, B>
-    where
-        Self: Sized + Stream<Item = Result<B, E>>,
-    {
-        StreamReader::new(self)
-    }
-
     #[cfg(feature = "async")]
     fn into_length_delimited_frames(self) -> Framed<Self, LengthDelimitedCodec>
     where
@@ -916,19 +901,11 @@ pub trait Utils {
         Framed::new(self, LinesCodec::new())
     }
 
-    fn into_utf8(self) -> Result<String, FromUtf8Error>
-    where
-        Self: Is<Vec<u8>>,
-    {
-        String::from_utf8(self.into_self())
-    }
-
-    #[cfg(feature = "async")]
-    fn into_right<L>(self) -> Either<L, Self>
+    fn into_manually_drop(self) -> ManuallyDrop<Self>
     where
         Self: Sized,
     {
-        Either::Right(self)
+        ManuallyDrop::new(self)
     }
 
     // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]
@@ -944,6 +921,30 @@ pub trait Utils {
             }
             .err(),
         }
+    }
+
+    #[cfg(feature = "tui")]
+    fn into_point_x(self) -> Point<Self>
+    where
+        Self: Default,
+    {
+        Point::new(self, Self::default())
+    }
+
+    #[cfg(feature = "tui")]
+    fn into_point_y(self) -> Point<Self>
+    where
+        Self: Default,
+    {
+        Point::new(Self::default(), self)
+    }
+
+    #[cfg(feature = "async")]
+    fn into_right<L>(self) -> Either<L, Self>
+    where
+        Self: Sized,
+    {
+        Either::Right(self)
     }
 
     #[cfg(feature = "async")]
@@ -965,6 +966,14 @@ pub trait Utils {
         IntoStream::into_stream(self)
     }
 
+    #[cfg(feature = "async")]
+    fn into_stream_reader<B: Buf, E: Into<IoError>>(self) -> StreamReader<Self, B>
+    where
+        Self: Sized + Stream<Item = Result<B, E>>,
+    {
+        StreamReader::new(self)
+    }
+
     fn into_string(self) -> Result<String, AnyhowError>
     where
         Self: Is<PathBuf>,
@@ -973,6 +982,13 @@ pub trait Utils {
             Ok(string) => string.ok(),
             Err(os_string) => os_string.invalid_utf8_err(),
         }
+    }
+
+    fn into_utf8(self) -> Result<String, FromUtf8Error>
+    where
+        Self: Is<Vec<u8>>,
+    {
+        String::from_utf8(self.into_self())
     }
 
     #[cfg(feature = "serde")]

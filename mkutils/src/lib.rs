@@ -118,7 +118,7 @@ pub use crate::{
         line::Line,
         lines::Lines,
         rope::Rope,
-        text_summary::TextSummary,
+        text_summary::{DirectedTextSummary, TextSummary},
     },
     screen::{Screen, ScreenConfig, ScreenTerminal, Stdout},
     scroll_view::ScrollView,

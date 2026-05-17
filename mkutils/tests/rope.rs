@@ -1,6 +1,6 @@
 #![cfg(feature = "tui")]
 
-use mkutils::{Atom, Rope, Utils};
+use mkutils::{Atom, PointUsize, Rope, Utils};
 #[cfg(feature = "async")]
 use std::io::Error as IoError;
 #[cfg(feature = "async")]
@@ -108,6 +108,22 @@ fn lines_horizontally_scrolled_text_is_visible() {
     let rope = Rope::from("abcdef\nuvwxyz");
 
     assert_eq!(collect_lines(&rope, 0..2, 2..5), ["cde", "wxy"]);
+}
+
+#[test]
+fn index_from_point_clamps_to_line_end_before_newline() {
+    let rope = Rope::from("abc\ndef");
+
+    assert_eq!(rope.index_from_point(PointUsize::new(99, 0)), 3);
+}
+
+#[test]
+fn translated_up_clamps_to_previous_line_end() {
+    let rope = Rope::from("abc\ndefgh");
+    let translation = rope.translated(8, &mkutils::PointIsize::new(0, -1));
+
+    assert!(!translation.is_forward);
+    assert_eq!(translation.text_summary.length.extended_graphemes, 5);
 }
 
 // ============================================================================

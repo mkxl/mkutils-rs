@@ -211,11 +211,27 @@ impl Rope {
 
     #[must_use]
     pub fn index_from_point(&self, point: PointUsize) -> usize {
+        let Some(line_offset) = self.line_offset(point.y) else {
+            return self.len_extended_graphemes();
+        };
+        let Some(line_summary) = self.line_summary(point.y) else {
+            return self.len_extended_graphemes();
+        };
+        let line_len = if line_summary.length.newlines.is_positive() {
+            line_summary.line_lengths.first
+        } else {
+            line_summary.length.extended_graphemes
+        };
+        let x = point.x.min(line_len);
         let mut atoms = self.atoms_at_line(point.y);
 
-        atoms.advance_within_line(point.x).into_ok_err();
+        atoms.advance_within_line(x).into_ok_err();
 
-        atoms.offset().length.extended_graphemes
+        atoms
+            .offset()
+            .length
+            .extended_graphemes
+            .min(line_offset.length.extended_graphemes.saturating_add(line_len))
     }
 
     #[must_use]

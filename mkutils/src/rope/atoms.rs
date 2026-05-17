@@ -66,6 +66,11 @@ impl<'r> Atoms<'r> {
         &self.offset
     }
 
+    #[must_use]
+    pub fn into_offset(self) -> TextSummary {
+        self.offset
+    }
+
     // NOTE: advance's [self.chunk_extended_grapheme_iter] but does not update [self.offset]
     fn set_next_chunk_extended_grapheme_iter(&mut self) {
         let Some(chunk) = self.chunk_cursor.iter_next() else {

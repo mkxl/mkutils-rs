@@ -1739,6 +1739,13 @@ pub trait Utils {
         Some(self)
     }
 
+    fn sorted(self, other: Self) -> (Self, Self)
+    where
+        Self: PartialOrd + Sized,
+    {
+        if self <= other { (self, other) } else { (other, self) }
+    }
+
     #[cfg(feature = "async")]
     fn spawn_task(self) -> JoinHandle<Self::Output>
     where

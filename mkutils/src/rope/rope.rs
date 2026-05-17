@@ -219,10 +219,34 @@ impl Rope {
     }
 
     #[must_use]
-    pub fn translated_index(&self, index: usize, delta: &PointIsize) -> usize {
-        let point = self.point_from_index(index).saturating_add_signed(delta);
+    pub fn clamp_index(&self, index: usize) -> usize {
+        self.len_extended_graphemes().min(index)
+    }
 
-        self.index_from_point(point)
+    fn distance_between(&self, begin_index: usize, end_index: usize) -> TextSummary {
+        let begin_index = self.clamp_index(begin_index);
+        let end_index = self.clamp_index(end_index);
+
+        if end_index <= begin_index {
+            return TextSummary::ZERO;
+        }
+
+        let len_extended_graphemes = end_index.saturating_sub(begin_index);
+        let (_prefix_rope, subrope) = self.split(begin_index);
+        let (subrope, _suffix_rope) = subrope.split(len_extended_graphemes);
+
+        subrope.text_summary().clone()
+    }
+
+    #[must_use]
+    pub fn translated(&self, begin_index: usize, delta: &PointIsize) -> TextSummary {
+        let begin_point = self.point_from_index(begin_index);
+        let begin_index = self.clamp_index(begin_index);
+        let end_point = begin_point.saturating_add_signed(delta);
+        let end_index = self.index_from_point(end_point);
+        let (begin_index, end_index) = begin_index.sorted(end_index);
+
+        self.distance_between(begin_index, end_index)
     }
 
     #[must_use]

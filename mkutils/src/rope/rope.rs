@@ -251,24 +251,26 @@ impl Rope {
     }
 
     #[must_use]
-    pub fn line_offset(&self, line_index: usize) -> Option<TextSummary> {
-        if line_index <= self.len_newlines() {
-            self.atoms_at_line(line_index).offset().clone().some()
-        } else {
-            None
+    pub fn line_info(&self, line_index: usize) -> Option<(TextSummary, TextSummary)> {
+        if self.len_newlines() < line_index {
+            return None;
         }
+
+        let mut atoms = self.atoms_at_line(line_index);
+        let line_offset = atoms.offset().clone();
+        let distance_advanced = atoms.advance_to_start_of_next_line().into_ok_err();
+
+        line_offset.pair(distance_advanced).some()
+    }
+
+    #[must_use]
+    pub fn line_offset(&self, line_index: usize) -> Option<TextSummary> {
+        self.line_info(line_index)?.into_first().some()
     }
 
     #[must_use]
     pub fn line_summary(&self, line_index: usize) -> Option<TextSummary> {
-        if line_index <= self.len_newlines() {
-            self.atoms_at_line(line_index)
-                .advance_to_start_of_next_line()
-                .into_ok_err()
-                .some()
-        } else {
-            None
-        }
+        self.line_info(line_index)?.into_second().some()
     }
 }
 

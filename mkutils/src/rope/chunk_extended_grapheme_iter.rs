@@ -23,14 +23,12 @@ impl<'c> ChunkExtendedGraphemeIter<'c> {
         self.offset.length.extended_graphemes
     }
 
-    fn next_newline_index(&self) -> Option<usize> {
+    fn next_newline_index(&self) -> Option<&usize> {
         self.chunk.newline_indices_geq(self.index()).first()
     }
 
     fn start_of_next_line_index(&self) -> Option<usize> {
-        self.next_newline_index()?
-            .incremented()
-            .some()
+        self.next_newline_index()?.incremented().some()
     }
 
     fn advance_to(&mut self, index: usize) -> TextSummary {
@@ -75,7 +73,7 @@ impl<'c> ChunkExtendedGraphemeIter<'c> {
     pub fn advance_within_line(&mut self, count: usize) -> Result<TextSummary, TextSummary> {
         // NOTE-fn-951d43
         let (into_result, max_end_index) = if let Some(next_newline_index) = self.next_newline_index() {
-            (Self::into_fn_ptr(Ok), next_newline_index)
+            (Self::into_fn_ptr(Ok), next_newline_index.copied())
         } else {
             (Self::into_fn_ptr(Err), self.chunk.len_extended_graphemes())
         };

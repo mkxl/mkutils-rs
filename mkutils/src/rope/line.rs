@@ -24,7 +24,8 @@ impl<'r, 'a> Line<'r, 'a> {
 
         let distance_advanced = self.atoms.advance_within_line(count).into_ok_err();
 
-        if distance_advanced.length.newlines.is_positive() {
+        if distance_advanced.length.extended_graphemes < count {
+            self.atoms.advance_to_start_of_next_line().into_ok_err();
             self.seen_newline.set_true();
         }
     }

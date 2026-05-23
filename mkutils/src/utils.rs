@@ -86,7 +86,7 @@ use std::{
     string::FromUtf8Error,
     sync::Arc,
     task::Poll,
-    time::Instant,
+    time::{Duration, Instant},
 };
 #[cfg(feature = "async")]
 use std::{fs::Metadata, process::ExitStatus};
@@ -100,7 +100,6 @@ use tokio::{
     io::{AsyncReadExt, AsyncWrite, AsyncWriteExt, BufWriter as TokioBufWriter},
     sync::oneshot::Sender as OneshotSender,
     task::{JoinHandle, JoinSet, LocalSet},
-    time::Duration,
     time::{Interval, Sleep, Timeout},
 };
 #[cfg(feature = "async")]
@@ -702,6 +701,14 @@ pub trait Utils {
         let triple = (prefix, substr, suffix);
 
         triple.some()
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    fn from_now(self) -> Instant
+    where
+        Self: Is<Duration>,
+    {
+        Instant::now() + self.into_self()
     }
 
     fn has_happened(self) -> bool

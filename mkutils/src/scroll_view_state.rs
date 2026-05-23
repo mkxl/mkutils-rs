@@ -7,6 +7,7 @@ use derive_more::From;
 use mkutils_macros::Toggle;
 use num::traits::SaturatingSub;
 use ratatui::style::Style;
+use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy, Toggle)]
 pub enum ScrollWhen {
@@ -25,6 +26,8 @@ pub struct ScrollViewState {
     scroll_when: ScrollWhen,
     latest_content_size: PointUsize,
     latest_scroll_view_area_size: PointUsize,
+    latest_scroll_time: Option<Instant>,
+    render_scroll_bars_timeout: Option<Duration>,
 }
 
 impl ScrollViewState {
@@ -33,16 +36,19 @@ impl ScrollViewState {
     const INITIAL_LATEST_SCROLL_VIEW_AREA_SIZE: PointUsize = PointUsize::ZERO;
 
     #[must_use]
-    pub const fn new(scroll_when: ScrollWhen) -> Self {
+    pub const fn new(scroll_when: ScrollWhen, render_scroll_bars_timeout: Option<Duration>) -> Self {
         let scroll_offset = Self::INITIAL_SCROLL_OFFSET;
         let latest_content_size = Self::INITIAL_LATEST_CONTENT_SIZE;
         let latest_scroll_view_area_size = Self::INITIAL_LATEST_SCROLL_VIEW_AREA_SIZE;
+        let latest_scroll_time = None;
 
         Self {
             scroll_offset,
             scroll_when,
             latest_content_size,
             latest_scroll_view_area_size,
+            latest_scroll_time,
+            render_scroll_bars_timeout,
         }
     }
 
@@ -63,17 +69,6 @@ impl ScrollViewState {
         }
     }
 
-    fn scroll(&mut self, scroll_count_type: ScrollCountType, orientation: Orientation, add: bool) {
-        let scroll_count = self.scroll_count(scroll_count_type, orientation);
-        let max_scroll_offset = self.max_scroll_offset().get(orientation).copied();
-        let scroll_offset = self.scroll_offset.get_mut(orientation);
-
-        scroll_offset
-            .saturating_add_or_sub(&scroll_count, add)
-            .min(max_scroll_offset)
-            .assign_to(scroll_offset);
-    }
-
     #[must_use]
     pub const fn scroll_offset(&self) -> PointUsize {
         self.scroll_offset
@@ -90,6 +85,19 @@ impl ScrollViewState {
 
     pub const fn set_latest_scroll_view_area_size(&mut self, latest_scroll_view_area_size: PointUsize) {
         self.latest_scroll_view_area_size = latest_scroll_view_area_size;
+    }
+
+    fn scroll(&mut self, scroll_count_type: ScrollCountType, orientation: Orientation, add: bool) {
+        let scroll_count = self.scroll_count(scroll_count_type, orientation);
+        let max_scroll_offset = self.max_scroll_offset().get(orientation).copied();
+        let scroll_offset = self.scroll_offset.get_mut(orientation);
+
+        self.latest_scroll_time = Instant::now().some();
+
+        scroll_offset
+            .saturating_add_or_sub(&scroll_count, add)
+            .min(max_scroll_offset)
+            .assign_to(scroll_offset);
     }
 
     pub fn scroll_down(&mut self, scroll_count_type: impl Into<ScrollCountType>) {
@@ -117,5 +125,13 @@ impl ScrollViewState {
             orientation,
             style,
         )
+    }
+
+    #[must_use]
+    pub fn should_render_scroll_bars(&self) -> bool {
+        let Some(render_scroll_bars_timeout) = self.render_scroll_bars_timeout else { return true };
+        let Some(latest_scroll_time) = self.latest_scroll_time else { return false };
+
+        latest_scroll_time.elapsed() <= render_scroll_bars_timeout
     }
 }

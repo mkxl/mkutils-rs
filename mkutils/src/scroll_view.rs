@@ -14,18 +14,24 @@ pub trait ScrollView {
         Style::default()
     }
 
-    fn render_scroll_bars(&mut self, frame: &mut Frame, content_area: Rect) {
+    fn render_scroll_bars(&self, frame: &mut Frame, content_area: Rect) {
+        let scroll_view_state = self.scroll_view_state();
+
+        if !scroll_view_state.should_render_scroll_bars() {
+            return;
+        }
+
         let scroll_bar_style = self.scroll_bar_style();
-        let max_scroll_offset = self.scroll_view_state_mut().max_scroll_offset();
+        let max_scroll_offset = scroll_view_state.max_scroll_offset();
 
         if max_scroll_offset.x.is_positive() {
-            self.scroll_view_state_mut()
+            scroll_view_state
                 .scroll_bar(Orientation::Horizontal, scroll_bar_style)
                 .render(content_area, frame.buffer_mut());
         }
 
         if max_scroll_offset.y.is_positive() {
-            self.scroll_view_state_mut()
+            scroll_view_state
                 .scroll_bar(Orientation::Vertical, scroll_bar_style)
                 .render(content_area, frame.buffer_mut());
         }

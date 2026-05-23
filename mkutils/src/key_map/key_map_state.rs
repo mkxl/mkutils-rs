@@ -41,7 +41,7 @@ impl<T: Clone> KeyMapState<T> {
     }
 
     fn defer_reset_time(&mut self) {
-        self.reset_time = Instant::now() + self.reset_period;
+        self.reset_time = self.reset_period.from_now();
     }
 
     fn get_key_map_trie_root_position(key_map: &KeyMap<T>) -> Position {

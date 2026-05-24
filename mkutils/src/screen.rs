@@ -6,7 +6,7 @@ use crossterm::{
         DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture, KeyboardEnhancementFlags,
         PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
     },
-    terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{Terminal, backend::CrosstermBackend};
 use std::io::{BufWriter, Error as IoError, StdoutLock, Write};
@@ -76,6 +76,7 @@ impl Screen {
 
         self.stdout
             .queue(EnterAlternateScreen)?
+            .queue(DisableLineWrap)?
             .queue(Self::PUSH_KEYBOARD_ENHANCEMENT_FLAGS)?
             .queue(Hide)?
             .queue(Self::CLEAR)?
@@ -96,6 +97,7 @@ impl Screen {
 
         self.stdout
             .queue(LeaveAlternateScreen)?
+            .queue(EnableLineWrap)?
             .queue(PopKeyboardEnhancementFlags)?
             .queue(Show)?
             .flush()?

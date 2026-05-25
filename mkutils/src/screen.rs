@@ -18,6 +18,7 @@ pub type ScreenTerminal<'a> = Terminal<CrosstermBackend<&'a mut Stdout>>;
 pub struct ScreenConfig {
     mouse_capture: bool,
     bracketed_paste: bool,
+    line_wrap_disabled: bool,
 }
 
 impl ScreenConfig {
@@ -30,6 +31,14 @@ impl ScreenConfig {
     pub const fn with_bracketed_paste(self, bracketed_paste: bool) -> Self {
         Self {
             bracketed_paste,
+            ..self
+        }
+    }
+
+    #[must_use]
+    pub const fn with_line_wrap_disabled(self, line_wrap_disabled: bool) -> Self {
+        Self {
+            line_wrap_disabled,
             ..self
         }
     }
@@ -74,9 +83,12 @@ impl Screen {
             self.stdout.queue(EnableBracketedPaste)?;
         }
 
+        if self.config.line_wrap_disabled {
+            self.stdout.queue(DisableLineWrap)?;
+        }
+
         self.stdout
             .queue(EnterAlternateScreen)?
-            .queue(DisableLineWrap)?
             .queue(Self::PUSH_KEYBOARD_ENHANCEMENT_FLAGS)?
             .queue(Hide)?
             .queue(Self::CLEAR)?
@@ -95,9 +107,12 @@ impl Screen {
             self.stdout.queue(DisableBracketedPaste)?;
         }
 
+        if self.config.line_wrap_disabled {
+            self.stdout.queue(EnableLineWrap)?;
+        }
+
         self.stdout
             .queue(LeaveAlternateScreen)?
-            .queue(EnableLineWrap)?
             .queue(PopKeyboardEnhancementFlags)?
             .queue(Show)?
             .flush()?

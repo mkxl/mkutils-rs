@@ -66,6 +66,7 @@ impl Terminal {
         &mut self,
         draw_fn: F,
     ) -> Result<&mut Self, IoError> {
+        self.ratatui_terminal.clear()?;
         self.ratatui_terminal.try_draw(|frame| draw_fn(frame).io_result())?;
         self.ratatui_terminal
             .backend_mut()

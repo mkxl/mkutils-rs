@@ -29,14 +29,27 @@ pub fn context(attr_args_token_stream: TokenStream, input_token_stream: TokenStr
 /// # Example
 ///
 /// ```rust
-/// #[derive(FromChain)]
+/// # struct Foo;
+/// # struct Bar;
+/// # struct Baz;
+/// # impl From<Foo> for Bar {
+/// #     fn from(_: Foo) -> Self { Self }
+/// # }
+/// # impl From<Bar> for Baz {
+/// #     fn from(_: Bar) -> Self { Self }
+/// # }
+/// #[derive(mkutils_macros::FromChain)]
 /// #[from_chain(Foo, Bar, Baz)]
 /// struct MyStruct;
+/// # impl From<Baz> for MyStruct {
+/// #     fn from(_: Baz) -> Self { Self }
+/// # }
+/// # let _ = MyStruct::from(Foo);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl From<Foo> for MyStruct {
 ///     fn from(foo: Foo) -> Self {
 ///         Self::from(Baz::from(Bar::from(foo)))
@@ -54,14 +67,18 @@ pub fn from_chain(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(TypeAssoc)]
+/// trait Foo {
+///     type Item;
+/// }
+///
+/// #[derive(mkutils_macros::TypeAssoc)]
 /// #[type_assoc(impl_trait = Foo, Item = Vec<u8>)]
 /// struct MyStruct;
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl Foo for MyStruct {
 ///     type Item = Vec<u8>;
 /// }
@@ -77,15 +94,18 @@ pub fn type_assoc(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(ConstAssoc)]
+/// #[derive(mkutils_macros::ConstAssoc)]
 /// #[const_assoc(pub MAX_SIZE: usize = 1024)]
 /// #[const_assoc(DEFAULT_NAME: &str = "unnamed")]
 /// struct MyStruct;
+///
+/// assert_eq!(MyStruct::MAX_SIZE, 1024);
+/// assert_eq!(MyStruct::DEFAULT_NAME, "unnamed");
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl MyStruct {
 ///     pub const MAX_SIZE: usize = 1024;
 ///     const DEFAULT_NAME: &str = "unnamed";
@@ -103,7 +123,7 @@ pub fn const_assoc(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(Default)]
+/// #[derive(mkutils_macros::Default)]
 /// struct MyStruct {
 ///     name: String,
 ///     #[default(42)]
@@ -111,11 +131,16 @@ pub fn const_assoc(input_token_stream: TokenStream) -> TokenStream {
 ///     #[default(vec![1, 2, 3])]
 ///     items: Vec<i32>,
 /// }
+///
+/// let value = MyStruct::default();
+/// assert_eq!(value.name, "");
+/// assert_eq!(value.count, 42);
+/// assert_eq!(value.items, vec![1, 2, 3]);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl Default for MyStruct {
 ///     fn default() -> Self {
 ///         Self {
@@ -136,17 +161,21 @@ pub fn default(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(SetVariant)]
+/// #[derive(PartialEq, Debug, mkutils_macros::SetVariant)]
 /// enum MyEnum {
 ///   Foo,
 ///   Bar,
 ///   Baz(String),
 /// }
+///
+/// let mut value = MyEnum::Foo;
+/// value.set_bar();
+/// assert_eq!(value, MyEnum::Bar);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl MyEnum {
 ///   pub fn set_foo(&mut self) -> &mut Self {
 ///     *self = Self::Foo;
@@ -171,17 +200,21 @@ pub fn set_variant(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(Toggle)]
+/// #[derive(PartialEq, Debug, mkutils_macros::Toggle)]
 /// enum MyEnum {
 ///   Foo,
 ///   Bar,
 ///   Baz(String),
 /// }
+///
+/// assert_eq!(MyEnum::Foo.toggled(), MyEnum::Bar);
+/// assert_eq!(MyEnum::Bar.toggled(), MyEnum::Foo);
+/// assert_eq!(MyEnum::Baz(String::new()).toggled(), MyEnum::Foo);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl MyEnum {
 ///   pub fn toggle(&self) -> Self {
 ///     match self {
@@ -208,14 +241,14 @@ pub fn toggle(input_token_stream: TokenStream) -> TokenStream {
 ///
 /// # Example
 ///
-/// ```rust
-/// #[derive(SaturatingAdd)]
+/// ```rust,ignore
+/// #[derive(mkutils_macros::SaturatingAdd)]
 /// struct MyStruct(usize);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl num::traits::SaturatingAdd for MyStruct {
 ///     fn saturating_add(&self, v: &Self) -> Self {
 ///         Self(self.0.saturating_add(&v.0))
@@ -238,14 +271,14 @@ pub fn saturating_add(input_token_stream: TokenStream) -> TokenStream {
 ///
 /// # Example
 ///
-/// ```rust
-/// #[derive(SaturatingSub)]
+/// ```rust,ignore
+/// #[derive(mkutils_macros::SaturatingSub)]
 /// struct MyStruct(usize);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl num::traits::SaturatingSub for MyStruct {
 ///     fn saturating_sub(&self, v: &Self) -> Self {
 ///         Self(self.0.saturating_sub(&v.0))
@@ -268,15 +301,15 @@ pub fn saturating_sub(input_token_stream: TokenStream) -> TokenStream {
 ///
 /// # Example
 ///
-/// ```rust
-/// #[derive(SaturatingAddSigned)]
+/// ```rust,ignore
+/// #[derive(mkutils_macros::SaturatingAddSigned)]
 /// #[saturating_add_signed(assoc(type Signed = usize))]
 /// struct MyStruct(usize);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl mkutils::SaturatingAddSigned for MyStruct {
 ///     type Signed = usize;
 ///
@@ -303,16 +336,20 @@ pub fn saturating_add_signed(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(Constructor)]
+/// #[derive(mkutils_macros::Constructor)]
 /// struct MyStruct {
 ///     name: String,
 ///     count: i32,
 /// }
+///
+/// let value = MyStruct::new(String::from("hello"), 42);
+/// assert_eq!(value.name, "hello");
+/// assert_eq!(value.count, 42);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl MyStruct {
 ///     fn new(name: String, count: i32) -> Self {
 ///         Self { name, count }
@@ -323,14 +360,16 @@ pub fn saturating_add_signed(input_token_stream: TokenStream) -> TokenStream {
 /// With a visibility attribute:
 ///
 /// ```rust
-/// #[derive(Constructor)]
+/// #[derive(mkutils_macros::Constructor)]
 /// #[new(pub(crate))]
 /// struct MyStruct(usize);
+///
+/// assert_eq!(MyStruct::new(42).0, 42);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl MyStruct {
 ///     pub(crate) fn new(_0: usize) -> Self {
 ///         Self(_0)
@@ -344,12 +383,12 @@ pub fn constructor(input_token_stream: TokenStream) -> TokenStream {
 
 /// # Example
 ///
-/// ```rust
+/// ```rust,ignore
 /// const THREAD_STACK_SIZE = lits::bytes!("8 MiB");
 ///
 /// #[mkutils_macros::tokio_main(thread_stack_size = THREAD_STACK_SIZE)]
 /// fn main() {
-///     ...
+///     // Application code goes here.
 /// }
 /// ```
 #[proc_macro_attribute]

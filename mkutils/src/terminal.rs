@@ -14,15 +14,17 @@ type RatatuiTerminal = BaseRatatuiTerminal<CrosstermBackend<Vec<u8>>>;
 pub struct Terminal {
     ratatui_terminal: RatatuiTerminal,
     bytes: Vec<u8>,
+    force_full_redraws: bool,
 }
 
 impl Terminal {
-    pub fn new(size: PointU16) -> Result<Self, IoError> {
+    pub fn new(size: PointU16, force_full_redraws: bool) -> Result<Self, IoError> {
         let ratatui_terminal = Self::ratatui_terminal(size)?;
         let bytes = Vec::new();
         let terminal = Self {
             ratatui_terminal,
             bytes,
+            force_full_redraws,
         };
 
         terminal.ok()
@@ -66,7 +68,10 @@ impl Terminal {
         &mut self,
         draw_fn: F,
     ) -> Result<&mut Self, IoError> {
-        self.ratatui_terminal.clear()?;
+        if self.force_full_redraws {
+            self.ratatui_terminal.clear()?;
+        }
+
         self.ratatui_terminal.try_draw(|frame| draw_fn(frame).io_result())?;
         self.ratatui_terminal
             .backend_mut()

@@ -3,7 +3,7 @@ resolver = "3"
 members = ["mkutils", "mkutils-macros"]
 
 [workspace.package]
-version = "0.1.146"
+version = "0.1.147"
 edition = "2024"
 description = "Utility methods, traits, and types."
 readme = "README.md"
@@ -13,7 +13,7 @@ keywords = ["utilities"]
 categories = ["development-tools"]
 
 [workspace.dependencies]
-mkutils-macros = { path = "mkutils-macros", version = "0.1.146" }
+mkutils-macros = { path = "mkutils-macros", version = "0.1.147" }
 
 [workspace.lints.rust]
 warnings = "deny"
@@ -28,6 +28,7 @@ missing_errors_doc = { level = "allow", priority = 1 }
 module_inception = { level = "allow", priority = 1 }
 multiple_crate_versions = { level = "allow", priority = 1 }
 option_if_let_else = { level = "allow", priority = 1 }
+struct_field_names = { level = "allow", priority = 1 }
 
 [patch.crates-io]
 crossterm = { git = 'https://github.com/crossterm-rs/crossterm', rev = "4f08595" }

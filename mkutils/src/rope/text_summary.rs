@@ -50,7 +50,7 @@ macro_rules! dimension_type_impls {
     };
 }
 
-#[derive(Add, Clone, ConstAssoc, Constructor, SaturatingAddImpl)]
+#[derive(Add, Clone, ConstAssoc, Constructor, Debug, SaturatingAddImpl)]
 #[const_assoc(pub ZERO: Self = Self::new(usize::ZERO, usize::ZERO, usize::ZERO))]
 pub struct Length {
     pub newlines: usize,
@@ -58,7 +58,7 @@ pub struct Length {
     pub bytes: usize,
 }
 
-#[derive(Clone, ConstAssoc, Constructor)]
+#[derive(Clone, ConstAssoc, Constructor, Debug)]
 #[const_assoc(pub ZERO: Self = Self::uniform(usize::ZERO))]
 pub struct LineLengthSet {
     pub first: usize,
@@ -72,14 +72,14 @@ impl LineLengthSet {
     }
 }
 
-#[derive(Clone, ConstAssoc, Constructor)]
+#[derive(Clone, ConstAssoc, Constructor, Debug)]
 #[const_assoc(pub ZERO: Self = Self::new(Length::ZERO, LineLengthSet::ZERO))]
 pub struct TextSummary {
     pub length: Length,
     pub line_lengths: LineLengthSet,
 }
 
-#[derive(Clone, ConstAssoc, Constructor)]
+#[derive(Clone, ConstAssoc, Constructor, Debug)]
 #[const_assoc(pub ZERO: Self = Self::new(true, TextSummary::ZERO))]
 pub struct DirectedTextSummary {
     pub is_forward: bool,

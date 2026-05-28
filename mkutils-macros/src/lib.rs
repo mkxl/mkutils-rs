@@ -46,13 +46,13 @@ pub fn context(attr_args_token_stream: TokenStream, input_token_stream: TokenStr
 /// struct MyStruct;
 ///
 /// // adds
-///
+/// // ```rust
 /// // impl From<Foo> for MyStruct {
 /// //     fn from(foo: Foo) -> Self {
 /// //         Self::from(Baz::from(Bar::from(foo)))
 /// //     }
 /// // }
-///
+/// // ```
 /// // as can be seen in
 ///
 /// let _my_struct: MyStruct = Foo.into();
@@ -78,11 +78,11 @@ pub fn from_chain(input_token_stream: TokenStream) -> TokenStream {
 /// struct MyStruct;
 ///
 /// // adds
-///
+/// // ```rust
 /// // impl Foo for MyStruct {
 /// //     type Item = Vec<u8>;
 /// // }
-///
+/// // ```
 /// // as can be seen in
 ///
 /// fn consume_foo<T: Foo>(value: T) {}
@@ -106,12 +106,12 @@ pub fn type_assoc(input_token_stream: TokenStream) -> TokenStream {
 /// struct MyStruct;
 ///
 /// // adds
-///
+/// // ```rust
 /// // impl MyStruct {
 /// //     pub const MAX_SIZE: usize = 1024;
 /// //     const DEFAULT_NAME: &str = "unnamed";
 /// // }
-///
+/// // ```
 /// // as can be seen in
 ///
 /// std::assert_eq!(MyStruct::MAX_SIZE, 1024);
@@ -139,7 +139,7 @@ pub fn const_assoc(input_token_stream: TokenStream) -> TokenStream {
 /// }
 ///
 /// // adds
-///
+/// // ```rust
 /// // impl Default for MyStruct {
 /// //     fn default() -> Self {
 /// //         Self {
@@ -149,7 +149,7 @@ pub fn const_assoc(input_token_stream: TokenStream) -> TokenStream {
 /// //         }
 /// //     }
 /// // }
-///
+/// // ```
 /// // as can be seen in
 ///
 /// let default = MyStruct::default();
@@ -176,7 +176,7 @@ pub fn default(input_token_stream: TokenStream) -> TokenStream {
 /// }
 ///
 /// // adds
-///
+/// // ```rust
 /// // impl MyEnum {
 /// //   pub fn set_foo(&mut self) -> &mut Self {
 /// //     *self = Self::Foo;
@@ -190,7 +190,7 @@ pub fn default(input_token_stream: TokenStream) -> TokenStream {
 /// //     self
 /// //   }
 /// // }
-///
+/// // ```
 /// // as can be seen in
 ///
 /// let mut my_enum = MyEnum::Foo;
@@ -217,7 +217,7 @@ pub fn set_variant(input_token_stream: TokenStream) -> TokenStream {
 /// }
 ///
 /// // adds
-///
+/// // ```rust
 /// // impl MyEnum {
 /// //   pub fn toggle(&self) -> Self {
 /// //     match self {
@@ -233,7 +233,7 @@ pub fn set_variant(input_token_stream: TokenStream) -> TokenStream {
 /// //     self
 /// //   }
 /// // }
-///
+/// // ```
 /// // as can be seen in
 ///
 /// std::assert_eq!(MyEnum::Foo.toggled(), MyEnum::Bar);
@@ -371,13 +371,13 @@ pub fn saturating_add_signed(input_token_stream: TokenStream) -> TokenStream {
 /// }
 ///
 /// // adds
-///
+/// // ```rust
 /// // impl MyStruct {
 /// //     pub(crate) fn new(name: String, count: i32) -> Self {
 /// //         Self { name, count }
 /// //     }
 /// // }
-///
+/// // ```
 /// // as can be seen in
 ///
 /// let my_struct_literal = MyStruct { name: "hello".into(), count: 2 };

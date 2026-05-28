@@ -69,6 +69,7 @@ use serde_json::{Error as SerdeJsonError, Value as Json, value::Index as SerdeJs
 #[cfg(feature = "serde")]
 use serde_yaml_ng::Error as SerdeYamlError;
 use std::{
+    any::TypeId,
     borrow::{Borrow, BorrowMut, Cow},
     collections::HashMap,
     error::Error as StdError,
@@ -1025,6 +1026,13 @@ pub trait Utils {
         Self: Is<Result<T, E>>,
     {
         self.into_self().map_err(E::io_error)
+    }
+
+    fn is<T: 'static>(&self) -> bool
+    where
+        Self: 'static,
+    {
+        TypeId::of::<Self>() == TypeId::of::<T>()
     }
 
     fn is_non_empty<T: Iterator>(&mut self) -> bool

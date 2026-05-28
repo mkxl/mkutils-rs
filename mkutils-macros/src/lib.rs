@@ -29,19 +29,33 @@ pub fn context(attr_args_token_stream: TokenStream, input_token_stream: TokenStr
 /// # Example
 ///
 /// ```rust
-/// #[derive(FromChain)]
+/// struct Foo;
+///
+/// struct Bar;
+///
+/// struct Baz;
+///
+/// impl From<Foo> for Bar { fn from(_foo: Foo) -> Self { Self } }
+///
+/// impl From<Bar> for Baz { fn from(_bar: Bar) -> Self { Self } }
+///
+/// impl From<Baz> for MyStruct { fn from(_baz: Baz) -> Self { Self } }
+///
+/// #[derive(mkutils_macros::FromChain)]
 /// #[from_chain(Foo, Bar, Baz)]
 /// struct MyStruct;
-/// ```
 ///
-/// adds
+/// // adds
 ///
-/// ```rust
-/// impl From<Foo> for MyStruct {
-///     fn from(foo: Foo) -> Self {
-///         Self::from(Baz::from(Bar::from(foo)))
-///     }
-/// }
+/// // impl From<Foo> for MyStruct {
+/// //     fn from(foo: Foo) -> Self {
+/// //         Self::from(Baz::from(Bar::from(foo)))
+/// //     }
+/// // }
+///
+/// // as can be seen in
+///
+/// let _my_struct: MyStruct = Foo.into();
 /// ```
 #[proc_macro_derive(FromChain, attributes(from_chain))]
 pub fn from_chain(input_token_stream: TokenStream) -> TokenStream {
@@ -54,17 +68,26 @@ pub fn from_chain(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(TypeAssoc)]
+///
+/// trait Foo {
+///   type Item;
+/// }
+///
+/// #[derive(mkutils_macros::TypeAssoc)]
 /// #[type_assoc(impl_trait = Foo, Item = Vec<u8>)]
 /// struct MyStruct;
-/// ```
 ///
-/// adds
+/// // adds
 ///
-/// ```rust
-/// impl Foo for MyStruct {
-///     type Item = Vec<u8>;
-/// }
+/// // impl Foo for MyStruct {
+/// //     type Item = Vec<u8>;
+/// // }
+///
+/// // as can be seen in
+///
+/// fn consume_foo<T: Foo>(value: T) {}
+///
+/// consume_foo(MyStruct);
 /// ```
 #[proc_macro_derive(TypeAssoc, attributes(type_assoc))]
 pub fn type_assoc(input_token_stream: TokenStream) -> TokenStream {
@@ -77,19 +100,22 @@ pub fn type_assoc(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(ConstAssoc)]
+/// #[derive(mkutils_macros::ConstAssoc)]
 /// #[const_assoc(pub MAX_SIZE: usize = 1024)]
 /// #[const_assoc(DEFAULT_NAME: &str = "unnamed")]
 /// struct MyStruct;
-/// ```
 ///
-/// adds
+/// // adds
 ///
-/// ```rust
-/// impl MyStruct {
-///     pub const MAX_SIZE: usize = 1024;
-///     const DEFAULT_NAME: &str = "unnamed";
-/// }
+/// // impl MyStruct {
+/// //     pub const MAX_SIZE: usize = 1024;
+/// //     const DEFAULT_NAME: &str = "unnamed";
+/// // }
+///
+/// // as can be seen in
+///
+/// std::assert_eq!(MyStruct::MAX_SIZE, 1024);
+/// std::assert_eq!(MyStruct::DEFAULT_NAME, "unnamed");
 /// ```
 #[proc_macro_derive(ConstAssoc, attributes(const_assoc))]
 pub fn const_assoc(input_token_stream: TokenStream) -> TokenStream {
@@ -103,28 +129,34 @@ pub fn const_assoc(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(Default)]
+/// #[derive(mkutils_macros::Default)]
 /// struct MyStruct {
 ///     name: String,
 ///     #[default(42)]
 ///     count: i32,
-///     #[default(vec![1, 2, 3])]
+///     #[default(std::vec![1, 2, 3])]
 ///     items: Vec<i32>,
 /// }
-/// ```
 ///
-/// adds
+/// // adds
 ///
-/// ```rust
-/// impl Default for MyStruct {
-///     fn default() -> Self {
-///         Self {
-///             name: ::core::default::Default::default(),
-///             count: 42,
-///             items: vec![1, 2, 3],
-///         }
-///     }
-/// }
+/// // impl Default for MyStruct {
+/// //     fn default() -> Self {
+/// //         Self {
+/// //             name: ::core::default::Default::default(),
+/// //             count: 42,
+/// //             items: std::vec![1, 2, 3],
+/// //         }
+/// //     }
+/// // }
+///
+/// // as can be seen in
+///
+/// let default = MyStruct::default();
+///
+/// std::assert_eq!(default.name, "");
+/// std::assert_eq!(default.count, 42);
+/// std::assert_eq!(default.items, std::vec![1, 2, 3]);
 /// ```
 #[proc_macro_derive(Default, attributes(default))]
 pub fn default(input_token_stream: TokenStream) -> TokenStream {
@@ -136,30 +168,36 @@ pub fn default(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(SetVariant)]
+/// #[derive(Debug, mkutils_macros::SetVariant, PartialEq)]
 /// enum MyEnum {
 ///   Foo,
 ///   Bar,
 ///   Baz(String),
 /// }
-/// ```
 ///
-/// adds
+/// // adds
 ///
-/// ```rust
-/// impl MyEnum {
-///   pub fn set_foo(&mut self) -> &mut Self {
-///     *self = Self::Foo;
+/// // impl MyEnum {
+/// //   pub fn set_foo(&mut self) -> &mut Self {
+/// //     *self = Self::Foo;
+/// //
+/// //     self
+/// //   }
+/// //
+/// //   pub fn set_bar(&mut self) -> &mut Self {
+/// //     *self = Self::Bar;
+/// //
+/// //     self
+/// //   }
+/// // }
 ///
-///     self
-///   }
+/// // as can be seen in
 ///
-///   pub fn set_bar(&mut self) -> &mut Self {
-///     *self = Self::Bar;
+/// let mut my_enum = MyEnum::Foo;
 ///
-///     self
-///   }
-/// }
+/// my_enum.set_bar();
+///
+/// std::assert_eq!(my_enum, MyEnum::Bar);
 /// ```
 #[proc_macro_derive(SetVariant)]
 pub fn set_variant(input_token_stream: TokenStream) -> TokenStream {
@@ -171,32 +209,36 @@ pub fn set_variant(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(Toggle)]
+/// #[derive(Debug, mkutils_macros::Toggle, PartialEq)]
 /// enum MyEnum {
 ///   Foo,
 ///   Bar,
 ///   Baz(String),
 /// }
-/// ```
 ///
-/// adds
+/// // adds
 ///
-/// ```rust
-/// impl MyEnum {
-///   pub fn toggle(&self) -> Self {
-///     match self {
-///         Self::Foo => Self::Bar,
-///         Self::Bar => Self::Foo,
-///         Self::Baz(_string) => Self::Foo,
-///     }
-///   }
+/// // impl MyEnum {
+/// //   pub fn toggle(&self) -> Self {
+/// //     match self {
+/// //         Self::Foo => Self::Bar,
+/// //         Self::Bar => Self::Foo,
+/// //         Self::Baz(_string) => Self::Foo,
+/// //     }
+/// //   }
+/// //
+/// //   pub fn toggle(&mut self) -> &mut Self {
+/// //     *self = self.toggled();
+/// //
+/// //     self
+/// //   }
+/// // }
 ///
-///   pub fn toggle(&mut self) -> &mut Self {
-///     *self = self.toggled();
+/// // as can be seen in
 ///
-///     self
-///   }
-/// }
+/// std::assert_eq!(MyEnum::Foo.toggled(), MyEnum::Bar);
+/// std::assert_eq!(MyEnum::Bar.toggled(), MyEnum::Foo);
+/// std::assert_eq!(MyEnum::Baz(String::new()).toggled(), MyEnum::Foo);
 /// ```
 #[proc_macro_derive(Toggle)]
 pub fn toggle(input_token_stream: TokenStream) -> TokenStream {
@@ -208,19 +250,25 @@ pub fn toggle(input_token_stream: TokenStream) -> TokenStream {
 ///
 /// # Example
 ///
-/// ```rust
-/// #[derive(SaturatingAdd)]
-/// struct MyStruct(usize);
+/// ```rust,ignore
+/// #[derive(Debug, mkutils_macros::SaturatingAdd, PartialEq)]
+/// struct MyStruct(usize, usize);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl num::traits::SaturatingAdd for MyStruct {
 ///     fn saturating_add(&self, v: &Self) -> Self {
-///         Self(self.0.saturating_add(&v.0))
+///         Self(self.0.saturating_add(&v.0), self.1.saturating_add(&v.1))
 ///     }
 /// }
+/// ```
+///
+/// as can be seen in
+///
+/// ```rust,ignore
+/// std::assert_eq!(MyStruct(1, 1).saturating_add(MyStruct(2, 2)), MyStruct(3, 3));
 /// ```
 #[proc_macro_derive(SaturatingAdd, attributes(saturating_add))]
 pub fn saturating_add(input_token_stream: TokenStream) -> TokenStream {
@@ -238,19 +286,25 @@ pub fn saturating_add(input_token_stream: TokenStream) -> TokenStream {
 ///
 /// # Example
 ///
-/// ```rust
-/// #[derive(SaturatingSub)]
-/// struct MyStruct(usize);
+/// ```rust,ignore
+/// #[derive(Debug, mkutils_macros::SaturatingSub, PartialEq)]
+/// struct MyStruct(usize, usize);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
+/// ```rust,ignore
 /// impl num::traits::SaturatingSub for MyStruct {
 ///     fn saturating_sub(&self, v: &Self) -> Self {
-///         Self(self.0.saturating_sub(&v.0))
+///         Self(self.0.saturating_sub(&v.0), self.1.saturating_sub(&v.1))
 ///     }
 /// }
+/// ```
+///
+/// as can be seen in
+///
+/// ```rust,ignore
+/// std::assert_eq!(MyStruct(1, 1).saturating_sub(MyStruct(2, 2)), MyStruct(0, 0));
 /// ```
 #[proc_macro_derive(SaturatingSub, attributes(saturating_sub))]
 pub fn saturating_sub(input_token_stream: TokenStream) -> TokenStream {
@@ -263,27 +317,33 @@ pub fn saturating_sub(input_token_stream: TokenStream) -> TokenStream {
     )
 }
 
+#[allow(clippy::too_long_first_doc_paragraph)]
 /// Implements `mkutils::SaturatingAddSigned` for a struct by delegating to each field.
-/// Supports setting bounds with `#[saturating_add_signed(bound = "T: SomeTrait")]`
+/// Set the `Signed` associated type and bounds with
+/// `#[saturating_add_signed(assoc(type Signed = Point<<T as SaturatingAddSigned>::Signed>)), bound = "T: SomeTrait"]`
 ///
 /// # Example
 ///
-/// ```rust
-/// #[derive(SaturatingAddSigned)]
-/// #[saturating_add_signed(assoc(type Signed = usize))]
-/// struct MyStruct(usize);
+/// ```rust,ignore
+/// #[derive(Debug, mkutils_macros::SaturatingAddSigned, PartialEq)]
+/// #[saturating_add_signed(assoc(type Signed = MyStruct<<T as SaturatingAddSigned>::Signed>))]
+/// struct MyStruct<T>(T, T);
 /// ```
 ///
 /// adds
 ///
-/// ```rust
-/// impl mkutils::SaturatingAddSigned for MyStruct {
-///     type Signed = usize;
-///
-///     fn saturating_add_signed(&self, v: &Self::Signed) -> Self {
-///         Self(self.0.saturating_add_signed(&v.0))
+/// ```rust,ignore
+/// impl mkutils::SaturatingAddSigned for MyStruct<T> {
+///     fn saturating_add_signed(&self, v: &Other) -> Self {
+///         Self(self.0.saturating_add_signed(&v.0), self.1.saturating_add_signed(&v.1))
 ///     }
 /// }
+/// ```
+///
+/// as can be seen in
+///
+/// ```rust,ignore
+/// std::assert_eq!(MyStruct(2, 2).saturating_add_signed(MyStruct(-1, -1)), MyStruct(1, 1));
 /// ```
 #[proc_macro_derive(SaturatingAddSigned, attributes(saturating_add_signed))]
 pub fn saturating_add_signed(input_token_stream: TokenStream) -> TokenStream {
@@ -303,39 +363,27 @@ pub fn saturating_add_signed(input_token_stream: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
-/// #[derive(Constructor)]
+/// #[derive(Debug, mkutils_macros::Constructor, PartialEq)]
+/// #[new(pub(crate))]
 /// struct MyStruct {
 ///     name: String,
 ///     count: i32,
 /// }
-/// ```
 ///
-/// adds
+/// // adds
 ///
-/// ```rust
-/// impl MyStruct {
-///     fn new(name: String, count: i32) -> Self {
-///         Self { name, count }
-///     }
-/// }
-/// ```
+/// // impl MyStruct {
+/// //     pub(crate) fn new(name: String, count: i32) -> Self {
+/// //         Self { name, count }
+/// //     }
+/// // }
 ///
-/// With a visibility attribute:
+/// // as can be seen in
 ///
-/// ```rust
-/// #[derive(Constructor)]
-/// #[new(pub(crate))]
-/// struct MyStruct(usize);
-/// ```
+/// let my_struct_literal = MyStruct { name: "hello".into(), count: 2 };
+/// let my_struct_constructed = MyStruct::new("hello".into(), 2);
 ///
-/// adds
-///
-/// ```rust
-/// impl MyStruct {
-///     pub(crate) fn new(_0: usize) -> Self {
-///         Self(_0)
-///     }
-/// }
+/// std::assert_eq!(my_struct_literal, my_struct_constructed);
 /// ```
 #[proc_macro_derive(Constructor, attributes(new))]
 pub fn constructor(input_token_stream: TokenStream) -> TokenStream {
@@ -344,12 +392,12 @@ pub fn constructor(input_token_stream: TokenStream) -> TokenStream {
 
 /// # Example
 ///
-/// ```rust
+/// ```rust,ignore
 /// const THREAD_STACK_SIZE = lits::bytes!("8 MiB");
 ///
 /// #[mkutils_macros::tokio_main(thread_stack_size = THREAD_STACK_SIZE)]
 /// fn main() {
-///     ...
+///     // ...
 /// }
 /// ```
 #[proc_macro_attribute]

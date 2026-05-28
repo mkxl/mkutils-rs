@@ -129,6 +129,6 @@ pub use crate::{
 #[cfg(feature = "tracing")]
 pub use crate::{timer::Timer, tracing::Tracing};
 pub use mkutils_macros::{
-    ConstAssoc, Constructor, Default, FromChain, SaturatingAdd, SaturatingSub, SetVariant, Toggle, TypeAssoc, context,
-    tokio_main,
+    ConstAssoc, Constructor, Default, FromChain, SaturatingAdd, SaturatingAddSigned, SaturatingSub, SetVariant, Toggle,
+    TypeAssoc, context, tokio_main,
 };

@@ -9,15 +9,22 @@ use crate::{
     saturating_add_signed::SaturatingAddSigned,
     utils::Utils,
 };
-use derive_more::{From, Into};
-use num::traits::ConstZero;
+use derive_more::{Constructor, From, Into};
+use num::traits::{ConstZero, SaturatingAdd};
 use std::{
     fmt::{Display, Error as FmtError, Formatter},
     ops::Range,
 };
 use zed_sum_tree::{Bias, Dimensions, Item, SumTree, Summary};
 
-#[derive(Default, From, Into)]
+#[derive(Clone, Constructor, Debug)]
+pub struct LineInfo {
+    pub begin: TextSummary,
+    pub length: TextSummary,
+    pub end: TextSummary,
+}
+
+#[derive(Debug, Default, From, Into)]
 pub struct Rope {
     chunk_sum_tree: SumTree<Chunk>,
 }
@@ -251,26 +258,18 @@ impl Rope {
     }
 
     #[must_use]
-    pub fn line_info(&self, line_index: usize) -> Option<(TextSummary, TextSummary)> {
+    pub fn line_info(&self, line_index: usize) -> Option<LineInfo> {
         if self.len_newlines() < line_index {
             return None;
         }
 
         let mut atoms = self.atoms_at_line(line_index);
-        let line_offset = atoms.offset().clone();
-        let distance_advanced = atoms.advance_to_start_of_next_line().into_ok_err();
+        let begin = atoms.offset().clone();
+        let length = atoms.advance_to_start_of_next_line().into_ok_err();
+        let end = begin.saturating_add(&length);
+        let line_info = LineInfo::new(begin, length, end);
 
-        line_offset.pair(distance_advanced).some()
-    }
-
-    #[must_use]
-    pub fn line_offset(&self, line_index: usize) -> Option<TextSummary> {
-        self.line_info(line_index)?.into_first().some()
-    }
-
-    #[must_use]
-    pub fn line_summary(&self, line_index: usize) -> Option<TextSummary> {
-        self.line_info(line_index)?.into_second().some()
+        line_info.some()
     }
 }
 

@@ -72,6 +72,9 @@ mod socket;
 #[cfg(feature = "tui")]
 mod terminal;
 
+#[cfg(feature = "tui")]
+mod tree_sitter_highlighter;
+
 #[cfg(feature = "tracing")]
 mod timer;
 
@@ -125,6 +128,7 @@ pub use crate::{
     scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen},
     terminal::Terminal,
     transpose::Transpose,
+    tree_sitter_highlighter::{RatatuiTreeSitterHighlighter, TreeSitterHighlightTheme},
 };
 #[cfg(feature = "tracing")]
 pub use crate::{timer::Timer, tracing::Tracing};

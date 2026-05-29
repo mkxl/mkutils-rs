@@ -20,7 +20,7 @@ macro_rules! get_byte_index {
     };
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Chunk {
     string: ArrayString<{ Self::CAPACITY }>,
     byte_index_intervals: ArrayVec<Range<usize>, { Self::CAPACITY }>,

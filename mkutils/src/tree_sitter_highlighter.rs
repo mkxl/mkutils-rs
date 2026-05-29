@@ -5,35 +5,8 @@ use ratatui::{
     text::{Line, Span},
 };
 use std::{collections::HashMap, ops::Range, sync::Mutex};
-use tree_sitter::Language;
+use tree_sitter::{Language, Query};
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
-
-const HIGHLIGHT_NAMES: [&str; 24] = [
-    "none",
-    "attribute",
-    "character",
-    "comment",
-    "constant",
-    "constructor",
-    "function",
-    "keyword",
-    "markup.raw",
-    "number",
-    "operator",
-    "property",
-    "punctuation",
-    "string.escape",
-    "string",
-    "text.emphasis",
-    "text.literal",
-    "text.reference",
-    "text.strong",
-    "text.title",
-    "text.uri",
-    "type",
-    "variable",
-    "warning",
-];
 
 pub struct TreeSitterHighlightTheme {
     default_style: Style,
@@ -71,8 +44,8 @@ impl TreeSitterHighlightTheme {
         }
     }
 
-    fn style_for_highlight_index(&self, highlight_index: usize) -> Style {
-        HIGHLIGHT_NAMES
+    fn style_for_highlight_index(&self, highlight_names: &[String], highlight_index: usize) -> Style {
+        highlight_names
             .get(highlight_index)
             .map_or(self.default_style, |capture_name| self.style_for(capture_name))
     }
@@ -104,7 +77,13 @@ impl TreeSitterHighlightConfig {
         }
     }
 
-    fn into_highlight_configuration(self) -> Result<HighlightConfiguration, AnyhowError> {
+    fn capture_names(&self) -> Result<Vec<String>, AnyhowError> {
+        Query::new(&self.language, self.highlights_query)
+            .map(|query| query.capture_names().iter().map(ToString::to_string).collect())
+            .map_err(AnyhowError::from)
+    }
+
+    fn into_highlight_configuration(self, highlight_names: &[&str]) -> Result<HighlightConfiguration, AnyhowError> {
         let mut config = HighlightConfiguration::new(
             self.language,
             self.name,
@@ -113,7 +92,7 @@ impl TreeSitterHighlightConfig {
             self.locals_query,
         )?;
 
-        config.configure(&HIGHLIGHT_NAMES);
+        config.configure(highlight_names);
 
         config.ok()
     }
@@ -178,6 +157,7 @@ impl<'a> HighlightSource<'a> {
 
 pub struct RatatuiTreeSitterHighlighter {
     theme: TreeSitterHighlightTheme,
+    highlight_names: Vec<String>,
     configs: HashMap<&'static str, HighlightConfiguration>,
     aliases: HashMap<&'static str, &'static str>,
     highlighter: Mutex<Highlighter>,
@@ -196,6 +176,7 @@ impl RatatuiTreeSitterHighlighter {
         let highlighter = Mutex::new(Highlighter::new());
         let mut this = Self {
             theme,
+            highlight_names: Vec::new(),
             configs,
             aliases,
             highlighter,
@@ -208,36 +189,55 @@ impl RatatuiTreeSitterHighlighter {
     }
 
     fn register_builtin_languages(&mut self) -> Result<(), AnyhowError> {
-        self.register_language(TreeSitterHighlightConfig::new(
-            "markdown",
-            tree_sitter_md::LANGUAGE.into(),
-            tree_sitter_md::HIGHLIGHT_QUERY_BLOCK,
-            tree_sitter_md::INJECTION_QUERY_BLOCK,
-            "",
-        ))?;
-        self.register_language(TreeSitterHighlightConfig::new(
-            "markdown_inline",
-            tree_sitter_md::INLINE_LANGUAGE.into(),
-            tree_sitter_md::HIGHLIGHT_QUERY_INLINE,
-            tree_sitter_md::INJECTION_QUERY_INLINE,
-            "",
-        ))?;
-        self.register_language(TreeSitterHighlightConfig::new(
-            "lean",
-            arborium_lean::language().into(),
-            arborium_lean::HIGHLIGHTS_QUERY,
-            arborium_lean::INJECTIONS_QUERY,
-            arborium_lean::LOCALS_QUERY,
-        ))?;
+        let configs = [
+            TreeSitterHighlightConfig::new(
+                "markdown",
+                tree_sitter_md::LANGUAGE.into(),
+                tree_sitter_md::HIGHLIGHT_QUERY_BLOCK,
+                tree_sitter_md::INJECTION_QUERY_BLOCK,
+                "",
+            ),
+            TreeSitterHighlightConfig::new(
+                "markdown_inline",
+                tree_sitter_md::INLINE_LANGUAGE.into(),
+                tree_sitter_md::HIGHLIGHT_QUERY_INLINE,
+                tree_sitter_md::INJECTION_QUERY_INLINE,
+                "",
+            ),
+            TreeSitterHighlightConfig::new(
+                "lean",
+                arborium_lean::language().into(),
+                arborium_lean::HIGHLIGHTS_QUERY,
+                arborium_lean::INJECTIONS_QUERY,
+                arborium_lean::LOCALS_QUERY,
+            ),
+        ];
+
+        self.highlight_names = Self::capture_names(&configs)?;
+        let highlight_names = self.highlight_names.iter().map(String::as_str).collect::<Vec<_>>();
+
+        for config in configs {
+            self.configs
+                .insert(config.name, config.into_highlight_configuration(&highlight_names)?);
+        }
+
         self.alias_language("lean4", "lean");
 
         ().ok()
     }
 
-    fn register_language(&mut self, config: TreeSitterHighlightConfig) -> Result<(), AnyhowError> {
-        self.configs.insert(config.name, config.into_highlight_configuration()?);
+    fn capture_names(configs: &[TreeSitterHighlightConfig]) -> Result<Vec<String>, AnyhowError> {
+        let mut capture_names = Vec::new();
 
-        ().ok()
+        for config in configs {
+            for capture_name in config.capture_names()? {
+                if !capture_names.iter().any(|name| name == &capture_name) {
+                    capture_names.push(capture_name);
+                }
+            }
+        }
+
+        capture_names.ok()
     }
 
     fn alias_language(&mut self, alias: &'static str, language_name: &'static str) {
@@ -280,7 +280,7 @@ impl RatatuiTreeSitterHighlighter {
                     source.push_range(&mut lines, &mut spans, start..end, style);
                 }
                 HighlightEvent::HighlightStart(highlight) => {
-                    style_stack.push(self.theme.style_for_highlight_index(highlight.0));
+                    style_stack.push(self.theme.style_for_highlight_index(&self.highlight_names, highlight.0));
                 }
                 HighlightEvent::HighlightEnd => {
                     style_stack.pop();

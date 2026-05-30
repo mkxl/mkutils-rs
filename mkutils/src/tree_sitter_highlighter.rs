@@ -13,6 +13,23 @@ use tree_sitter::{
 };
 use zed_sum_tree::Bias;
 
+const RUST_LOCALS_QUERY: &str = r"
+(function_item
+  body: (block) @local.scope)
+
+(closure_expression
+  body: (_) @local.scope)
+
+(parameter
+  pattern: (identifier) @local.definition)
+
+(let_declaration
+  pattern: (identifier) @local.definition
+  value: (_) @local.definition-value)
+
+(identifier) @local.reference
+";
+
 pub struct TreeSitterHighlightTheme {
     default_style: Style,
     styles: HashMap<&'static str, Style>,
@@ -39,6 +56,22 @@ mod tests {
                 .any(|span| { span.content.contains("#check") && span.style == keyword_style }),
             "markdown: {lines:#?}\nlean: {lean_lines:#?}"
         );
+    }
+
+    #[test]
+    fn highlights_rust_local_references_like_definitions() {
+        let parameter_style = Style::new().fg(Color::Blue);
+        let highlighter = RatatuiTreeSitterHighlighter::new(
+            TreeSitterHighlightTheme::new(Style::new()).with_style("variable.parameter", parameter_style),
+        );
+        let lines = highlighter.highlight("rust", "fn f(x: i32) { x; }\n").unwrap();
+        let highlighted_x_count = lines
+            .iter()
+            .flat_map(|line| &line.spans)
+            .filter(|span| span.content.as_ref() == "x" && span.style == parameter_style)
+            .count();
+
+        assert_eq!(highlighted_x_count, 2, "{lines:#?}");
     }
 }
 
@@ -574,6 +607,13 @@ impl RatatuiTreeSitterHighlighter {
                 arborium_lean::HIGHLIGHTS_QUERY,
                 arborium_lean::INJECTIONS_QUERY,
                 arborium_lean::LOCALS_QUERY,
+            ),
+            TreeSitterHighlightConfig::new(
+                "rust",
+                tree_sitter_rust::LANGUAGE.into(),
+                tree_sitter_rust::HIGHLIGHTS_QUERY,
+                tree_sitter_rust::INJECTIONS_QUERY,
+                RUST_LOCALS_QUERY,
             ),
         ];
 

@@ -40,6 +40,7 @@ tokio-util = { version = "0.7.16", features = ["codec", "io"], optional = true }
 tracing = { version = "0.1.41", features = ["valuable"], optional = true }
 tracing-subscriber = { version = "0.3.20", features = ["json", "valuable"], optional = true }
 tree-sitter = { version = "0.25.10", optional = true }
+tree-sitter-highlight = { version = "0.25.10", optional = true }
 tree-sitter-md = { package = "tree-sitter-md-025", version = "0.5.6", optional = true }
 trie-rs = { version = "0.4.2", optional = true }
 tuplities-remove = { version = "0.1.4" }
@@ -53,7 +54,7 @@ async = ["dep:futures", "dep:tokio", "dep:tokio-stream", "dep:tokio-util"]
 http = ["dep:poem", "dep:poem-openapi", "dep:reqwest" ]
 serde = ["dep:rmp-serde", "dep:serde_json", "dep:serde_yaml_ng"]
 tracing = ["dep:console-subscriber", "dep:tracing", "dep:tracing-subscriber", "dep:valuable"]
-tui = ["dep:arborium-lean", "dep:arrayvec", "dep:crossterm", "dep:palette", "dep:ratatui", "dep:tokio", "dep:tracing", "dep:tree-sitter", "dep:tree-sitter-md", "dep:trie-rs", "dep:unicode-segmentation", "dep:zed-sum-tree"]
+tui = ["dep:arborium-lean", "dep:arrayvec", "dep:crossterm", "dep:palette", "dep:ratatui", "dep:tokio", "dep:tracing", "dep:tree-sitter", "dep:tree-sitter-highlight", "dep:tree-sitter-md", "dep:trie-rs", "dep:unicode-segmentation", "dep:zed-sum-tree"]
 unstable = []
 
 [lints]

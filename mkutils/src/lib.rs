@@ -128,7 +128,7 @@ pub use crate::{
     scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen},
     terminal::Terminal,
     transpose::Transpose,
-    tree_sitter_highlighter::{RatatuiTreeSitterHighlighter, TreeSitterHighlightTheme},
+    tree_sitter_highlighter::{RatatuiTreeSitterHighlighter, TreeSitterHighlightConfig, TreeSitterHighlightTheme},
 };
 #[cfg(feature = "tracing")]
 pub use crate::{timer::Timer, tracing::Tracing};

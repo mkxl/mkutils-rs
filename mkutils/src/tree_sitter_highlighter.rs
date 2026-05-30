@@ -112,6 +112,7 @@ impl TreeSitterHighlightConfig {
             .map_err(AnyhowError::from)
     }
 
+    #[allow(clippy::similar_names)]
     fn into_highlight_configuration(
         self,
         highlight_names: &[String],
@@ -157,6 +158,14 @@ impl TreeSitterHighlightConfig {
         }
 
         let combined_injections_query = has_combined_queries.then_some(combined_injections_query);
+        let non_local_variable_patterns = (0..query.pattern_count())
+            .map(|pattern_index| {
+                query
+                    .property_predicates(pattern_index)
+                    .iter()
+                    .any(|(property, positive)| !*positive && property.key.as_ref() == "local")
+            })
+            .collect();
         let highlight_indices = query
             .capture_names()
             .iter()
@@ -168,11 +177,19 @@ impl TreeSitterHighlightConfig {
             .collect();
         let mut injection_content_capture_index = None;
         let mut injection_language_capture_index = None;
+        let mut local_def_capture_index = None;
+        let mut local_def_value_capture_index = None;
+        let mut local_ref_capture_index = None;
+        let mut local_scope_capture_index = None;
 
         for (capture_index, capture_name) in query.capture_names().iter().enumerate() {
             match *capture_name {
                 "injection.content" => injection_content_capture_index = u32::try_from(capture_index).ok(),
                 "injection.language" => injection_language_capture_index = u32::try_from(capture_index).ok(),
+                "local.definition" => local_def_capture_index = u32::try_from(capture_index).ok(),
+                "local.definition-value" => local_def_value_capture_index = u32::try_from(capture_index).ok(),
+                "local.reference" => local_ref_capture_index = u32::try_from(capture_index).ok(),
+                "local.scope" => local_scope_capture_index = u32::try_from(capture_index).ok(),
                 _ => {}
             }
         }
@@ -185,8 +202,13 @@ impl TreeSitterHighlightConfig {
             locals_pattern_index,
             highlights_pattern_index,
             highlight_indices,
+            non_local_variable_patterns,
             injection_content_capture_index,
             injection_language_capture_index,
+            local_def_capture_index,
+            local_def_value_capture_index,
+            local_ref_capture_index,
+            local_scope_capture_index,
         }
         .ok()
     }
@@ -200,8 +222,13 @@ struct RegisteredTreeSitterHighlightConfig {
     locals_pattern_index: usize,
     highlights_pattern_index: usize,
     highlight_indices: Vec<Option<usize>>,
+    non_local_variable_patterns: Vec<bool>,
     injection_content_capture_index: Option<u32>,
     injection_language_capture_index: Option<u32>,
+    local_def_capture_index: Option<u32>,
+    local_def_value_capture_index: Option<u32>,
+    local_ref_capture_index: Option<u32>,
+    local_scope_capture_index: Option<u32>,
 }
 
 impl RegisteredTreeSitterHighlightConfig {
@@ -241,6 +268,29 @@ struct InjectionRequest {
     language_name: String,
     ranges: Vec<TreeSitterRange>,
     depth: usize,
+}
+
+#[derive(Clone)]
+struct LocalDef {
+    name: String,
+    value_range: Range<usize>,
+    highlight_index: Option<usize>,
+}
+
+#[derive(Clone)]
+struct LocalScope {
+    inherits: bool,
+    range: Range<usize>,
+    local_defs: Vec<LocalDef>,
+}
+
+#[derive(Clone)]
+struct CaptureRecord {
+    pattern_index: usize,
+    capture_index: u32,
+    node_id: usize,
+    range: Range<usize>,
+    definition_value_range: Option<Range<usize>>,
 }
 
 struct TreeSitterHighlightState {
@@ -596,7 +646,7 @@ impl RatatuiTreeSitterHighlighter {
         self.highlight_ranges_to_lines(rope, &highlight_ranges)
     }
 
-    #[allow(clippy::needless_pass_by_value, clippy::too_many_arguments)]
+    #[allow(clippy::needless_pass_by_value, clippy::too_many_arguments, clippy::too_many_lines)]
     fn collect_highlight_ranges(
         &self,
         state: &mut TreeSitterHighlightState,
@@ -660,6 +710,7 @@ impl RatatuiTreeSitterHighlighter {
 
         {
             let mut seen_injection_matches = Vec::new();
+            let mut capture_records = Vec::new();
             let mut captures = state
                 .cursor
                 .captures(&config.query, tree.root_node(), RopeTextProvider::new(rope));
@@ -686,22 +737,30 @@ impl RatatuiTreeSitterHighlighter {
                             }
                         }
                     }
-                } else if query_match.pattern_index >= config.highlights_pattern_index
-                    && let Some(highlight_index) = config.highlight_index_for_capture(capture.index)
-                {
+                } else {
                     let range = capture.node.byte_range();
 
                     if !range.is_empty() {
-                        highlight_ranges.push(HighlightRange {
+                        let definition_value_range = query_match
+                            .captures
+                            .iter()
+                            .find(|capture| Some(capture.index) == config.local_def_value_capture_index)
+                            .map(|capture| capture.node.byte_range());
+
+                        capture_records.push(CaptureRecord {
+                            pattern_index: query_match.pattern_index,
+                            capture_index: capture.index,
+                            node_id: capture.node.id(),
                             range,
-                            highlight_index,
-                            depth,
+                            definition_value_range,
                         });
                     }
                 }
 
                 captures.advance();
             }
+
+            Self::process_capture_records(config, rope, depth, &capture_records, highlight_ranges);
         }
 
         drop(tree);
@@ -721,6 +780,131 @@ impl RatatuiTreeSitterHighlighter {
         }
 
         Ok(())
+    }
+
+    fn process_capture_records(
+        config: &RegisteredTreeSitterHighlightConfig,
+        rope: &Rope,
+        depth: usize,
+        capture_records: &[CaptureRecord],
+        highlight_ranges: &mut Vec<HighlightRange>,
+    ) {
+        let mut scope_stack = vec![LocalScope {
+            inherits: false,
+            range: 0..usize::MAX,
+            local_defs: Vec::new(),
+        }];
+        let mut index = 0;
+
+        while let Some(record) = capture_records.get(index) {
+            while record.range.start > scope_stack.last().expect("scope stack should not be empty").range.end {
+                scope_stack.pop();
+            }
+
+            let node_id = record.node_id;
+            let mut group_end = index.incremented();
+
+            while capture_records
+                .get(group_end)
+                .is_some_and(|record| record.node_id == node_id)
+            {
+                group_end = group_end.incremented();
+            }
+
+            let group = &capture_records[index..group_end];
+            let range = record.range.clone();
+            let mut reference_highlight = None;
+            let mut definition_location = None;
+
+            for record in group
+                .iter()
+                .filter(|record| record.pattern_index < config.highlights_pattern_index)
+            {
+                if Some(record.capture_index) == config.local_scope_capture_index {
+                    let inherits = config
+                        .query
+                        .property_settings(record.pattern_index)
+                        .iter()
+                        .find(|property| property.key.as_ref() == "local.scope-inherits")
+                        .and_then(|property| property.value.as_ref())
+                        .is_none_or(|value| value.as_ref() == "true");
+
+                    scope_stack.push(LocalScope {
+                        inherits,
+                        range: record.range.clone(),
+                        local_defs: Vec::new(),
+                    });
+                    definition_location = None;
+                } else if Some(record.capture_index) == config.local_def_capture_index {
+                    reference_highlight = None;
+                    let name = rope_text_in_range(rope, record.range.clone());
+                    let value_range = record.definition_value_range.clone().unwrap_or(0..0);
+                    let scope_index = scope_stack.len().saturating_sub(1);
+                    let scope = scope_stack.last_mut().expect("scope stack should not be empty");
+
+                    scope.local_defs.push(LocalDef {
+                        name,
+                        value_range,
+                        highlight_index: None,
+                    });
+                    definition_location = Some((scope_index, scope.local_defs.len().saturating_sub(1)));
+                } else if Some(record.capture_index) == config.local_ref_capture_index && definition_location.is_none()
+                {
+                    let name = rope_text_in_range(rope, record.range.clone());
+                    reference_highlight = Self::reference_highlight(&scope_stack, &name, &record.range);
+                }
+            }
+
+            let is_local_variable = definition_location.is_some() || reference_highlight.is_some();
+            let current_highlight = group
+                .iter()
+                .filter(|record| record.pattern_index >= config.highlights_pattern_index)
+                .filter(|record| {
+                    !(is_local_variable
+                        && config
+                            .non_local_variable_patterns
+                            .get(record.pattern_index)
+                            .copied()
+                            .unwrap_or_default())
+                })
+                .filter_map(|record| config.highlight_index_for_capture(record.capture_index))
+                .next_back();
+
+            if let Some((scope_index, def_index)) = definition_location
+                && let Some(local_def) = scope_stack
+                    .get_mut(scope_index)
+                    .and_then(|scope| scope.local_defs.get_mut(def_index))
+            {
+                local_def.highlight_index = current_highlight;
+            }
+
+            if let Some(highlight_index) = reference_highlight.or(current_highlight) {
+                highlight_ranges.push(HighlightRange {
+                    range,
+                    highlight_index,
+                    depth,
+                });
+            }
+
+            index = group_end;
+        }
+    }
+
+    fn reference_highlight(scope_stack: &[LocalScope], name: &str, range: &Range<usize>) -> Option<usize> {
+        for scope in scope_stack.iter().rev() {
+            if let Some(highlight_index) = scope.local_defs.iter().rev().find_map(|definition| {
+                (definition.name == name && range.start >= definition.value_range.end)
+                    .then_some(definition.highlight_index)
+            }) {
+                return highlight_index;
+            }
+
+            if !scope.inherits {
+                break;
+            }
+        }
+
+        None
     }
 
     fn injection_for_match<'tree>(

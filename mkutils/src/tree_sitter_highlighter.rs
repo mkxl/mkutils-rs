@@ -8,38 +8,12 @@ use ratatui::{
     text::{Line, Span},
 };
 use std::{collections::HashMap, ops::Range, sync::Mutex};
-use tree_sitter::{
-    Language, Node, Parser, Point, Query, QueryCursor, Range as TreeSitterRange, StreamingIterator, TextProvider,
-};
+use tree_sitter::{Language, Parser, Query, QueryCursor, StreamingIterator, TextProvider};
 use zed_sum_tree::Bias;
 
 pub struct TreeSitterHighlightTheme {
     default_style: Style,
     styles: HashMap<&'static str, Style>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ratatui::style::Color;
-
-    #[test]
-    fn highlights_injected_lean_fenced_code() {
-        let keyword_style = Style::new().fg(Color::Red);
-        let highlighter = RatatuiTreeSitterHighlighter::new(
-            TreeSitterHighlightTheme::new(Style::new()).with_style("keyword", keyword_style),
-        );
-        let lines = highlighter.highlight("markdown", "```lean\n#check Nat\n```").unwrap();
-        let lean_lines = highlighter.highlight("lean", "#check Nat\n").unwrap();
-
-        assert!(
-            lines
-                .iter()
-                .flat_map(|line| &line.spans)
-                .any(|span| { span.content.contains("#check") && span.style == keyword_style }),
-            "markdown: {lines:#?}\nlean: {lean_lines:#?}"
-        );
-    }
 }
 
 impl TreeSitterHighlightTheme {
@@ -116,47 +90,7 @@ impl TreeSitterHighlightConfig {
         self,
         highlight_names: &[String],
     ) -> Result<RegisteredTreeSitterHighlightConfig, AnyhowError> {
-        let mut query_source = String::new();
-        query_source.push_str(self.injections_query);
-        let locals_query_offset = query_source.len();
-        query_source.push_str(self.locals_query);
-        let highlights_query_offset = query_source.len();
-        query_source.push_str(self.highlights_query);
-
-        let mut query = Query::new(&self.language, &query_source)?;
-        let mut locals_pattern_index = 0;
-        let mut highlights_pattern_index = 0;
-
-        for pattern_index in 0..query.pattern_count() {
-            let pattern_offset = query.start_byte_for_pattern(pattern_index);
-
-            if pattern_offset < highlights_query_offset {
-                highlights_pattern_index += 1;
-            }
-
-            if pattern_offset < locals_query_offset {
-                locals_pattern_index += 1;
-            }
-        }
-
-        let mut combined_injections_query = Query::new(&self.language, self.injections_query)?;
-        let mut has_combined_queries = false;
-
-        for pattern_index in 0..locals_pattern_index {
-            let settings = query.property_settings(pattern_index);
-
-            if settings
-                .iter()
-                .any(|setting| setting.key.as_ref() == "injection.combined")
-            {
-                has_combined_queries = true;
-                query.disable_pattern(pattern_index);
-            } else {
-                combined_injections_query.disable_pattern(pattern_index);
-            }
-        }
-
-        let combined_injections_query = has_combined_queries.then_some(combined_injections_query);
+        let query = Query::new(&self.language, self.highlights_query)?;
         let highlight_indices = query
             .capture_names()
             .iter()
@@ -166,45 +100,29 @@ impl TreeSitterHighlightConfig {
                     .position(|highlight_name| highlight_name == capture_name)
             })
             .collect();
-        let mut injection_content_capture_index = None;
-        let mut injection_language_capture_index = None;
 
-        for (capture_index, capture_name) in query.capture_names().iter().enumerate() {
-            match *capture_name {
-                "injection.content" => injection_content_capture_index = u32::try_from(capture_index).ok(),
-                "injection.language" => injection_language_capture_index = u32::try_from(capture_index).ok(),
-                _ => {}
-            }
-        }
+        let _ = self.injections_query;
+        let _ = self.locals_query;
 
-        RegisteredTreeSitterHighlightConfig {
-            language_name: self.name,
-            language: self.language,
-            query,
-            combined_injections_query,
-            locals_pattern_index,
-            highlights_pattern_index,
-            highlight_indices,
-            injection_content_capture_index,
-            injection_language_capture_index,
-        }
-        .ok()
+        RegisteredTreeSitterHighlightConfig::new(self.language, query, highlight_indices).ok()
     }
 }
 
 struct RegisteredTreeSitterHighlightConfig {
-    language_name: &'static str,
     language: Language,
     query: Query,
-    combined_injections_query: Option<Query>,
-    locals_pattern_index: usize,
-    highlights_pattern_index: usize,
     highlight_indices: Vec<Option<usize>>,
-    injection_content_capture_index: Option<u32>,
-    injection_language_capture_index: Option<u32>,
 }
 
 impl RegisteredTreeSitterHighlightConfig {
+    const fn new(language: Language, query: Query, highlight_indices: Vec<Option<usize>>) -> Self {
+        Self {
+            language,
+            query,
+            highlight_indices,
+        }
+    }
+
     fn highlight_index_for_capture(&self, capture_index: u32) -> Option<usize> {
         self.highlight_indices.get(capture_index as usize).copied().flatten()
     }
@@ -233,14 +151,6 @@ impl<'r> TextProvider<&'r str> for RopeTextProvider<'r> {
 struct HighlightRange {
     range: Range<usize>,
     highlight_index: usize,
-    depth: usize,
-}
-
-#[derive(Clone)]
-struct InjectionRequest {
-    language_name: String,
-    ranges: Vec<TreeSitterRange>,
-    depth: usize,
 }
 
 struct TreeSitterHighlightState {
@@ -371,104 +281,6 @@ fn rope_slices_in_range(rope: &Rope, range: Range<usize>) -> Vec<&str> {
     slices
 }
 
-fn rope_text_in_range(rope: &Rope, range: Range<usize>) -> String {
-    rope_slices_in_range(rope, range).concat()
-}
-
-fn root_range(rope: &Rope) -> TreeSitterRange {
-    TreeSitterRange {
-        start_byte: 0,
-        start_point: Point::new(0, 0),
-        end_byte: rope.length().bytes,
-        end_point: Point::new(usize::MAX, usize::MAX),
-    }
-}
-
-fn intersect_ranges(
-    parent_ranges: &[TreeSitterRange],
-    nodes: &[Node],
-    includes_children: bool,
-) -> Vec<TreeSitterRange> {
-    let Some(first_node) = nodes.first() else {
-        return Vec::new();
-    };
-    let mut cursor = first_node.walk();
-    let mut result = Vec::new();
-    let mut parent_range_iter = parent_ranges.iter();
-    let Some(mut parent_range) = parent_range_iter.next() else {
-        return result;
-    };
-
-    for node in nodes {
-        let mut preceding_range = TreeSitterRange {
-            start_byte: 0,
-            start_point: Point::new(0, 0),
-            end_byte: node.start_byte(),
-            end_point: node.start_position(),
-        };
-        let following_range = TreeSitterRange {
-            start_byte: node.end_byte(),
-            start_point: node.end_position(),
-            end_byte: usize::MAX,
-            end_point: Point::new(usize::MAX, usize::MAX),
-        };
-
-        for excluded_range in node
-            .children(&mut cursor)
-            .filter(|_child| !includes_children)
-            .map(|child| child.range())
-            .chain(std::iter::once(following_range))
-        {
-            let mut range = TreeSitterRange {
-                start_byte: preceding_range.end_byte,
-                start_point: preceding_range.end_point,
-                end_byte: excluded_range.start_byte,
-                end_point: excluded_range.start_point,
-            };
-            preceding_range = excluded_range;
-
-            if range.end_byte < parent_range.start_byte {
-                continue;
-            }
-
-            while parent_range.start_byte <= range.end_byte {
-                if parent_range.end_byte > range.start_byte {
-                    if range.start_byte < parent_range.start_byte {
-                        range.start_byte = parent_range.start_byte;
-                        range.start_point = parent_range.start_point;
-                    }
-
-                    if parent_range.end_byte < range.end_byte {
-                        if range.start_byte < parent_range.end_byte {
-                            result.push(TreeSitterRange {
-                                start_byte: range.start_byte,
-                                start_point: range.start_point,
-                                end_byte: parent_range.end_byte,
-                                end_point: parent_range.end_point,
-                            });
-                        }
-                        range.start_byte = parent_range.end_byte;
-                        range.start_point = parent_range.end_point;
-                    } else {
-                        if range.start_byte < range.end_byte {
-                            result.push(range);
-                        }
-                        break;
-                    }
-                }
-
-                if let Some(next_range) = parent_range_iter.next() {
-                    parent_range = next_range;
-                } else {
-                    return result;
-                }
-            }
-        }
-    }
-
-    result
-}
-
 pub struct RatatuiTreeSitterHighlighter {
     theme: TreeSitterHighlightTheme,
     highlight_names: Vec<String>,
@@ -579,36 +391,8 @@ impl RatatuiTreeSitterHighlighter {
             .state
             .lock()
             .map_err(|_error| anyhow!("Tree-sitter highlighter mutex is poisoned"))?;
-        let mut highlight_ranges = Vec::new();
 
-        self.collect_highlight_ranges(
-            &mut state,
-            rope,
-            config,
-            None,
-            vec![root_range(rope)],
-            0,
-            &mut highlight_ranges,
-        )?;
-
-        drop(state);
-
-        self.highlight_ranges_to_lines(rope, &highlight_ranges)
-    }
-
-    #[allow(clippy::needless_pass_by_value, clippy::too_many_arguments)]
-    fn collect_highlight_ranges(
-        &self,
-        state: &mut TreeSitterHighlightState,
-        rope: &Rope,
-        config: &RegisteredTreeSitterHighlightConfig,
-        parent_name: Option<&str>,
-        ranges: Vec<TreeSitterRange>,
-        depth: usize,
-        highlight_ranges: &mut Vec<HighlightRange>,
-    ) -> Result<(), AnyhowError> {
         state.parser.set_language(&config.language)?;
-        state.parser.set_included_ranges(&ranges)?;
         let tree = state
             .parser
             .parse_with_options(
@@ -617,157 +401,33 @@ impl RatatuiTreeSitterHighlighter {
                 None,
             )
             .context("Tree-sitter parser did not produce a tree")?;
-        let mut injections = Vec::new();
-
-        if let Some(combined_injections_query) = config.combined_injections_query.as_ref() {
-            let mut injections_by_pattern_index =
-                vec![(None::<String>, Vec::new(), false); combined_injections_query.pattern_count()];
-            let mut matches =
-                state
-                    .cursor
-                    .matches(combined_injections_query, tree.root_node(), RopeTextProvider::new(rope));
-
-            while let Some(query_match) = matches.next() {
-                let entry = &mut injections_by_pattern_index[query_match.pattern_index];
-                let (language_name, content_node, include_children) =
-                    Self::injection_for_match(config, parent_name, combined_injections_query, query_match, rope);
-
-                if language_name.is_some() {
-                    entry.0 = language_name;
-                }
-                if let Some(content_node) = content_node {
-                    entry.1.push(content_node);
-                }
-                entry.2 = include_children;
-            }
-
-            for (language_name, content_nodes, includes_children) in injections_by_pattern_index {
-                if let Some(language_name) = language_name
-                    && !content_nodes.is_empty()
-                {
-                    let ranges = intersect_ranges(&ranges, &content_nodes, includes_children);
-
-                    if !ranges.is_empty() {
-                        injections.push(InjectionRequest {
-                            language_name,
-                            ranges,
-                            depth: depth.incremented(),
-                        });
-                    }
-                }
-            }
-        }
-
-        {
-            let mut seen_injection_matches = Vec::new();
+        let highlight_ranges = {
             let mut captures = state
                 .cursor
                 .captures(&config.query, tree.root_node(), RopeTextProvider::new(rope));
+            let mut highlight_ranges = Vec::new();
 
             captures.advance();
             while let Some((query_match, capture_index)) = captures.get() {
                 let capture = query_match.captures[*capture_index];
 
-                if query_match.pattern_index < config.locals_pattern_index {
-                    if !seen_injection_matches.contains(&query_match.id()) {
-                        seen_injection_matches.push(query_match.id());
-                        let (language_name, content_node, include_children) =
-                            Self::injection_for_match(config, parent_name, &config.query, query_match, rope);
-
-                        if let (Some(language_name), Some(content_node)) = (language_name, content_node) {
-                            let ranges = intersect_ranges(&ranges, &[content_node], include_children);
-
-                            if !ranges.is_empty() {
-                                injections.push(InjectionRequest {
-                                    language_name,
-                                    ranges,
-                                    depth: depth.incremented(),
-                                });
-                            }
-                        }
-                    }
-                } else if query_match.pattern_index >= config.highlights_pattern_index
-                    && let Some(highlight_index) = config.highlight_index_for_capture(capture.index)
-                {
+                if let Some(highlight_index) = config.highlight_index_for_capture(capture.index) {
                     let range = capture.node.byte_range();
 
                     if !range.is_empty() {
-                        highlight_ranges.push(HighlightRange {
-                            range,
-                            highlight_index,
-                            depth,
-                        });
+                        highlight_ranges.push(HighlightRange { range, highlight_index });
                     }
                 }
 
                 captures.advance();
             }
-        }
 
-        drop(tree);
+            highlight_ranges
+        };
 
-        for injection in injections {
-            if let Some(injection_config) = self.config(&injection.language_name) {
-                self.collect_highlight_ranges(
-                    state,
-                    rope,
-                    injection_config,
-                    Some(config.language_name),
-                    injection.ranges,
-                    injection.depth,
-                    highlight_ranges,
-                )?;
-            }
-        }
+        drop(state);
 
-        Ok(())
-    }
-
-    fn injection_for_match<'tree>(
-        config: &RegisteredTreeSitterHighlightConfig,
-        parent_name: Option<&str>,
-        query: &Query,
-        query_match: &tree_sitter::QueryMatch<'_, 'tree>,
-        rope: &Rope,
-    ) -> (Option<String>, Option<Node<'tree>>, bool) {
-        let mut language_name = None;
-        let mut content_node = None;
-
-        for capture in query_match.captures {
-            let index = Some(capture.index);
-
-            if index == config.injection_language_capture_index {
-                language_name = Some(rope_text_in_range(rope, capture.node.byte_range()));
-            } else if index == config.injection_content_capture_index {
-                content_node = Some(capture.node);
-            }
-        }
-
-        let mut include_children = false;
-
-        for property in query.property_settings(query_match.pattern_index) {
-            match property.key.as_ref() {
-                "injection.language" if language_name.is_none() => {
-                    language_name = property.value.as_ref().map(ToString::to_string);
-                }
-                "injection.self" if language_name.is_none() => {
-                    language_name = Some(config.language_name.to_owned());
-                }
-                "injection.parent" if language_name.is_none() => {
-                    language_name = parent_name.map(ToString::to_string);
-                }
-                "injection.include-children" => include_children = true,
-                _ => {}
-            }
-        }
-
-        if let Some(content_node) = content_node
-            && content_node.kind() == "code_fence_content"
-        {
-            include_children = true;
-        }
-
-        (language_name, content_node, include_children)
+        self.highlight_ranges_to_lines(rope, &highlight_ranges)
     }
 
     fn highlight_ranges_to_lines(
@@ -801,13 +461,7 @@ impl RatatuiTreeSitterHighlighter {
             let style = highlight_ranges
                 .iter()
                 .filter(|highlight_range| highlight_range.range.start <= *start && *end <= highlight_range.range.end)
-                .max_by_key(|highlight_range| {
-                    (
-                        highlight_range.depth,
-                        usize::MAX
-                            .saturating_sub(highlight_range.range.end.saturating_sub(highlight_range.range.start)),
-                    )
-                })
+                .min_by_key(|highlight_range| highlight_range.range.end.saturating_sub(highlight_range.range.start))
                 .map_or(self.theme.default_style, |highlight_range| {
                     self.theme
                         .style_for_highlight_index(&self.highlight_names, highlight_range.highlight_index)

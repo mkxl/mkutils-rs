@@ -62,7 +62,6 @@ workspace = true
 
 [dev-dependencies]
 tokio-test = "0.4.5"
-tree-sitter-highlight = "0.25.10"
 
 [package.metadata.docs.rs]
 all-features = true

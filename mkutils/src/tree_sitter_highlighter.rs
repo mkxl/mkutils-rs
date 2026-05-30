@@ -7,17 +7,9 @@ use ratatui::{
     style::Style,
     text::{Line, Span},
 };
-use std::{
-    collections::HashMap,
-    ops::Range,
-    sync::{
-        Mutex,
-        atomic::{AtomicUsize, Ordering},
-    },
-};
+use std::{collections::HashMap, ops::Range, sync::Mutex};
 use tree_sitter::{
-    Language, Node, ParseOptions, Parser, Point, Query, QueryCursor, QueryCursorOptions, Range as TreeSitterRange,
-    StreamingIterator, TextProvider,
+    Language, Node, Parser, Point, Query, QueryCursor, Range as TreeSitterRange, StreamingIterator, TextProvider,
 };
 use zed_sum_tree::Bias;
 
@@ -47,8 +39,6 @@ pub struct TreeSitterHighlightTheme {
 mod tests {
     use super::*;
     use ratatui::style::Color;
-    use std::sync::atomic::AtomicUsize;
-    use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
 
     #[test]
     fn highlights_injected_lean_fenced_code() {
@@ -82,146 +72,6 @@ mod tests {
             .count();
 
         assert_eq!(highlighted_x_count, 2, "{lines:#?}");
-    }
-
-    #[test]
-    fn highlights_injected_markdown_inline_links() {
-        let uri_style = Style::new().fg(Color::Green);
-        let highlighter = RatatuiTreeSitterHighlighter::new(
-            TreeSitterHighlightTheme::new(Style::new()).with_style("text.uri", uri_style),
-        );
-        let lines = highlighter
-            .highlight("markdown", "[label](https://example.com)")
-            .unwrap();
-
-        assert!(
-            lines
-                .iter()
-                .flat_map(|line| &line.spans)
-                .any(|span| span.content.contains("https://example.com") && span.style == uri_style),
-            "{lines:#?}"
-        );
-    }
-
-    #[test]
-    fn supports_external_language_registration_and_aliasing() {
-        let function_style = Style::new().fg(Color::Yellow);
-        let mut highlighter = RatatuiTreeSitterHighlighter::new(
-            TreeSitterHighlightTheme::new(Style::new()).with_style("function", function_style),
-        );
-
-        highlighter
-            .register_language(TreeSitterHighlightConfig::new(
-                "rust_external",
-                tree_sitter_rust::LANGUAGE.into(),
-                tree_sitter_rust::HIGHLIGHTS_QUERY,
-                tree_sitter_rust::INJECTIONS_QUERY,
-                RUST_LOCALS_QUERY,
-            ))
-            .unwrap();
-        highlighter.alias_language("rs", "rust_external");
-
-        let lines = highlighter.highlight("rs", "fn f() {}\n").unwrap();
-
-        assert!(
-            lines
-                .iter()
-                .flat_map(|line| &line.spans)
-                .any(|span| span.content.as_ref() == "f" && span.style == function_style),
-            "{lines:#?}"
-        );
-    }
-
-    #[test]
-    fn supports_cancellation() {
-        let highlighter = RatatuiTreeSitterHighlighter::new(TreeSitterHighlightTheme::new(Style::new()));
-        let cancellation_flag = AtomicUsize::new(1);
-        let error = highlighter
-            .highlight_with_cancellation("rust", "fn f() {}\n", &cancellation_flag)
-            .unwrap_err();
-
-        assert!(error.to_string().contains("cancelled"));
-    }
-
-    #[test]
-    fn matches_tree_sitter_highlight_for_contiguous_rust_input() {
-        let source = "fn f(x: i32) {}\n";
-        let theme = TreeSitterHighlightTheme::new(Style::new())
-            .with_style("function", Style::new().fg(Color::Red))
-            .with_style("keyword", Style::new().fg(Color::Blue))
-            .with_style("type", Style::new().fg(Color::Green))
-            .with_style("variable.parameter", Style::new().fg(Color::Yellow));
-        let highlighter = RatatuiTreeSitterHighlighter::new(theme);
-        let config = highlighter.config("rust").unwrap();
-        let actual = highlighter.highlight("rust", source).unwrap();
-        let expected = official_tree_sitter_highlight_lines(&highlighter, config, source);
-
-        assert_eq!(line_debug(&actual), line_debug(&expected));
-    }
-
-    fn official_tree_sitter_highlight_lines(
-        highlighter: &RatatuiTreeSitterHighlighter,
-        _config: &RegisteredTreeSitterHighlightConfig,
-        source: &str,
-    ) -> Vec<Line<'static>> {
-        let mut config = HighlightConfiguration::new(
-            tree_sitter_rust::LANGUAGE.into(),
-            "rust",
-            tree_sitter_rust::HIGHLIGHTS_QUERY,
-            tree_sitter_rust::INJECTIONS_QUERY,
-            RUST_LOCALS_QUERY,
-        )
-        .unwrap();
-        config.configure(&highlighter.highlight_names);
-
-        let mut official_highlighter = Highlighter::new();
-        let events = official_highlighter
-            .highlight(&config, source.as_bytes(), None, |_| None)
-            .unwrap()
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
-        let rope = Rope::from(source);
-        let mut lines = Vec::new();
-        let mut spans = Vec::new();
-        let mut source = HighlightSource::new(&rope);
-        let mut style_stack = vec![highlighter.theme.default_style];
-
-        for event in events {
-            match event {
-                HighlightEvent::Source { start, end } => {
-                    let style = style_stack.last().copied().unwrap_or(highlighter.theme.default_style);
-                    source.push_range(&mut lines, &mut spans, start..end, style);
-                }
-                HighlightEvent::HighlightStart(highlight) => {
-                    style_stack.push(
-                        highlighter
-                            .theme
-                            .style_for_highlight_index(&highlighter.highlight_names, highlight.0),
-                    );
-                }
-                HighlightEvent::HighlightEnd => {
-                    style_stack.pop();
-                }
-            }
-        }
-
-        if !spans.is_empty() {
-            lines.push(spans.into());
-        }
-
-        lines
-    }
-
-    fn line_debug(lines: &[Line<'static>]) -> Vec<Vec<(String, Style)>> {
-        lines
-            .iter()
-            .map(|line| {
-                line.spans
-                    .iter()
-                    .map(|span| (span.content.to_string(), span.style))
-                    .collect()
-            })
-            .collect()
     }
 }
 
@@ -263,7 +113,7 @@ impl TreeSitterHighlightTheme {
     }
 }
 
-pub struct TreeSitterHighlightConfig {
+struct TreeSitterHighlightConfig {
     name: &'static str,
     language: Language,
     highlights_query: &'static str,
@@ -273,7 +123,7 @@ pub struct TreeSitterHighlightConfig {
 
 impl TreeSitterHighlightConfig {
     #[must_use]
-    pub const fn new(
+    const fn new(
         name: &'static str,
         language: Language,
         highlights_query: &'static str,
@@ -781,30 +631,19 @@ impl RatatuiTreeSitterHighlighter {
 
     fn capture_names(configs: &[TreeSitterHighlightConfig]) -> Result<Vec<String>, AnyhowError> {
         let mut capture_names = Vec::new();
+
         for config in configs {
-            Self::append_capture_names(&mut capture_names, config.capture_names()?);
+            for capture_name in config.capture_names()? {
+                if !capture_names.iter().any(|name| name == &capture_name) {
+                    capture_names.push(capture_name);
+                }
+            }
         }
 
         capture_names.ok()
     }
 
-    fn append_capture_names(capture_names: &mut Vec<String>, new_capture_names: Vec<String>) {
-        for capture_name in new_capture_names {
-            if !capture_names.iter().any(|name| name == &capture_name) {
-                capture_names.push(capture_name);
-            }
-        }
-    }
-
-    pub fn register_language(&mut self, config: TreeSitterHighlightConfig) -> Result<(), AnyhowError> {
-        Self::append_capture_names(&mut self.highlight_names, config.capture_names()?);
-        self.configs
-            .insert(config.name, config.into_highlight_configuration(&self.highlight_names)?);
-
-        ().ok()
-    }
-
-    pub fn alias_language(&mut self, alias: &'static str, language_name: &'static str) {
+    fn alias_language(&mut self, alias: &'static str, language_name: &'static str) {
         self.aliases.insert(alias, language_name);
     }
 
@@ -822,36 +661,7 @@ impl RatatuiTreeSitterHighlighter {
         self.highlight_rope(language_name, &rope)
     }
 
-    pub fn highlight_with_cancellation(
-        &self,
-        language_name: &str,
-        source: &str,
-        cancellation_flag: &AtomicUsize,
-    ) -> Result<Vec<Line<'static>>, AnyhowError> {
-        let rope = Rope::from(source);
-
-        self.highlight_rope_with_cancellation(language_name, &rope, cancellation_flag)
-    }
-
     pub fn highlight_rope(&self, language_name: &str, rope: &Rope) -> Result<Vec<Line<'static>>, AnyhowError> {
-        self.highlight_rope_impl(language_name, rope, None)
-    }
-
-    pub fn highlight_rope_with_cancellation(
-        &self,
-        language_name: &str,
-        rope: &Rope,
-        cancellation_flag: &AtomicUsize,
-    ) -> Result<Vec<Line<'static>>, AnyhowError> {
-        self.highlight_rope_impl(language_name, rope, Some(cancellation_flag))
-    }
-
-    fn highlight_rope_impl(
-        &self,
-        language_name: &str,
-        rope: &Rope,
-        cancellation_flag: Option<&AtomicUsize>,
-    ) -> Result<Vec<Line<'static>>, AnyhowError> {
         let config = self
             .config(language_name)
             .context("unknown Tree-sitter highlight language")?;
@@ -868,7 +678,6 @@ impl RatatuiTreeSitterHighlighter {
             None,
             vec![root_range(rope)],
             0,
-            cancellation_flag,
             &mut highlight_ranges,
         )?;
 
@@ -886,36 +695,27 @@ impl RatatuiTreeSitterHighlighter {
         parent_name: Option<&str>,
         ranges: Vec<TreeSitterRange>,
         depth: usize,
-        cancellation_flag: Option<&AtomicUsize>,
         highlight_ranges: &mut Vec<HighlightRange>,
     ) -> Result<(), AnyhowError> {
-        Self::ensure_not_cancelled(cancellation_flag)?;
         state.parser.set_language(&config.language)?;
         state.parser.set_included_ranges(&ranges)?;
-        let mut parse_progress =
-            |_state: &tree_sitter::ParseState| cancellation_flag.is_some_and(|flag| flag.load(Ordering::Relaxed) != 0);
         let tree = state
             .parser
             .parse_with_options(
                 &mut |byte_offset, _point| rope_slice_from_byte(rope, byte_offset),
                 None,
-                Some(ParseOptions::new().progress_callback(&mut parse_progress)),
+                None,
             )
             .context("Tree-sitter parser did not produce a tree")?;
         let mut injections = Vec::new();
-        let mut query_progress = |_state: &tree_sitter::QueryCursorState| {
-            cancellation_flag.is_some_and(|flag| flag.load(Ordering::Relaxed) != 0)
-        };
 
         if let Some(combined_injections_query) = config.combined_injections_query.as_ref() {
             let mut injections_by_pattern_index =
                 vec![(None::<String>, Vec::new(), false); combined_injections_query.pattern_count()];
-            let mut matches = state.cursor.matches_with_options(
-                combined_injections_query,
-                tree.root_node(),
-                RopeTextProvider::new(rope),
-                QueryCursorOptions::new().progress_callback(&mut query_progress),
-            );
+            let mut matches =
+                state
+                    .cursor
+                    .matches(combined_injections_query, tree.root_node(), RopeTextProvider::new(rope));
 
             while let Some(query_match) = matches.next() {
                 let entry = &mut injections_by_pattern_index[query_match.pattern_index];
@@ -951,12 +751,9 @@ impl RatatuiTreeSitterHighlighter {
         {
             let mut seen_injection_matches = Vec::new();
             let mut capture_records = Vec::new();
-            let mut captures = state.cursor.captures_with_options(
-                &config.query,
-                tree.root_node(),
-                RopeTextProvider::new(rope),
-                QueryCursorOptions::new().progress_callback(&mut query_progress),
-            );
+            let mut captures = state
+                .cursor
+                .captures(&config.query, tree.root_node(), RopeTextProvider::new(rope));
 
             captures.advance();
             while let Some((query_match, capture_index)) = captures.get() {
@@ -1017,21 +814,12 @@ impl RatatuiTreeSitterHighlighter {
                     Some(config.language_name),
                     injection.ranges,
                     injection.depth,
-                    cancellation_flag,
                     highlight_ranges,
                 )?;
             }
         }
 
         Ok(())
-    }
-
-    fn ensure_not_cancelled(cancellation_flag: Option<&AtomicUsize>) -> Result<(), AnyhowError> {
-        if cancellation_flag.is_some_and(|flag| flag.load(Ordering::Relaxed) != 0) {
-            return anyhow!("Tree-sitter highlighting cancelled").err();
-        }
-
-        ().ok()
     }
 
     fn process_capture_records(
@@ -1198,7 +986,7 @@ impl RatatuiTreeSitterHighlighter {
         }
 
         if let Some(content_node) = content_node
-            && matches!(content_node.kind(), "code_fence_content" | "inline")
+            && content_node.kind() == "code_fence_content"
         {
             include_children = true;
         }

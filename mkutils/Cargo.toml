@@ -39,8 +39,8 @@ tokio-stream = { version = "0.1.17", features = ["io-util", "sync"], optional = 
 tokio-util = { version = "0.7.16", features = ["codec", "io"], optional = true }
 tracing = { version = "0.1.41", features = ["valuable"], optional = true }
 tracing-subscriber = { version = "0.3.20", features = ["json", "valuable"], optional = true }
-tree-sitter = { version = "0.25.10", optional = true }
-tree-sitter-highlight = { version = "0.25.10", optional = true }
+tree-sitter = { git = "https://github.com/mkxl/tree-sitter.git", branch = "michael/chunked-tree-sitter-highlight", package = "tree-sitter", optional = true }
+tree-sitter-highlight = { git = "https://github.com/mkxl/tree-sitter.git", branch = "michael/chunked-tree-sitter-highlight", package = "tree-sitter-highlight", optional = true }
 tree-sitter-md = { package = "tree-sitter-md-025", version = "0.5.6", optional = true }
 trie-rs = { version = "0.4.2", optional = true }
 tuplities-remove = { version = "0.1.4" }

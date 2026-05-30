@@ -1,12 +1,16 @@
-use crate::{rope::rope::Rope, utils::Utils};
+use crate::{
+    rope::{rope::Rope, text_summary::LengthBytes},
+    utils::Utils,
+};
 use anyhow::{Context, Error as AnyhowError, anyhow};
 use ratatui::{
     style::Style,
     text::{Line, Span},
 };
 use std::{collections::HashMap, ops::Range, sync::Mutex};
-use tree_sitter::{Language, Query};
-use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
+use tree_sitter::{Language, Node, Point, Query};
+use tree_sitter_highlight::{ChunkedSource, HighlightConfiguration, HighlightEvent, Highlighter};
+use zed_sum_tree::Bias;
 
 pub struct TreeSitterHighlightTheme {
     default_style: Style,
@@ -98,35 +102,68 @@ impl TreeSitterHighlightConfig {
     }
 }
 
-struct HighlightSource<'a> {
-    source: &'a str,
-    rope: Rope,
+#[derive(Clone, Copy)]
+struct RopeHighlightSource<'r> {
+    rope: &'r Rope,
+}
+
+impl<'r> RopeHighlightSource<'r> {
+    const fn new(rope: &'r Rope) -> Self {
+        Self { rope }
+    }
+}
+
+impl<'r> ChunkedSource<'r> for RopeHighlightSource<'r> {
+    type Chunk = &'r str;
+    type Chunks = std::vec::IntoIter<&'r str>;
+
+    fn len(&self) -> usize {
+        self.rope.length().bytes
+    }
+
+    fn chunk_at(&mut self, byte_offset: usize, _position: Point) -> Self::Chunk {
+        rope_slice_from_byte(self.rope, byte_offset)
+    }
+
+    fn chunks_for_node(&mut self, node: Node) -> Self::Chunks {
+        rope_slices_in_range(self.rope, node.byte_range()).into_iter()
+    }
+
+    fn text_for_range(&self, range: Range<usize>) -> Vec<u8> {
+        rope_slices_in_range(self.rope, range)
+            .iter()
+            .flat_map(|slice| slice.as_bytes())
+            .copied()
+            .collect()
+    }
+}
+
+struct HighlightSource<'r> {
+    rope: &'r Rope,
     line_index: usize,
     line_end_byte: usize,
 }
 
-impl<'a> HighlightSource<'a> {
-    fn new(source: &'a str) -> Self {
-        let rope = Rope::from(source);
+impl<'r> HighlightSource<'r> {
+    fn new(rope: &'r Rope) -> Self {
         let line_index = 0;
-        let line_end_byte = Self::line_end_byte(&rope, line_index, source.len());
+        let line_end_byte = Self::line_end_byte(rope, line_index);
 
         Self {
-            source,
             rope,
             line_index,
             line_end_byte,
         }
     }
 
-    fn line_end_byte(rope: &Rope, line_index: usize, source_len: usize) -> usize {
+    fn line_end_byte(rope: &Rope, line_index: usize) -> usize {
         rope.line_info(line_index)
-            .map_or(source_len, |line_info| line_info.end.length.bytes)
+            .map_or_else(|| rope.length().bytes, |line_info| line_info.end.length.bytes)
     }
 
     fn advance_line(&mut self) {
         self.line_index = self.line_index.incremented();
-        self.line_end_byte = Self::line_end_byte(&self.rope, self.line_index, self.source.len());
+        self.line_end_byte = Self::line_end_byte(self.rope, self.line_index);
     }
 
     fn push_range(
@@ -140,19 +177,77 @@ impl<'a> HighlightSource<'a> {
 
         while start < range.end {
             let end = range.end.min(self.line_end_byte);
-            let segment = &self.source[start..end];
 
-            if let Some(line_segment) = segment.strip_suffix('\n') {
-                spans.push(Span::styled(line_segment.to_owned(), style));
-                lines.push(std::mem::take(spans).into());
-                self.advance_line();
-            } else {
-                spans.push(Span::styled(segment.to_owned(), style));
+            for segment in rope_slices_in_range(self.rope, start..end) {
+                if let Some(line_segment) = segment.strip_suffix('\n') {
+                    spans.push(Span::styled(line_segment.to_owned(), style));
+                    lines.push(std::mem::take(spans).into());
+                    self.advance_line();
+                } else {
+                    spans.push(Span::styled(segment.to_owned(), style));
+                }
             }
 
             start = end;
         }
     }
+}
+
+fn rope_slice_from_byte(rope: &Rope, byte_offset: usize) -> &str {
+    if rope.length().bytes <= byte_offset {
+        return "";
+    }
+
+    let mut cursor = rope.chunk_sum_tree().cursor::<LengthBytes>(Rope::CONTEXT);
+    cursor.seek(&LengthBytes::new(byte_offset), Bias::Right);
+
+    let Some(chunk) = cursor.item() else {
+        return "";
+    };
+
+    let chunk_start = cursor.start().get();
+    let chunk_byte_offset = byte_offset.saturating_sub(chunk_start);
+
+    &chunk.as_str()[chunk_byte_offset..]
+}
+
+fn rope_slices_in_range(rope: &Rope, range: Range<usize>) -> Vec<&str> {
+    let source_len = rope.length().bytes;
+    let range = range.start.min(source_len)..range.end.min(source_len);
+    let mut slices = Vec::new();
+
+    if range.is_empty() {
+        return slices;
+    }
+
+    let mut cursor = rope.chunk_sum_tree().cursor::<LengthBytes>(Rope::CONTEXT);
+    cursor.seek(&LengthBytes::new(range.start), Bias::Right);
+
+    while let Some(chunk) = cursor.item() {
+        let chunk_start = cursor.start().get();
+        let chunk_end = chunk_start.saturating_add(chunk.len_bytes());
+
+        if range.end <= chunk_start {
+            break;
+        }
+
+        let start = range.start.saturating_sub(chunk_start).min(chunk.len_bytes());
+        let end = range.end.min(chunk_end).saturating_sub(chunk_start);
+
+        for segment in chunk.as_str()[start..end].split_inclusive('\n') {
+            if !segment.is_empty() {
+                slices.push(segment);
+            }
+        }
+
+        if range.end <= chunk_end {
+            break;
+        }
+
+        cursor.next();
+    }
+
+    slices
 }
 
 pub struct RatatuiTreeSitterHighlighter {
@@ -253,6 +348,12 @@ impl RatatuiTreeSitterHighlighter {
     }
 
     pub fn highlight(&self, language_name: &str, source: &str) -> Result<Vec<Line<'static>>, AnyhowError> {
+        let rope = Rope::from(source);
+
+        self.highlight_rope(language_name, &rope)
+    }
+
+    pub fn highlight_rope(&self, language_name: &str, rope: &Rope) -> Result<Vec<Line<'static>>, AnyhowError> {
         let config = self
             .config(language_name)
             .context("unknown Tree-sitter highlight language")?;
@@ -262,14 +363,18 @@ impl RatatuiTreeSitterHighlighter {
                 .lock()
                 .map_err(|_error| anyhow!("Tree-sitter highlighter mutex is poisoned"))?;
             highlighter
-                .highlight(config, source.as_bytes(), None, |injected_language_name| {
-                    self.config(injected_language_name)
-                })?
+                .highlight_with_source(
+                    config,
+                    RopeHighlightSource::new(rope),
+                    None,
+                    None,
+                    |injected_language_name| self.config(injected_language_name),
+                )?
                 .collect::<Result<Vec<_>, _>>()?
         };
         let mut lines = Vec::new();
         let mut spans = Vec::new();
-        let mut source = HighlightSource::new(source);
+        let mut source = HighlightSource::new(rope);
         let mut style_stack = vec![self.theme.default_style];
 
         for event in events {

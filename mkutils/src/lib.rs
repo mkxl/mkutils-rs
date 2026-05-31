@@ -4,7 +4,7 @@
     feature(sliceindex_wrappers, try_trait_v2, try_trait_v2_residual)
 )]
 #![cfg_attr(
-    all(feature = "async", feature = "unstable", feature = "serde"),
+    all(feature = "async", feature = "serde", feature = "unstable"),
     feature(associated_type_defaults)
 )] // NOTE-socket-c8f04c
 
@@ -22,6 +22,9 @@ mod saturating_add_signed;
 mod seq_visitor;
 mod timestamped;
 mod utils;
+
+#[cfg(feature = "tui")]
+mod alias_hash_map;
 
 #[cfg(all(feature = "serde", feature = "tracing"))]
 mod as_valuable;
@@ -66,8 +69,11 @@ mod scroll_view;
 mod scroll_view_state;
 
 // NOTE-socket-c8f04c
-#[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
+#[cfg(all(feature = "async", feature = "serde", feature = "unstable"))]
 mod socket;
+
+#[cfg(feature = "tui")]
+mod syntax_highlighter;
 
 #[cfg(feature = "tui")]
 mod terminal;
@@ -83,7 +89,7 @@ mod transpose;
 
 #[cfg(feature = "unstable")]
 pub use crate::output::Output;
-#[cfg(all(feature = "async", feature = "unstable", feature = "serde"))] // NOTE-socket-c8f04c
+#[cfg(all(feature = "async", feature = "serde", feature = "unstable"))] // NOTE-socket-c8f04c
 pub use crate::socket::{Request, Socket};
 pub use crate::{
     active_vec::ActiveVec,
@@ -95,13 +101,9 @@ pub use crate::{
     timestamped::Timestamped,
     utils::Utils,
 };
-#[cfg(feature = "async")]
-pub use crate::{
-    event::Event,
-    process::{Process, ProcessBuilder},
-};
 #[cfg(feature = "tui")]
 pub use crate::{
+    alias_hash_map::AliasHashMap,
     geometry::{Orientation, Point, PointIsize, PointU16, PointUsize},
     key_map::{
         key_binding::KeyBinding,
@@ -123,8 +125,14 @@ pub use crate::{
     screen::{Screen, ScreenConfig, ScreenTerminal, Stdout},
     scroll_view::ScrollView,
     scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen},
+    syntax_highlighter::{ColorScheme, Highlight, SyntaxHighlighter},
     terminal::Terminal,
     transpose::Transpose,
+};
+#[cfg(feature = "async")]
+pub use crate::{
+    event::Event,
+    process::{Process, ProcessBuilder},
 };
 #[cfg(feature = "tracing")]
 pub use crate::{timer::Timer, tracing::Tracing};

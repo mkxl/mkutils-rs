@@ -446,7 +446,7 @@ fn edge_single_newline() {
 
 #[test]
 fn edge_empty_rope_atoms() {
-    let rope = Rope::empty();
+    let rope = Rope::new();
     let text: String = rope.atoms().collect_atoms();
 
     assert_eq!(text, "");
@@ -454,7 +454,7 @@ fn edge_empty_rope_atoms() {
 
 #[test]
 fn edge_empty_rope_lines() {
-    let rope = Rope::empty();
+    let rope = Rope::new();
     let lines = collect_lines(&rope, 0..1, 0..80);
 
     assert!(lines.is_empty() || lines == vec![""]);

@@ -31,7 +31,7 @@ impl Chunk {
     const CAPACITY: usize = 256;
 
     #[must_use]
-    pub const fn empty() -> Self {
+    pub const fn new() -> Self {
         let string = ArrayString::new_const();
         let byte_index_intervals = ArrayVec::new_const();
         let newline_indices = ArrayVec::new_const();
@@ -155,11 +155,11 @@ impl Chunk {
     #[must_use]
     pub fn split(&self, index: usize) -> (Self, Self) {
         if index.is_zero() {
-            return Self::empty().pair(self.clone());
+            return Self::new().pair(self.clone());
         }
 
         if self.len_extended_graphemes() <= index {
-            return self.clone().pair(Self::empty());
+            return self.clone().pair(Self::new());
         }
 
         // NOTE: okay to parse unchecked as [prefix_chunk] and [suffix_chunk] are both strictly shorter than [self]
@@ -214,7 +214,7 @@ impl FromStr for Chunk {
     type Err = CapacityError<()>;
 
     fn from_str(extended_graphemes: &str) -> Result<Self, Self::Err> {
-        match Self::empty().try_push_extended_graphemes(extended_graphemes) {
+        match Self::new().try_push_extended_graphemes(extended_graphemes) {
             Ok(chunk) => chunk.mem_take().ok(),
             Err(_remaining_extended_graphemes) => CapacityError::new(()).err(),
         }

@@ -34,7 +34,7 @@ impl Rope {
     pub const BIAS: Bias = Bias::Right;
 
     #[must_use]
-    pub fn empty() -> Self {
+    pub fn new() -> Self {
         Self::default()
     }
 
@@ -91,20 +91,20 @@ impl Rope {
 
     pub fn push_extended_graphemes(&mut self, mut extended_graphemes: &str) {
         while !extended_graphemes.is_empty() {
-            let mut should_push_empty_chunk = self.chunk_sum_tree.is_empty();
+            let mut should_push_new_chunk = self.chunk_sum_tree.is_empty();
             let update_last = |last_chunk: &mut Chunk| match last_chunk.try_push_extended_graphemes(extended_graphemes)
             {
                 Ok(_last_chunk) => extended_graphemes.assign(""),
                 Err(remaining_extended_graphemes) => {
                     extended_graphemes.assign(remaining_extended_graphemes);
-                    should_push_empty_chunk.set_true();
+                    should_push_new_chunk.set_true();
                 }
             };
 
             self.chunk_sum_tree.update_last(update_last, Self::CONTEXT);
 
-            if should_push_empty_chunk {
-                self.push(Chunk::empty());
+            if should_push_new_chunk {
+                self.push(Chunk::new());
             }
         }
     }
@@ -134,12 +134,12 @@ impl Rope {
         }
 
         let Some(chunk) = chunks_cursor.item() else {
-            return prefix_rope.pair(Self::empty());
+            return prefix_rope.pair(Self::new());
         };
 
         let chunk_extended_grapheme_offset = index.saturating_sub(prefix_rope_len_extended_graphemes);
         let (prefix_chunk, suffix_chunk) = chunk.split(chunk_extended_grapheme_offset);
-        let mut suffix_rope = Self::empty();
+        let mut suffix_rope = Self::new();
 
         if prefix_chunk.is_not_empty() {
             prefix_rope.push(prefix_chunk);
@@ -291,7 +291,7 @@ impl Display for Rope {
 
 impl<'a> FromIterator<&'a str> for Rope {
     fn from_iter<T: IntoIterator<Item = &'a str>>(iter: T) -> Self {
-        let mut rope = Self::empty();
+        let mut rope = Self::new();
 
         for string in iter {
             rope.push_extended_graphemes(string);

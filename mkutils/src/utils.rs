@@ -25,10 +25,11 @@ use bytes::Bytes;
 use camino::{Utf8Path, Utf8PathBuf};
 #[cfg(feature = "unstable")]
 use core::index::Clamp;
+use either::Either;
 #[cfg(feature = "async")]
 use futures::{
     Sink, SinkExt, Stream, StreamExt, TryFuture,
-    future::{Either, JoinAll},
+    future::JoinAll,
     stream::{Filter, FuturesUnordered},
 };
 #[cfg(feature = "tui")]
@@ -712,6 +713,46 @@ pub trait Utils {
         Instant::now() + self.into_self()
     }
 
+    fn get_left<'a, L: 'a, R: 'a>(&'a self) -> Option<&'a L>
+    where
+        Self: Borrow<Either<L, R>>,
+    {
+        match self.borrow() {
+            Either::Left(left) => left.some(),
+            Either::Right(_right) => None,
+        }
+    }
+
+    fn get_left_mut<'a, L: 'a, R: 'a>(&'a mut self) -> Option<&'a mut L>
+    where
+        Self: BorrowMut<Either<L, R>>,
+    {
+        match self.borrow_mut() {
+            Either::Left(left) => left.some(),
+            Either::Right(_right) => None,
+        }
+    }
+
+    fn get_right<'a, L: 'a, R: 'a>(&'a self) -> Option<&'a R>
+    where
+        Self: Borrow<Either<L, R>>,
+    {
+        match self.borrow() {
+            Either::Left(_left) => None,
+            Either::Right(right) => right.some(),
+        }
+    }
+
+    fn get_right_mut<'a, L: 'a, R: 'a>(&'a mut self) -> Option<&'a mut R>
+    where
+        Self: BorrowMut<Either<L, R>>,
+    {
+        match self.borrow_mut() {
+            Either::Left(_left) => None,
+            Either::Right(right) => right.some(),
+        }
+    }
+
     fn has_happened(self) -> bool
     where
         Self: Is<Instant>,
@@ -877,7 +918,6 @@ pub trait Utils {
         tokio::time::interval(self.into_self())
     }
 
-    #[cfg(feature = "async")]
     fn into_left<R>(self) -> Either<Self, R>
     where
         Self: Sized,
@@ -947,7 +987,6 @@ pub trait Utils {
         Point::new(Self::default(), self)
     }
 
-    #[cfg(feature = "async")]
     fn into_right<L>(self) -> Either<L, Self>
     where
         Self: Sized,
@@ -1408,6 +1447,13 @@ pub trait Utils {
         Self: Is<String>,
     {
         PoemMessage::Text(self.into_self())
+    }
+
+    fn predicate_eq(&self) -> impl Fn(&Self) -> bool
+    where
+        Self: PartialEq,
+    {
+        move |other| other == self
     }
 
     fn predicate_lt(&self) -> impl Fn(&Self) -> bool

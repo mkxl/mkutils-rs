@@ -16,6 +16,29 @@ pub struct ColorScheme<S> {
 }
 
 impl<S> ColorScheme<S> {
+    pub const ATTRIBUTE: &str = "attribute";
+    pub const CHARACTER: &str = "character";
+    pub const COMMENT: &str = "comment";
+    pub const CONSTANT: &str = "constant";
+    pub const CONSTRUCTOR: &str = "constructor";
+    pub const FUNCTION: &str = "function";
+    pub const KEYWORD: &str = "keyword";
+    pub const MARKUP_RAW: &str = "markup.raw";
+    pub const NUMBER: &str = "number";
+    pub const OPERATOR: &str = "operator";
+    pub const PROPERTY: &str = "property";
+    pub const PUNCTUATION: &str = "punctuation";
+    pub const STRING: &str = "string";
+    pub const STRING_ESCAPE: &str = "string.escape";
+    pub const TEXT_EMPHASIS: &str = "text.emphasis";
+    pub const TEXT_LITERAL: &str = "text.literal";
+    pub const TEXT_REFERENCE: &str = "text.reference";
+    pub const TEXT_STRONG: &str = "text.strong";
+    pub const TEXT_TITLE: &str = "text.title";
+    pub const TEXT_URI: &str = "text.uri";
+    pub const TYPE: &str = "type";
+    pub const WARNING: &str = "warning";
+
     const CAPTURE_NAME_SEPARATOR: &str = ".";
 
     pub fn new(default_style: S) -> Self {
@@ -117,7 +140,10 @@ impl<S> SyntaxHighlighter<S> {
         }
     }
 
-    pub fn add_languages(&mut self, highlight_configurations: impl IntoIterator<Item = HighlightConfiguration>) {
+    pub fn add_languages(
+        &mut self,
+        highlight_configurations: impl IntoIterator<Item = HighlightConfiguration>,
+    ) -> &mut Self {
         for highlight_configuration in highlight_configurations {
             self.highlight_configuration_from_language_name.insert(
                 highlight_configuration.language_name.clone().into_cow_owned(),
@@ -126,15 +152,23 @@ impl<S> SyntaxHighlighter<S> {
         }
 
         self.reconfigure();
+
+        self
     }
 
-    pub fn add_language(&mut self, highlight_configuration: HighlightConfiguration) {
-        self.add_languages(highlight_configuration.once());
+    pub fn add_language(&mut self, highlight_configuration: HighlightConfiguration) -> &mut Self {
+        self.add_languages(highlight_configuration.once())
     }
 
-    pub fn add_language_alias(&mut self, from_language_name: impl Into<CowStr>, to_language_name: impl Into<CowStr>) {
+    pub fn add_language_alias(
+        &mut self,
+        from_language_name: impl Into<CowStr>,
+        to_language_name: impl Into<CowStr>,
+    ) -> &mut Self {
         self.highlight_configuration_from_language_name
             .insert_alias(from_language_name.into(), to_language_name.into());
+
+        self
     }
 
     pub fn highlight<'a, T: 'a + ChunkedSource<'a>, H: Highlight<S>>(

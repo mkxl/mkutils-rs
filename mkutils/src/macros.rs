@@ -22,3 +22,19 @@ macro_rules! max {
         ::std::cmp::max($head, $crate::max!($($tail),+))
     };
 }
+
+#[macro_export]
+macro_rules! map {
+    ($($key:tt : $value:expr),* $(,)?) => {{
+        let mut collection = ::std::default::Default::default();
+
+        $(
+            ::std::iter::Extend::extend(
+                &mut collection,
+                ::std::iter::once(($key.into(), $value.into())),
+            );
+        )*
+
+        collection
+    }};
+}

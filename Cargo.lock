@@ -3574,8 +3574,8 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter"
-version = "0.28.0"
-source = "git+https://github.com/mkxl/tree-sitter?rev=ce633f1#ce633f1c5ca13ff5c369e4f872f15e7418141eb9"
+version = "0.28.1"
+source = "git+https://github.com/mkxl/tree-sitter?rev=bc5b16c#bc5b16ccc2d59284cc71993907beae486b81e3e2"
 dependencies = [
  "cc",
  "regex",
@@ -3586,8 +3586,8 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-highlight"
-version = "0.28.0"
-source = "git+https://github.com/mkxl/tree-sitter?rev=ce633f1#ce633f1c5ca13ff5c369e4f872f15e7418141eb9"
+version = "0.28.1"
+source = "git+https://github.com/mkxl/tree-sitter?rev=bc5b16c#bc5b16ccc2d59284cc71993907beae486b81e3e2"
 dependencies = [
  "regex",
  "streaming-iterator",
@@ -3598,7 +3598,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-language"
 version = "0.1.8"
-source = "git+https://github.com/mkxl/tree-sitter?rev=ce633f1#ce633f1c5ca13ff5c369e4f872f15e7418141eb9"
+source = "git+https://github.com/mkxl/tree-sitter?rev=bc5b16c#bc5b16ccc2d59284cc71993907beae486b81e3e2"
 
 [[package]]
 name = "trie-rs"

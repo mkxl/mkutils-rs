@@ -4,7 +4,8 @@ use std::{
     collections::{HashMap, HashSet},
 };
 use tree_sitter_highlight::{
-    Error as TreeSitterError, Highlight as TreeSitterHighlight, HighlightConfiguration, HighlightEvent, Highlighter,
+    ChunkedSource, Error as TreeSitterError, Highlight as TreeSitterHighlight, HighlightConfiguration, HighlightEvent,
+    Highlighter,
 };
 
 type CowStr = Cow<'static, str>;
@@ -88,6 +89,19 @@ pub struct SyntaxHighlighter<S> {
 }
 
 impl<S> SyntaxHighlighter<S> {
+    pub fn new(color_scheme: ColorScheme<S>) -> Self {
+        let highlight_configuration_from_language_name = AliasHashMap::new();
+        let highlighter = Highlighter::new();
+        let highlight_capture_names = Vec::new();
+
+        Self {
+            color_scheme,
+            highlight_configuration_from_language_name,
+            highlighter,
+            highlight_capture_names,
+        }
+    }
+
     fn reconfigure(&mut self) {
         self.highlight_capture_names = self
             .highlight_configuration_from_language_name
@@ -118,26 +132,30 @@ impl<S> SyntaxHighlighter<S> {
         self.add_languages(highlight_configuration.once());
     }
 
-    pub fn add_language_alias(&mut self, from_language_name: CowStr, to_language_name: CowStr) {
+    pub fn add_language_alias(&mut self, from_language_name: impl Into<CowStr>, to_language_name: impl Into<CowStr>) {
         self.highlight_configuration_from_language_name
-            .insert_alias(from_language_name, to_language_name);
+            .insert_alias(from_language_name.into(), to_language_name.into());
     }
 
-    pub fn highlight<H: Highlight<S>>(
-        &mut self,
+    pub fn highlight<'a, T: 'a + ChunkedSource<'a>, H: Highlight<S>>(
+        &'a mut self,
         language_name: &str,
-        source: &[u8],
+        source: T,
         highlight: &mut H,
     ) -> Result<H::Output, TreeSitterError> {
         let Some(highlight_configuration) = self.highlight_configuration_from_language_name.get(language_name) else {
             return TreeSitterError::InvalidLanguage.err();
         };
-        let highlight_events =
-            self.highlighter
-                .highlight(highlight_configuration, source, None, None, |injected_language_name| {
-                    self.highlight_configuration_from_language_name
-                        .get(injected_language_name)
-                })?;
+        let highlight_events = self.highlighter.highlight_with_source(
+            highlight_configuration,
+            source,
+            None,
+            None,
+            |injected_language_name| {
+                self.highlight_configuration_from_language_name
+                    .get(injected_language_name)
+            },
+        )?;
         let default_style = self.color_scheme.default_style();
         let mut style_stack = std::vec![default_style];
 

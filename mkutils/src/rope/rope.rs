@@ -4,7 +4,7 @@ use crate::{
         atoms::{Atoms, ExtendedGraphemeDimensions},
         chunk::Chunk,
         lines::Lines,
-        text_summary::{DirectedTextSummary, Length, LengthExtendedGraphemes, LineLengthSet, TextSummary},
+        text_summary::{DirectedTextSummary, Length, LengthBytes, LengthExtendedGraphemes, LineLengthSet, TextSummary},
     },
     saturating_add_signed::SaturatingAddSigned,
     utils::Utils,
@@ -12,10 +12,15 @@ use crate::{
 use derive_more::{Constructor, From, Into};
 use num::traits::{ConstZero, SaturatingAdd};
 use std::{
+    borrow::Cow,
     fmt::{Display, Error as FmtError, Formatter},
+    iter::Flatten,
     ops::Range,
+    option::IntoIter as OptionIntoIter,
 };
-use zed_sum_tree::{Bias, Dimensions, Item, SumTree, Summary};
+use tree_sitter::{Node, Point};
+use tree_sitter_highlight::ChunkedSource;
+use zed_sum_tree::{Bias, Cursor, Dimension, Dimensions, Item, SumTree, Summary};
 
 #[derive(Clone, Constructor, Debug)]
 pub struct LineInfo {
@@ -60,6 +65,11 @@ impl Rope {
 
     fn text_summary(&self) -> &TextSummary {
         self.chunk_sum_tree.summary()
+    }
+
+    #[must_use]
+    pub fn len_bytes(&self) -> usize {
+        self.text_summary().length.bytes
     }
 
     #[must_use]
@@ -271,6 +281,79 @@ impl Rope {
 
         line_info.some()
     }
+
+    fn get_chunks_cursor<'r, T: Dimension<'r, TextSummary> + Ord>(
+        &'r self,
+        offset: impl Into<T>,
+    ) -> Cursor<'r, 'static, Chunk, T> {
+        let mut chunks_cursor = self.chunk_sum_tree.cursor::<T>(Self::CONTEXT);
+
+        chunks_cursor.seek(&offset.into(), Self::BIAS);
+
+        chunks_cursor
+    }
+
+    // TODO:
+    // - i currently use [Option] so i don't have to check this every single
+    //   [.next()] call, but there's likely a better implementation
+    // - eventually use
+    //   [https://doc.rust-lang.org/stable/std/option/enum.Option.html#method.into_flat_iter]
+    fn get_bytes_at_indices(
+        &self,
+        within_rope_byte_indices: Range<usize>,
+    ) -> Flatten<OptionIntoIter<BytesAtIndices<'_>>> {
+        if within_rope_byte_indices.is_empty() {
+            None
+        } else {
+            BytesAtIndices::new(self, within_rope_byte_indices).some()
+        }
+        .into_iter()
+        .flatten()
+    }
+}
+
+pub struct BytesAtIndices<'r> {
+    chunks_cursor: Cursor<'r, 'static, Chunk, LengthBytes>,
+    within_rope_byte_indices: Range<usize>,
+}
+
+impl<'r> BytesAtIndices<'r> {
+    fn new(rope: &'r Rope, within_rope_byte_indices: Range<usize>) -> Self {
+        let chunks_cursor = rope.get_chunks_cursor::<LengthBytes>(within_rope_byte_indices.start);
+
+        Self {
+            chunks_cursor,
+            within_rope_byte_indices,
+        }
+    }
+}
+
+impl<'r> Iterator for BytesAtIndices<'r> {
+    type Item = &'r [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let chunk = self.chunks_cursor.item()?;
+        let within_rope_byte_index_of_chunk_begin = self.chunks_cursor.start().get();
+
+        if self.within_rope_byte_indices.end <= within_rope_byte_index_of_chunk_begin {
+            return None;
+        }
+
+        let within_chunk_byte_index_of_chunk_begin = self
+            .within_rope_byte_indices
+            .start
+            .saturating_sub(within_rope_byte_index_of_chunk_begin);
+        let within_chunk_byte_index_of_chunk_end = self
+            .within_rope_byte_indices
+            .end
+            .saturating_sub(within_rope_byte_index_of_chunk_begin);
+        let within_chunk_byte_indices = within_chunk_byte_index_of_chunk_begin..within_chunk_byte_index_of_chunk_end;
+        let bytes = chunk.as_bytes().clamped_index(within_chunk_byte_indices);
+
+        self.chunks_cursor.next();
+
+        bytes.some()
+    }
 }
 
 impl From<&str> for Rope {
@@ -298,5 +381,41 @@ impl<'a> FromIterator<&'a str> for Rope {
         }
 
         rope
+    }
+}
+
+impl<'r> ChunkedSource<'r> for &'r Rope {
+    type Chunk = &'r [u8];
+    type Chunks = Flatten<OptionIntoIter<BytesAtIndices<'r>>>;
+
+    fn len(&self) -> usize {
+        self.len_bytes()
+    }
+
+    fn chunk_at(&mut self, within_rope_byte_index: usize, _position: Point) -> Self::Chunk {
+        self.get_bytes_at_indices(within_rope_byte_index..self.len_bytes())
+            .next()
+            .unwrap_or_default()
+    }
+
+    fn chunks_for_node(&mut self, node: Node) -> Self::Chunks {
+        self.get_bytes_at_indices(node.byte_range())
+    }
+
+    #[allow(clippy::unused_peekable)]
+    fn text_for_range(&self, within_rope_byte_indices: Range<usize>) -> Cow<'r, [u8]> {
+        let mut bytes_iter = self.get_bytes_at_indices(within_rope_byte_indices);
+        let Some(bytes) = bytes_iter.next() else { return Cow::default() };
+        let mut bytes_iter = bytes_iter.peekable();
+
+        if bytes_iter.is_empty() {
+            return bytes.to_cow_borrowed();
+        }
+
+        let mut bytes = Vec::from(bytes);
+
+        bytes.extend(bytes_iter.flatten());
+
+        bytes.into_cow_owned()
     }
 }

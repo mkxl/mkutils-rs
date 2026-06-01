@@ -84,6 +84,11 @@ impl Chunk {
     }
 
     #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        self.string.as_bytes()
+    }
+
+    #[must_use]
     pub fn as_str(&self) -> &str {
         self.string.as_str()
     }
@@ -226,5 +231,17 @@ impl Item for Chunk {
 
     fn summary(&self, _context: <Self::Summary as Summary>::Context<'_>) -> Self::Summary {
         self.text_summary()
+    }
+}
+
+impl AsRef<str> for Chunk {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl AsRef<[u8]> for Chunk {
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
     }
 }

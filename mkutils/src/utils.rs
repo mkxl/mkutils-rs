@@ -23,8 +23,6 @@ use bytes::Buf;
 #[cfg(all(feature = "async", feature = "http"))]
 use bytes::Bytes;
 use camino::{Utf8Path, Utf8PathBuf};
-#[cfg(feature = "unstable")]
-use core::index::Clamp;
 use either::Either;
 #[cfg(feature = "async")]
 use futures::{
@@ -32,11 +30,9 @@ use futures::{
     future::JoinAll,
     stream::{Filter, FuturesUnordered},
 };
-#[cfg(feature = "tui")]
-use num::traits::ConstZero;
 use num::{
     Bounded, NumCast, One, ToPrimitive, Zero,
-    traits::{SaturatingAdd, SaturatingSub},
+    traits::{ConstZero, SaturatingAdd, SaturatingSub},
 };
 #[cfg(feature = "tui")]
 use palette::IntoColor;
@@ -81,7 +77,7 @@ use std::{
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
     iter::{Once, Peekable, Repeat},
     mem::ManuallyDrop,
-    ops::{ControlFlow, Index, IndexMut, Range},
+    ops::{Bound, ControlFlow, Index, IndexMut, Range, RangeBounds},
     path::{Path, PathBuf},
     pin::Pin,
     str::{FromStr, Utf8Error},
@@ -378,20 +374,34 @@ pub trait Utils {
         anyhow::bail!("({status}) {text}")
     }
 
-    #[cfg(feature = "unstable")]
-    fn clamp(self) -> Clamp<Self>
-    where
-        Self: Sized,
-    {
-        Clamp(self)
-    }
-
     #[must_use]
     fn clamped(self, min: Self, max: Self) -> Self
     where
         Self: PartialOrd + Sized,
     {
         num::clamp(self, min, max)
+    }
+
+    fn clamped_index<T, R: RangeBounds<usize>>(&self, range: R) -> &[T]
+    where
+        Self: Borrow<[T]>,
+    {
+        let slice = self.borrow();
+        let mut begin = match range.start_bound() {
+            Bound::Included(begin) => begin.copied(),
+            Bound::Excluded(begin_decremented) => begin_decremented.incremented(),
+            Bound::Unbounded => usize::ZERO,
+        };
+        let mut end = match range.end_bound() {
+            Bound::Included(end_decremented) => end_decremented.incremented(),
+            Bound::Excluded(end) => end.copied(),
+            Bound::Unbounded => usize::ZERO,
+        };
+
+        begin.max_assign(usize::ZERO);
+        end.min_assign(slice.len());
+
+        &slice[begin..end]
     }
 
     #[cfg(feature = "tui")]

@@ -32,5 +32,5 @@ struct_field_names = { level = "allow", priority = 1 }
 
 [patch.crates-io]
 crossterm = { git = 'https://github.com/crossterm-rs/crossterm', rev = "4f08595" }
-tree-sitter = { git = 'https://github.com/mkxl/tree-sitter', rev = "ce633f1" }
-tree-sitter-highlight = { git = 'https://github.com/mkxl/tree-sitter', rev = "ce633f1" }
+tree-sitter = { git = 'https://github.com/mkxl/tree-sitter', rev = "bc5b16c" }
+tree-sitter-highlight = { git = 'https://github.com/mkxl/tree-sitter', rev = "bc5b16c" }

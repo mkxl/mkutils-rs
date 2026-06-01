@@ -3,7 +3,7 @@ resolver = "3"
 members = ["mkutils", "mkutils-macros"]
 
 [workspace.package]
-version = "0.1.156"
+version = "0.1.157"
 edition = "2024"
 description = "Utility methods, traits, and types."
 readme = "README.md"
@@ -13,7 +13,7 @@ keywords = ["utilities"]
 categories = ["development-tools"]
 
 [workspace.dependencies]
-mkutils-macros = { path = "mkutils-macros", version = "0.1.156" }
+mkutils-macros = { path = "mkutils-macros", version = "0.1.157" }
 
 [workspace.lints.rust]
 warnings = "deny"
@@ -32,5 +32,5 @@ struct_field_names = { level = "allow", priority = 1 }
 
 [patch.crates-io]
 crossterm = { git = 'https://github.com/crossterm-rs/crossterm', rev = "4f08595" }
-tree-sitter = { git = 'https://github.com/mkxl/tree-sitter', rev = "4322cb5" }
-tree-sitter-highlight = { git = 'https://github.com/mkxl/tree-sitter', rev = "4322cb5" }
+tree-sitter = { git = 'https://github.com/mkxl/tree-sitter', rev = "2f01405" }
+tree-sitter-highlight = { git = 'https://github.com/mkxl/tree-sitter', rev = "2f01405" }

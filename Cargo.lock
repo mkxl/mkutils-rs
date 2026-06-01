@@ -1543,7 +1543,7 @@ dependencies = [
 
 [[package]]
 name = "mkutils"
-version = "0.1.155"
+version = "0.1.156"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1587,7 +1587,7 @@ dependencies = [
 
 [[package]]
 name = "mkutils-macros"
-version = "0.1.155"
+version = "0.1.156"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -3564,8 +3564,8 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter"
-version = "0.28.1"
-source = "git+https://github.com/mkxl/tree-sitter?rev=bc5b16c#bc5b16ccc2d59284cc71993907beae486b81e3e2"
+version = "0.27.0"
+source = "git+https://github.com/mkxl/tree-sitter?rev=4322cb5#4322cb525d093422e556ce8be93ed0aaf4f3e8ea"
 dependencies = [
  "cc",
  "regex",
@@ -3576,8 +3576,8 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-highlight"
-version = "0.28.1"
-source = "git+https://github.com/mkxl/tree-sitter?rev=bc5b16c#bc5b16ccc2d59284cc71993907beae486b81e3e2"
+version = "0.27.0"
+source = "git+https://github.com/mkxl/tree-sitter?rev=4322cb5#4322cb525d093422e556ce8be93ed0aaf4f3e8ea"
 dependencies = [
  "regex",
  "streaming-iterator",
@@ -3588,7 +3588,7 @@ dependencies = [
 [[package]]
 name = "tree-sitter-language"
 version = "0.1.8"
-source = "git+https://github.com/mkxl/tree-sitter?rev=bc5b16c#bc5b16ccc2d59284cc71993907beae486b81e3e2"
+source = "git+https://github.com/mkxl/tree-sitter?rev=4322cb5#4322cb525d093422e556ce8be93ed0aaf4f3e8ea"
 
 [[package]]
 name = "trie-rs"

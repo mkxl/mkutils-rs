@@ -25,7 +25,7 @@ macro_rules! max {
 
 #[macro_export]
 macro_rules! map {
-    ($($key:tt : $value:expr),* $(,)?) => {{
+    ($($key:expr => $value:expr),* $(,)?) => {{
         let mut collection = ::std::default::Default::default();
 
         $(

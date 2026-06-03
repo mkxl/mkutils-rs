@@ -4,8 +4,8 @@ use std::{
     collections::{HashMap, HashSet},
 };
 use tree_sitter_highlight::{
-    ChunkedSource, Error as TreeSitterError, Highlight as TreeSitterHighlight, HighlightConfiguration, HighlightEvent,
-    Highlighter,
+    ChunkedSource, Error as TreeSitterHighlightError, Highlight as TreeSitterHighlight, HighlightConfiguration,
+    HighlightEvent, Highlighter,
 };
 
 type CowStr = Cow<'static, str>;
@@ -176,9 +176,9 @@ impl<S> SyntaxHighlighter<S> {
         language_name: &str,
         source: T,
         highlight: &mut H,
-    ) -> Result<H::Output, TreeSitterError> {
+    ) -> Result<H::Output, TreeSitterHighlightError> {
         let Some(highlight_configuration) = self.highlight_configuration_from_language_name.get(language_name) else {
-            return TreeSitterError::InvalidLanguage.err();
+            return TreeSitterHighlightError::InvalidLanguage.err();
         };
         let highlight_events = self.highlighter.highlight_with_source(
             highlight_configuration,

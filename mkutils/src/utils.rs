@@ -109,6 +109,7 @@ use tokio_util::{
 use tracing::Level;
 use tuplities_remove::TupleRemove;
 use typenum::{U0, U1, U2};
+use ulid::Ulid;
 #[cfg(feature = "tui")]
 use unicode_segmentation::{GraphemeIndices, Graphemes, UnicodeSegmentation};
 #[cfg(all(feature = "serde", feature = "tracing"))]
@@ -1039,6 +1040,13 @@ pub trait Utils {
             Ok(string) => string.ok(),
             Err(os_string) => os_string.invalid_utf8_err(),
         }
+    }
+
+    fn into_ulid(self) -> Ulid
+    where
+        Self: Into<u128>,
+    {
+        Ulid(self.into())
     }
 
     fn into_utf8(self) -> Result<String, FromUtf8Error>

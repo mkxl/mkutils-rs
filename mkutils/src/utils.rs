@@ -47,7 +47,7 @@ use poem_openapi::payload::{Binary as PoemBinary, Json as PoemJson};
 #[cfg(feature = "tui")]
 use ratatui::{
     Frame,
-    layout::Rect,
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Style, Styled},
     text::{Line, Span},
     widgets::{Block, StatefulWidget, Widget},
@@ -1170,6 +1170,14 @@ pub trait Utils {
         path.push(component);
 
         path
+    }
+
+    #[cfg(feature = "tui")]
+    fn layout_areas<const N: usize>(self, direction: impl Into<Direction>, area: Rect) -> [Rect; N]
+    where
+        Self: IntoIterator<Item: Into<Constraint>> + Sized,
+    {
+        Layout::new(direction.into(), self).areas(area)
     }
 
     fn len_range<T: SaturatingSub>(&self) -> T

@@ -2,13 +2,13 @@ use crate::{saturating_add_signed::SaturatingAddSigned, utils::Utils};
 use derive_more::{Add, IsVariant, Sub};
 use mkutils_macros::{
     SaturatingAdd as SaturatingAddImpl, SaturatingAddSigned as SaturatingAddSignedImpl,
-    SaturatingSub as SaturatingSubImpl,
+    SaturatingSub as SaturatingSubImpl, Toggle,
 };
 use num::traits::{ConstZero, SaturatingSub};
-use ratatui::layout::{Constraint, Layout, Size};
+use ratatui::layout::{Direction, Size};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, IsVariant)]
+#[derive(Clone, Copy, IsVariant, Toggle)]
 pub enum Orientation {
     Horizontal,
     Vertical,
@@ -16,20 +16,17 @@ pub enum Orientation {
 
 impl Orientation {
     #[must_use]
-    pub const fn toggled(&self) -> Self {
+    pub const fn direction(&self) -> Direction {
         match self {
-            Self::Horizontal => Self::Vertical,
-            Self::Vertical => Self::Horizontal,
+            Self::Horizontal => Direction::Horizontal,
+            Self::Vertical => Direction::Vertical,
         }
     }
+}
 
-    pub const fn toggle(&mut self) {
-        *self = self.toggled();
-    }
-
-    pub fn layout<I: IntoIterator<Item: Into<Constraint>>>(&self, constraints: I) -> Layout {
-        self.is_horizontal()
-            .if_else::<fn(I) -> Layout>(Layout::horizontal, Layout::vertical)(constraints)
+impl From<Orientation> for Direction {
+    fn from(orientation: Orientation) -> Self {
+        orientation.direction()
     }
 }
 

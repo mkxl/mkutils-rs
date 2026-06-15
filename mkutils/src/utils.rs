@@ -28,7 +28,7 @@ use either::Either;
 use futures::{
     Sink, SinkExt, Stream, StreamExt, TryFuture,
     future::JoinAll,
-    stream::{Filter, FuturesUnordered},
+    stream::{Filter, FuturesUnordered, Iter as FuturesStreamIter},
 };
 use num::{
     Bounded, NumCast, One, ToPrimitive, Zero,
@@ -75,7 +75,7 @@ use std::{
     future::Ready,
     hash::Hash,
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
-    iter::{Once, Peekable, Repeat},
+    iter::{Flatten, Once, Peekable, Repeat},
     mem::ManuallyDrop,
     ops::{Bound, ControlFlow, Index, IndexMut, Range, RangeBounds},
     path::{Path, PathBuf},
@@ -896,6 +896,15 @@ pub trait Utils {
         poem::endpoint::make_sync(func)
     }
 
+    // NOTE: similar to [https://doc.rust-lang.org/stable/std/option/enum.Option.html#method.into_flat_iter]
+    fn into_iter_flatten(self) -> Flatten<Self::IntoIter>
+    where
+        Self: IntoIterator + Sized,
+        Self::Item: IntoIterator,
+    {
+        self.into_iter().flatten()
+    }
+
     fn into_fn_ptr<X, Y>(func: fn(X) -> Y) -> fn(X) -> Y {
         func
     }
@@ -1142,6 +1151,14 @@ pub trait Utils {
         Self: Iterator,
     {
         self.next()
+    }
+
+    #[cfg(feature = "async")]
+    fn stream(self) -> FuturesStreamIter<Self>
+    where
+        Self: Iterator + Sized,
+    {
+        futures::stream::iter(self)
     }
 
     #[cfg(feature = "async")]
@@ -1939,6 +1956,20 @@ pub trait Utils {
             .unwrap_or(&mut Json::Null)
             .mem_take()
             .into_value_from_json()
+    }
+
+    #[cfg(feature = "async")]
+    async fn then_collect<T, C: Default + Extend<T>>(mut self, mut func: impl AsyncFnMut(Self::Item) -> T) -> C
+    where
+        Self: Sized + Stream + Unpin,
+    {
+        let mut collection = C::default();
+
+        while let Some(item) = self.next().await {
+            func(item).await.push_to(collection.ref_mut());
+        }
+
+        collection
     }
 
     #[cfg(feature = "async")]

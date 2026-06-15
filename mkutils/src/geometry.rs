@@ -1,5 +1,5 @@
 use crate::{saturating_add_signed::SaturatingAddSigned, utils::Utils};
-use derive_more::{Add, IsVariant, Sub};
+use derive_more::{Add, Constructor, IsVariant, Sub};
 use mkutils_macros::{
     SaturatingAdd as SaturatingAddImpl, SaturatingAddSigned as SaturatingAddSignedImpl,
     SaturatingSub as SaturatingSubImpl, Toggle,
@@ -34,6 +34,7 @@ impl From<Orientation> for Direction {
 #[derive(
     Add,
     Clone,
+    Constructor,
     Copy,
     Debug,
     Default,
@@ -51,10 +52,6 @@ pub struct Point<T> {
 }
 
 impl<T> Point<T> {
-    pub const fn new(x: T, y: T) -> Self {
-        Self { x, y }
-    }
-
     // TODO: would like to have an [impl<T, S: Into<T>> From<Point<S>> for Point<T>]
     // impl but conflicts with [From<T> for T] when [S = T] in the first
     pub fn into_point<S: From<T>>(self) -> Point<S> {

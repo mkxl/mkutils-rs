@@ -293,11 +293,6 @@ impl Rope {
         chunks_cursor
     }
 
-    // TODO:
-    // - i currently use [Option] so i don't have to check this every single
-    //   [.next()] call, but there's likely a better implementation
-    // - eventually use
-    //   [https://doc.rust-lang.org/stable/std/option/enum.Option.html#method.into_flat_iter]
     fn get_bytes_at_indices(
         &self,
         within_rope_byte_indices: Range<usize>,
@@ -307,8 +302,7 @@ impl Rope {
         } else {
             BytesAtIndices::new(self, within_rope_byte_indices).some()
         }
-        .into_iter()
-        .flatten()
+        .into_iter_flatten()
     }
 }
 

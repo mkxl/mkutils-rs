@@ -117,6 +117,21 @@ use valuable::Value;
 
 pub type BoxError = Box<dyn StdError + Send + Sync>;
 
+#[cfg(feature = "tui")]
+macro_rules! to_rope {
+    ($self:expr $(, $($tokens:tt)+)?) => {{
+        let mut rope_builder = RopeBuilder::default();
+
+        while let Some(buffer) = rope_builder.buffer_mut() {
+            let num_bytes_read = $self.read(buffer)$($($tokens)+)??;
+
+            rope_builder.on_read(num_bytes_read)?;
+        }
+
+        rope_builder.build().ok()
+    }};
+}
+
 #[allow(async_fn_in_trait)]
 pub trait Utils {
     const CRLF: &str = "\r\n";
@@ -1663,15 +1678,7 @@ pub trait Utils {
     where
         Self: Read,
     {
-        let mut rope_builder = RopeBuilder::default();
-
-        while let Some(buffer) = rope_builder.buffer_mut() {
-            let num_bytes_read = self.read(buffer)?;
-
-            rope_builder.on_read(num_bytes_read)?;
-        }
-
-        rope_builder.build().ok()
+        to_rope!(self)
     }
 
     #[cfg(all(feature = "async", feature = "tui"))]
@@ -1679,15 +1686,7 @@ pub trait Utils {
     where
         Self: AsyncRead + Unpin,
     {
-        let mut rope_builder = RopeBuilder::default();
-
-        while let Some(buffer) = rope_builder.buffer_mut() {
-            let num_bytes_read = self.read(buffer).await?;
-
-            rope_builder.on_read(num_bytes_read)?;
-        }
-
-        rope_builder.build().ok()
+        to_rope!(self, .await)
     }
 
     #[cfg(feature = "async")]

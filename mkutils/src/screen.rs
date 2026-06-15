@@ -9,9 +9,13 @@ use crossterm::{
     terminal::{Clear, ClearType, DisableLineWrap, EnableLineWrap, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{Terminal, backend::CrosstermBackend};
-use std::io::{BufWriter, Error as IoError, StdoutLock, Write};
+use std::{
+    fs::File,
+    io::{BufWriter, Error as IoError, Write},
+    os::fd::AsFd,
+};
 
-pub type Stdout = BufWriter<StdoutLock<'static>>;
+pub type Stdout = BufWriter<File>;
 pub type ScreenTerminal<'a> = Terminal<CrosstermBackend<&'a mut Stdout>>;
 
 #[derive(Default)]
@@ -64,7 +68,11 @@ impl Screen {
     }
 
     fn new(config: ScreenConfig) -> Result<Self, IoError> {
-        let stdout = std::io::stdout().lock().buf_writer();
+        let stdout = std::io::stdout()
+            .as_fd()
+            .try_clone_to_owned()?
+            .convert::<File>()
+            .buf_writer();
         let mut screen = Self { stdout, config };
 
         screen.on_new()?;
@@ -123,8 +131,8 @@ impl Screen {
         self.on_drop_impl().log_if_error().unit();
     }
 
-    pub const fn writer_mut(&mut self) -> &mut BufWriter<StdoutLock<'static>> {
-        &mut self.stdout
+    pub fn stdout_mut(&mut self) -> &mut Stdout {
+        self.stdout.ref_mut()
     }
 
     pub fn size() -> Result<PointU16, IoError> {
@@ -132,15 +140,13 @@ impl Screen {
     }
 
     pub fn terminal(&mut self) -> Result<ScreenTerminal<'_>, IoError> {
-        let backend = CrosstermBackend::new(&mut self.stdout);
+        let backend = CrosstermBackend::new(self.stdout.ref_mut());
         let terminal = Terminal::new(backend)?;
 
         terminal.ok()
     }
 
-    // NOTE:
-    // - [https://chatgpt.com/c/695cfdcf-be98-8331-90dc-123981ab6ba8]
-    // - [https://chatgpt.com/c/695d51f6-c0b0-832d-865f-31462c278e0a]
+    // NOTE-drop-move-eb4166
     #[must_use]
     pub fn into_stdout(mut self) -> Stdout {
         self.on_drop();

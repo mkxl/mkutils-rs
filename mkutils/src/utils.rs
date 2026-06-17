@@ -132,6 +132,19 @@ macro_rules! to_rope {
     }};
 }
 
+#[cfg(feature = "async")]
+macro_rules! then_collect {
+    ($self:expr, $func:expr $(, $return:expr, $question_mark:tt)?) => {{
+        let mut collection = Default::default();
+
+        while let Some(item) = $self.next().await {
+            $func(item).await$($question_mark)?.push_to(&mut collection);
+        }
+
+        $($return)?(collection)
+    }};
+}
+
 #[allow(async_fn_in_trait)]
 pub trait Utils {
     const CRLF: &str = "\r\n";
@@ -1962,13 +1975,18 @@ pub trait Utils {
     where
         Self: Sized + Stream + Unpin,
     {
-        let mut collection = C::default();
+        then_collect!(self, func)
+    }
 
-        while let Some(item) = self.next().await {
-            func(item).await.push_to(collection.ref_mut());
-        }
-
-        collection
+    #[cfg(feature = "async")]
+    async fn then_try_collect<T, E, C: Default + Extend<T>>(
+        mut self,
+        mut func: impl AsyncFnMut(Self::Item) -> Result<T, E>,
+    ) -> Result<C, E>
+    where
+        Self: Sized + Stream + Unpin,
+    {
+        then_collect!(self, func, Ok, ?)
     }
 
     #[cfg(feature = "async")]

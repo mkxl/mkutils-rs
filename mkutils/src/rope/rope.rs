@@ -104,7 +104,7 @@ impl Rope {
             let mut should_push_new_chunk = self.chunk_sum_tree.is_empty();
             let update_last = |last_chunk: &mut Chunk| match last_chunk.try_push_extended_graphemes(extended_graphemes)
             {
-                Ok(_last_chunk) => extended_graphemes.assign(""),
+                Ok(_last_chunk) => extended_graphemes.assign("").mem_drop(),
                 Err(remaining_extended_graphemes) => {
                     extended_graphemes.assign(remaining_extended_graphemes);
                     should_push_new_chunk.set_true();

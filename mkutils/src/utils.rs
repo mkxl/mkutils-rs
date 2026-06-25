@@ -75,7 +75,7 @@ use std::{
     future::Ready,
     hash::Hash,
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
-    iter::{Flatten, Once, Peekable, Repeat},
+    iter::{Flatten, Map, Once, Peekable, Repeat},
     mem::ManuallyDrop,
     ops::{Bound, ControlFlow, Index, IndexMut, Range, RangeBounds},
     path::{Path, PathBuf},
@@ -228,18 +228,20 @@ pub trait Utils {
         Arc::new(self)
     }
 
-    fn assign(&mut self, other: Self)
+    #[allow(clippy::return_self_not_must_use)]
+    fn assign(&mut self, other: Self) -> Self
     where
         Self: Sized,
     {
-        *self = other;
+        self.mem_replace(other)
     }
 
-    fn assign_to(self, other: &mut Self)
+    #[allow(clippy::return_self_not_must_use)]
+    fn assign_to(self, other: &mut Self) -> Self
     where
         Self: Sized,
     {
-        other.assign(self);
+        other.assign(self)
     }
 
     async fn async_with<T>(self, next: impl Future<Output = T>) -> T
@@ -606,6 +608,17 @@ pub trait Utils {
     #[cfg(feature = "unstable")]
     fn end_ok<T, E>(&self) -> Output<T, E> {
         Output::EndOk
+    }
+
+    #[expect(clippy::type_complexity)]
+    fn enumerated<T: One + SaturatingAdd + Zero>(self) -> Map<Self::IntoIter, impl FnMut(Self::Item) -> (T, Self::Item)>
+    where
+        Self: IntoIterator + Sized,
+    {
+        let mut index = T::zero();
+
+        self.into_iter()
+            .map(move |item| index.incremented().assign_to(index.ref_mut()).pair(item))
     }
 
     fn err<T>(self) -> Result<T, Self>

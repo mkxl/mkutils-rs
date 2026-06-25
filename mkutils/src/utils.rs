@@ -426,7 +426,7 @@ pub trait Utils {
         let mut end = match range.end_bound() {
             Bound::Included(end_decremented) => end_decremented.incremented(),
             Bound::Excluded(end) => end.copied(),
-            Bound::Unbounded => usize::ZERO,
+            Bound::Unbounded => slice.len(),
         };
 
         begin.max_assign(usize::ZERO);

@@ -49,8 +49,8 @@ use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Style, Styled},
-    text::{Line, Span},
-    widgets::{Block, StatefulWidget, Widget},
+    text::{Line, Span, Text},
+    widgets::{Block, Paragraph, StatefulWidget, Widget},
 };
 #[cfg(feature = "http")]
 use reqwest::{RequestBuilder, Response};
@@ -119,11 +119,11 @@ pub type BoxError = Box<dyn StdError + Send + Sync>;
 
 #[cfg(feature = "tui")]
 macro_rules! to_rope {
-    ($self:expr $(, $($tokens:tt)+)?) => {{
+    ($self:expr $(, $($dot_await:tt)+)?) => {{
         let mut rope_builder = RopeBuilder::default();
 
         while let Some(buffer) = rope_builder.buffer_mut() {
-            let num_bytes_read = $self.read(buffer)$($($tokens)+)??;
+            let num_bytes_read = $self.read(buffer)$($($dot_await)+)??;
 
             rope_builder.on_read(num_bytes_read)?;
         }
@@ -1002,6 +1002,14 @@ pub trait Utils {
         Self: Sized,
     {
         ManuallyDrop::new(self)
+    }
+
+    #[cfg(feature = "tui")]
+    fn into_paragraph<'a>(self) -> Paragraph<'a>
+    where
+        Self: Into<Text<'a>>,
+    {
+        Paragraph::new(self)
     }
 
     // NOTE: [https://docs.rs/poem-openapi/latest/src/poem_openapi/payload/json.rs.html]

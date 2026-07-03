@@ -860,6 +860,13 @@ pub trait Utils {
         self.borrow_mut().entry(key).insert_entry(value).into_mut()
     }
 
+    fn insert_immut<'a, K: 'a + Eq + Hash, V>(&'a mut self, key: K, value: V) -> &'a V
+    where
+        Self: BorrowMut<HashMap<K, V>>,
+    {
+        self.insert_mut(key, value).as_immut()
+    }
+
     #[must_use]
     fn interpolate(
         self,

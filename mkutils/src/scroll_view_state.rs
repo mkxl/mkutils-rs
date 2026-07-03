@@ -5,7 +5,7 @@ use crate::{
 };
 use derive_more::From;
 use mkutils_macros::Toggle;
-use num::traits::SaturatingSub;
+use num::traits::{ConstOne, SaturatingSub};
 use ratatui::style::Style;
 use std::time::{Duration, Instant};
 
@@ -62,7 +62,7 @@ impl ScrollViewState {
     #[must_use]
     pub fn max_scroll_offset(&self) -> PointUsize {
         match self.scroll_when {
-            ScrollWhen::Always => self.latest_content_size.saturating_sub_scalar(&1),
+            ScrollWhen::Always => self.latest_content_size.saturating_sub_scalar(&usize::ONE),
             ScrollWhen::ForLargeContent => self
                 .latest_content_size
                 .saturating_sub(&self.latest_scroll_view_area_size),

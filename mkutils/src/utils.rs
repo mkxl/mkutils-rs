@@ -11,8 +11,9 @@ use crate::{
 };
 #[cfg(feature = "tui")]
 use crate::{
-    geometry::{Point, PointUsize},
+    geometry::{Point, PointI16, PointU16, PointUsize},
     rope::{atoms::Atom, builder::RopeBuilder, rope::Rope},
+    saturating_add_signed::SaturatingAddSigned,
     transpose::Transpose,
 };
 #[cfg(feature = "async")]
@@ -418,6 +419,12 @@ pub trait Utils {
         Self: Borrow<[T]>,
     {
         let slice = self.borrow();
+        let length = slice.len();
+
+        if length.is_zero() {
+            return &[];
+        }
+
         let mut begin = match range.start_bound() {
             Bound::Included(begin) => begin.copied(),
             Bound::Excluded(begin_decremented) => begin_decremented.incremented(),
@@ -430,7 +437,8 @@ pub trait Utils {
         };
 
         begin.max_assign(usize::ZERO);
-        end.min_assign(slice.len());
+        begin.min_assign(length);
+        end.min_assign(length);
 
         &slice[begin..end]
     }
@@ -1696,6 +1704,17 @@ pub trait Utils {
         Self: Clone,
     {
         std::iter::repeat(self)
+    }
+
+    #[cfg(feature = "tui")]
+    fn resize_by(self, delta: &PointI16) -> Rect
+    where
+        Self: Is<Rect>,
+    {
+        let rect = self.into_self();
+        let size = rect.as_size().convert::<PointU16>().saturating_add_signed(delta).into();
+
+        rect.resize(size)
     }
 
     fn result_display<T, E: Display>(self) -> ResultDisplay<Self, T, E>

@@ -52,6 +52,13 @@ pub struct Point<T> {
 }
 
 impl<T> Point<T> {
+    pub fn from_scalar<S: Clone + Into<T>>(scalar: S) -> Self {
+        let x = scalar.clone().into();
+        let y = scalar.into();
+
+        Self::new(x, y)
+    }
+
     // TODO: would like to have an [impl<T, S: Into<T>> From<Point<S>> for Point<T>]
     // impl but conflicts with [From<T> for T] when [S = T] in the first
     pub fn into_point<S: From<T>>(self) -> Point<S> {
@@ -103,12 +110,19 @@ impl<T: From<u16>> From<Size> for Point<T> {
     }
 }
 
+impl<T: Into<u16>> From<Point<T>> for Size {
+    fn from(point: Point<T>) -> Self {
+        Self::new(point.x.into(), point.y.into())
+    }
+}
+
 impl<T, X: From<T>, Y: From<T>> From<Point<T>> for (X, Y) {
     fn from(point: Point<T>) -> Self {
         point.x.convert::<X>().pair(point.y.into())
     }
 }
 
+pub type PointI16 = Point<i16>;
+pub type PointIsize = Point<isize>;
 pub type PointU16 = Point<u16>;
 pub type PointUsize = Point<usize>;
-pub type PointIsize = Point<isize>;

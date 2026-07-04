@@ -101,7 +101,7 @@ pub use crate::{
 #[cfg(feature = "tui")]
 pub use crate::{
     alias_hash_map::AliasHashMap,
-    geometry::{Orientation, Point, PointIsize, PointU16, PointUsize},
+    geometry::{Orientation, Point, PointI16, PointIsize, PointU16, PointUsize},
     key_map::{
         key_binding::KeyBinding,
         key_map::{KeyBindingTrie, KeyMap},

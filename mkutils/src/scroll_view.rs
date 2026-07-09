@@ -1,4 +1,8 @@
-use crate::{geometry::Orientation, scroll_view_state::ScrollViewState, utils::Utils};
+use crate::{
+    geometry::{Orientation, PointUsize},
+    scroll_view_state::ScrollViewState,
+    utils::Utils,
+};
 use crossterm::event::MouseEventKind;
 use ratatui::{Frame, layout::Rect, style::Style};
 
@@ -68,12 +72,12 @@ pub trait ScrollView {
         self.scroll_view_state_mut().scroll_down(count);
     }
 
-    fn on_scroll(&mut self, mouse_event_kind: MouseEventKind, count: usize) {
+    fn on_scroll(&mut self, mouse_event_kind: MouseEventKind, count: PointUsize) {
         match mouse_event_kind {
-            MouseEventKind::ScrollLeft => self.scroll_left(count),
-            MouseEventKind::ScrollRight => self.scroll_right(count),
-            MouseEventKind::ScrollUp => self.scroll_up(count),
-            MouseEventKind::ScrollDown => self.scroll_down(count),
+            MouseEventKind::ScrollLeft => self.scroll_left(count.x),
+            MouseEventKind::ScrollRight => self.scroll_right(count.x),
+            MouseEventKind::ScrollUp => self.scroll_up(count.y),
+            MouseEventKind::ScrollDown => self.scroll_down(count.y),
             _ignored_mouse_event_kind => {}
         }
     }

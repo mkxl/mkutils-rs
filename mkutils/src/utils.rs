@@ -919,12 +919,17 @@ pub trait Utils {
         IntoColor::into_color(self)
     }
 
-    fn into_ok_err<T>(self) -> T
+    // NOTE:
+    // - as an example, let [X = str] and [Y = Utf8Path]
+    // - then we require [str: AsRef<Utf8Path> + ToOwned] and [Utf8Path::Owned: From<String>]
+    fn into_cow<'a, Y: 'a + ?Sized + ToOwned, X: 'a + AsRef<Y> + ?Sized + ToOwned>(self) -> Cow<'a, Y>
     where
-        Self: Is<Result<T, T>>,
+        Self: Is<Cow<'a, X>>,
+        Y::Owned: From<X::Owned>,
     {
         match self.into_self() {
-            Ok(value) | Err(value) => value,
+            Cow::Borrowed(borrowed) => borrowed.as_ref().to_cow_borrowed(),
+            Cow::Owned(owned) => owned.convert::<Y::Owned>().into_cow_owned(),
         }
     }
 
@@ -935,7 +940,7 @@ pub trait Utils {
         ControlFlow::Continue(self)
     }
 
-    fn into_cow_owned<B: ?Sized + ToOwned<Owned = Self>>(self) -> Cow<'static, B>
+    fn into_cow_owned<'a, B: ?Sized + ToOwned<Owned = Self>>(self) -> Cow<'a, B>
     where
         Self: Sized,
     {
@@ -1030,6 +1035,15 @@ pub trait Utils {
         Self: Sized,
     {
         ManuallyDrop::new(self)
+    }
+
+    fn into_ok_err<T>(self) -> T
+    where
+        Self: Is<Result<T, T>>,
+    {
+        match self.into_self() {
+            Ok(value) | Err(value) => value,
+        }
     }
 
     #[cfg(feature = "tui")]

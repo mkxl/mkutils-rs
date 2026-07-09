@@ -414,7 +414,7 @@ pub trait Utils {
         num::clamp(self, min, max)
     }
 
-    fn clamped_index<T, R: RangeBounds<usize>>(&self, range: R) -> &[T]
+    fn clamped_index<T, R: RangeBounds<usize>>(&self, range_bounds: R) -> &[T]
     where
         Self: Borrow<[T]>,
     {
@@ -425,22 +425,9 @@ pub trait Utils {
             return &[];
         }
 
-        let mut begin = match range.start_bound() {
-            Bound::Included(begin) => begin.copied(),
-            Bound::Excluded(begin_decremented) => begin_decremented.incremented(),
-            Bound::Unbounded => usize::ZERO,
-        };
-        let mut end = match range.end_bound() {
-            Bound::Included(end_decremented) => end_decremented.incremented(),
-            Bound::Excluded(end) => end.copied(),
-            Bound::Unbounded => slice.len(),
-        };
+        let range = range_bounds.to_range(length);
 
-        begin.max_assign(usize::ZERO);
-        begin.min_assign(length);
-        end.min_assign(length);
-
-        &slice[begin..end]
+        &slice[range]
     }
 
     #[cfg(feature = "tui")]
@@ -697,11 +684,12 @@ pub trait Utils {
     }
 
     #[cfg(feature = "tui")]
-    fn extended_grapheme_substring(&self, range: Range<usize>) -> &str
+    fn extended_grapheme_substring<R: RangeBounds<usize>>(&self, range_bounds: R) -> &str
     where
         Self: AsRef<str>,
     {
         let string = self.as_ref();
+        let range = range_bounds.to_range(string.extended_graphemes().count());
         let mut extended_grapheme_byte_indices = string.extended_grapheme_byte_indices().skip(range.start);
         let Some(begin_byte_index) = extended_grapheme_byte_indices.next() else { return "" };
         let mut extended_grapheme_byte_indices = extended_grapheme_byte_indices.skip(range.len());
@@ -2111,6 +2099,26 @@ pub trait Utils {
         Self: Borrow<Option<T>>,
     {
         self.borrow().as_ref().map(T::to_owned)
+    }
+
+    fn to_range(&self, length: usize) -> Range<usize>
+    where
+        Self: RangeBounds<usize>,
+    {
+        let begin = match self.start_bound() {
+            Bound::Included(begin) => begin.copied(),
+            Bound::Excluded(begin_decremented) => begin_decremented.incremented(),
+            Bound::Unbounded => usize::ZERO,
+        };
+        let end = match self.end_bound() {
+            Bound::Included(end_decremented) => end_decremented.incremented(),
+            Bound::Excluded(end) => end.copied(),
+            Bound::Unbounded => length,
+        };
+        let begin = begin.min(length);
+        let end = end.min(length);
+
+        begin..end
     }
 
     #[cfg(feature = "serde")]

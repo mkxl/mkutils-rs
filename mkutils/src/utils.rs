@@ -1263,6 +1263,14 @@ pub trait Utils {
         Layout::new(direction.into(), self).areas(area)
     }
 
+    #[cfg(feature = "tui")]
+    fn len_extended_graphemes(&self) -> usize
+    where
+        Self: AsRef<str>,
+    {
+        self.as_ref().extended_graphemes().count()
+    }
+
     fn len_range<T: SaturatingSub>(&self) -> T
     where
         Self: Borrow<Range<T>>,

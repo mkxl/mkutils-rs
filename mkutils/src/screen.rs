@@ -12,7 +12,6 @@ use ratatui::{Terminal, backend::CrosstermBackend};
 use std::{
     fs::File,
     io::{BufWriter, Error as IoError, Write},
-    os::fd::AsFd,
 };
 
 pub type Stdout = BufWriter<File>;
@@ -68,11 +67,7 @@ impl Screen {
     }
 
     fn new(config: ScreenConfig) -> Result<Self, IoError> {
-        let stdout = std::io::stdout()
-            .as_fd()
-            .try_clone_to_owned()?
-            .convert::<File>()
-            .buf_writer();
+        let stdout = std::io::stdout().to_file_buf_writer()?;
         let mut screen = Self { stdout, config };
 
         screen.on_new()?;

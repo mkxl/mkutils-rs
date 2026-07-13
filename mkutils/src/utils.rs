@@ -79,6 +79,7 @@ use std::{
     iter::{Flatten, Map, Once, Peekable, Repeat},
     mem::ManuallyDrop,
     ops::{Bound, ControlFlow, Index, IndexMut, Range, RangeBounds},
+    os::fd::AsFd,
     path::{Path, PathBuf},
     pin::Pin,
     str::{FromStr, Utf8Error},
@@ -2061,13 +2062,11 @@ pub trait Utils {
         Cow::Borrowed(self)
     }
 
-    fn toggle(&mut self)
+    fn to_file_buf_writer(&self) -> Result<BufWriter<File>, IoError>
     where
-        Self: BorrowMut<bool>,
+        Self: AsFd,
     {
-        let bool_value = self.borrow_mut();
-
-        *bool_value = !*bool_value;
+        self.as_fd().try_clone_to_owned()?.convert::<File>().buf_writer().ok()
     }
 
     #[cfg(feature = "serde")]
@@ -2190,6 +2189,15 @@ pub trait Utils {
         Self: Read + Sized,
     {
         serde_yaml_ng::from_reader(self)
+    }
+
+    fn toggle(&mut self)
+    where
+        Self: BorrowMut<bool>,
+    {
+        let bool_value = self.borrow_mut();
+
+        *bool_value = !*bool_value;
     }
 
     #[must_use]

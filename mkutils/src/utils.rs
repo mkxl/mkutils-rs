@@ -2062,11 +2062,11 @@ pub trait Utils {
         Cow::Borrowed(self)
     }
 
-    fn to_file_buf_writer(&self) -> Result<BufWriter<File>, IoError>
+    fn to_file(&self) -> Result<File, IoError>
     where
         Self: AsFd,
     {
-        self.as_fd().try_clone_to_owned()?.convert::<File>().buf_writer().ok()
+        self.as_fd().try_clone_to_owned()?.convert::<File>().ok()
     }
 
     #[cfg(feature = "serde")]

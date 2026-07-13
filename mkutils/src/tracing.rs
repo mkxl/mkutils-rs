@@ -2,7 +2,7 @@ use crate::utils::Utils;
 use console_subscriber::{ConsoleLayer, Server as ConsoleServer};
 use std::{
     fs::File,
-    io::{BufWriter, Error as IoError, StderrLock, StdoutLock},
+    io::{Error as IoError, StderrLock, StdoutLock},
     net::IpAddr,
 };
 use tracing_subscriber::{
@@ -124,12 +124,12 @@ impl<W> Tracing<W> {
         }
     }
 
-    pub fn with_stdout_writer(self) -> Result<Tracing<BufWriter<File>>, IoError> {
-        self.with_writer(std::io::stdout().to_file_buf_writer()?).ok()
+    pub fn with_stdout_writer(self) -> Result<Tracing<File>, IoError> {
+        self.with_writer(std::io::stdout().to_file()?).ok()
     }
 
-    pub fn with_stderr_writer(self) -> Result<Tracing<BufWriter<File>>, IoError> {
-        self.with_writer(std::io::stderr().to_file_buf_writer()?).ok()
+    pub fn with_stderr_writer(self) -> Result<Tracing<File>, IoError> {
+        self.with_writer(std::io::stderr().to_file()?).ok()
     }
 
     pub fn with_stdout_lock_writer(self) -> Tracing<StdoutLockFn> {

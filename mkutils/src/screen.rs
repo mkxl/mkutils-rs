@@ -67,7 +67,7 @@ impl Screen {
     }
 
     fn new(config: ScreenConfig) -> Result<Self, IoError> {
-        let stdout = std::io::stdout().to_file_buf_writer()?;
+        let stdout = std::io::stdout().to_file()?.buf_writer();
         let mut screen = Self { stdout, config };
 
         screen.on_new()?;

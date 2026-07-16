@@ -147,6 +147,31 @@ macro_rules! then_collect {
     }};
 }
 
+macro_rules! try_get {
+    ($self:expr, $key:expr, $borrow:ident, $get:ident, $values:ident) => {{
+        let hash_map = $self.$borrow();
+
+        if let Some(key) = $key {
+            hash_map.$get(key).check_present()
+        } else if hash_map.len() == 1 {
+            hash_map.$values().next().check_next()
+        } else {
+            Self::try_get_ambigious_key_error(hash_map.len())
+        }
+    }};
+    ($self:expr, $key:expr $(, $suffix:tt)?) => {
+        ::paste::paste! {
+            try_get!(
+                $self,
+                $key,
+                [<borrow $(_ $suffix)?>],
+                [<get $(_ $suffix)?>],
+                [<values $(_ $suffix)?>]
+            )
+        }
+    };
+}
+
 #[allow(async_fn_in_trait)]
 pub trait Utils {
     const CRLF: &str = "\r\n";
@@ -2234,6 +2259,30 @@ pub trait Utils {
         Self: Sized,
     {
         self.try_into()
+    }
+
+    fn try_get_ambigious_key_error<T>(len: usize) -> Result<T, AnyhowError> {
+        anyhow::bail!("unspecified key is ambiguous with {len} entries")
+    }
+
+    fn try_get<'a, Q: Hash + Eq, K: 'a + Borrow<Q> + Eq + Hash, V>(
+        &'a self,
+        key: Option<&Q>,
+    ) -> Result<&'a V, AnyhowError>
+    where
+        Self: Borrow<HashMap<K, V>>,
+    {
+        try_get!(self, key)
+    }
+
+    fn try_get_mut<'a, Q: Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash, V>(
+        &'a mut self,
+        key: Option<&Q>,
+    ) -> Result<&'a mut V, AnyhowError>
+    where
+        Self: BorrowMut<HashMap<K, V>>,
+    {
+        try_get!(self, key, mut)
     }
 
     #[cfg(feature = "async")]

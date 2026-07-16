@@ -152,7 +152,7 @@ macro_rules! try_get {
         let hash_map = $self.$borrow();
 
         if let Some(key) = $key {
-            hash_map.$get(key).check_present()
+            hash_map.$get(&key).check_present()
         } else if hash_map.len() == 1 {
             hash_map.$values().next().check_next()
         } else {
@@ -2267,7 +2267,7 @@ pub trait Utils {
 
     fn try_get<'a, Q: Hash + Eq, K: 'a + Borrow<Q> + Eq + Hash, V>(
         &'a self,
-        key: Option<&Q>,
+        key: Option<Q>,
     ) -> Result<&'a V, AnyhowError>
     where
         Self: Borrow<HashMap<K, V>>,
@@ -2277,7 +2277,7 @@ pub trait Utils {
 
     fn try_get_mut<'a, Q: Eq + Hash, K: 'a + Borrow<Q> + Eq + Hash, V>(
         &'a mut self,
-        key: Option<&Q>,
+        key: Option<Q>,
     ) -> Result<&'a mut V, AnyhowError>
     where
         Self: BorrowMut<HashMap<K, V>>,

@@ -1,8 +1,9 @@
 use crate::{
-    geometry::{Orientation, PointUsize},
+    geometry::{Orientation, Point, PointUsize},
     scroll_bar::ScrollBar,
     utils::Utils,
 };
+use crossterm::event::MouseEventKind;
 use derive_more::From;
 use mkutils_macros::Toggle;
 use num::traits::{ConstOne, SaturatingSub};
@@ -114,6 +115,20 @@ impl ScrollViewState {
 
     pub fn scroll_right(&mut self, scroll_count_type: impl Into<ScrollCountType>) {
         self.scroll(scroll_count_type.into(), Orientation::Horizontal, true);
+    }
+
+    pub fn on_scroll(
+        &mut self,
+        mouse_event_kind: MouseEventKind,
+        scroll_count_type: Point<impl Into<ScrollCountType>>,
+    ) {
+        match mouse_event_kind {
+            MouseEventKind::ScrollLeft => self.scroll_left(scroll_count_type.x),
+            MouseEventKind::ScrollRight => self.scroll_right(scroll_count_type.x),
+            MouseEventKind::ScrollUp => self.scroll_up(scroll_count_type.y),
+            MouseEventKind::ScrollDown => self.scroll_down(scroll_count_type.y),
+            _ignored_mouse_event_kind => {}
+        }
     }
 
     #[must_use]

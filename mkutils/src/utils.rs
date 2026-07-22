@@ -172,7 +172,7 @@ macro_rules! try_get {
     };
 }
 
-#[allow(async_fn_in_trait)]
+#[expect(async_fn_in_trait)]
 pub trait Utils {
     const CRLF: &str = "\r\n";
     const IS_EXTENDED: bool = true;
@@ -195,15 +195,22 @@ pub trait Utils {
 
     fn absolute_utf8(&self) -> Result<Cow<'_, Utf8Path>, IoError>
     where
-        Self: AsRef<Utf8Path>,
+        Self: AsRef<str>,
     {
-        let path = self.as_ref();
+        let path = self.as_ref().as_utf8_path();
 
         if path.is_absolute() {
             path.to_cow_borrowed().ok()
         } else {
             camino::absolute_utf8(path)?.into_cow_owned::<Utf8Path>().ok()
         }
+    }
+
+    fn absolute_utf8_path_buf(&self) -> Result<Utf8PathBuf, IoError>
+    where
+        Self: AsRef<str>,
+    {
+        self.absolute_utf8()?.into_owned().ok()
     }
 
     async fn achain<T: Future>(self, rhs: T) -> T::Output
@@ -255,7 +262,7 @@ pub trait Utils {
         Arc::new(self)
     }
 
-    #[allow(clippy::return_self_not_must_use)]
+    #[expect(clippy::return_self_not_must_use)]
     fn assign(&mut self, other: Self) -> Self
     where
         Self: Sized,
@@ -263,7 +270,7 @@ pub trait Utils {
         self.mem_replace(other)
     }
 
-    #[allow(clippy::return_self_not_must_use)]
+    #[expect(clippy::return_self_not_must_use)]
     fn assign_to(self, other: &mut Self) -> Self
     where
         Self: Sized,
@@ -779,7 +786,7 @@ pub trait Utils {
         triple.some()
     }
 
-    #[allow(clippy::wrong_self_convention)]
+    #[expect(clippy::wrong_self_convention)]
     fn from_now(self) -> Instant
     where
         Self: Is<Duration>,
@@ -1214,7 +1221,7 @@ pub trait Utils {
         self.as_ref().trim().is_empty()
     }
 
-    #[allow(clippy::wrong_self_convention)]
+    #[expect(clippy::wrong_self_convention)]
     fn is_less_than<T: PartialOrd>(self, rhs: T) -> bool
     where
         Self: Into<T>,
@@ -1361,6 +1368,13 @@ pub trait Utils {
         self
     }
 
+    fn map_as_ref<'a, Y: ?Sized, X: 'a + AsRef<Y>>(&'a self) -> Option<&'a Y>
+    where
+        Self: Borrow<Option<X>>,
+    {
+        self.borrow().as_ref().map(X::as_ref)
+    }
+
     fn map_collect<Y, T: FromIterator<Y>>(self, func: impl FnMut(Self::Item) -> Y) -> T
     where
         Self: IntoIterator + Sized,
@@ -1373,13 +1387,6 @@ pub trait Utils {
         Self: Is<Option<X>>,
     {
         self.into_self().map(X::into)
-    }
-
-    fn map_as_ref<'a, Y: ?Sized, X: 'a + AsRef<Y>>(&'a self) -> Option<&'a Y>
-    where
-        Self: Borrow<Option<X>>,
-    {
-        self.borrow().as_ref().map(X::as_ref)
     }
 
     fn map_range<X, Y>(self, mut func: impl FnMut(X) -> Y) -> Range<Y>
@@ -2163,7 +2170,7 @@ pub trait Utils {
 
     fn to_uri(&self) -> Result<String, IoError>
     where
-        Self: AsRef<Utf8Path>,
+        Self: AsRef<str>,
     {
         Self::URI_PREFIX.cat(self.absolute_utf8()?).ok()
     }

@@ -1,6 +1,6 @@
 use crate::{
-    geometry::{Orientation, PointUsize},
-    scroll_view_state::ScrollViewState,
+    geometry::{Orientation, Point},
+    scroll_view_state::{ScrollCountType, ScrollViewState},
     utils::Utils,
 };
 use crossterm::event::MouseEventKind;
@@ -56,28 +56,28 @@ pub trait ScrollView {
         self.render_misc(frame, scroll_view_area);
     }
 
-    fn scroll_left(&mut self, count: usize) {
-        self.scroll_view_state_mut().scroll_left(count);
+    fn scroll_left(&mut self, scroll_count_type: impl Into<ScrollCountType>) {
+        self.scroll_view_state_mut().scroll_left(scroll_count_type);
     }
 
-    fn scroll_right(&mut self, count: usize) {
-        self.scroll_view_state_mut().scroll_right(count);
+    fn scroll_right(&mut self, scroll_count_type: impl Into<ScrollCountType>) {
+        self.scroll_view_state_mut().scroll_right(scroll_count_type);
     }
 
-    fn scroll_up(&mut self, count: usize) {
-        self.scroll_view_state_mut().scroll_up(count);
+    fn scroll_up(&mut self, scroll_count_type: impl Into<ScrollCountType>) {
+        self.scroll_view_state_mut().scroll_up(scroll_count_type);
     }
 
-    fn scroll_down(&mut self, count: usize) {
-        self.scroll_view_state_mut().scroll_down(count);
+    fn scroll_down(&mut self, scroll_count_type: impl Into<ScrollCountType>) {
+        self.scroll_view_state_mut().scroll_down(scroll_count_type);
     }
 
-    fn on_scroll(&mut self, mouse_event_kind: MouseEventKind, count: PointUsize) {
+    fn on_scroll(&mut self, mouse_event_kind: MouseEventKind, scroll_count_type: Point<impl Into<ScrollCountType>>) {
         match mouse_event_kind {
-            MouseEventKind::ScrollLeft => self.scroll_left(count.x),
-            MouseEventKind::ScrollRight => self.scroll_right(count.x),
-            MouseEventKind::ScrollUp => self.scroll_up(count.y),
-            MouseEventKind::ScrollDown => self.scroll_down(count.y),
+            MouseEventKind::ScrollLeft => self.scroll_left(scroll_count_type.x),
+            MouseEventKind::ScrollRight => self.scroll_right(scroll_count_type.x),
+            MouseEventKind::ScrollUp => self.scroll_up(scroll_count_type.y),
+            MouseEventKind::ScrollDown => self.scroll_down(scroll_count_type.y),
             _ignored_mouse_event_kind => {}
         }
     }

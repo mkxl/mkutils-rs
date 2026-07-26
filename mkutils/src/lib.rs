@@ -81,6 +81,9 @@ mod timer;
 #[cfg(feature = "tracing")]
 mod tracing;
 
+#[cfg(all(feature = "async", feature = "tracing"))]
+mod tracing_store;
+
 #[cfg(feature = "tui")]
 mod transpose;
 
@@ -88,6 +91,8 @@ mod transpose;
 pub use crate::output::Output;
 #[cfg(all(feature = "async", feature = "serde", feature = "unstable"))] // NOTE-socket-c8f04c
 pub use crate::socket::{Request, Socket};
+#[cfg(all(feature = "async", feature = "tracing"))]
+pub use crate::tracing_store::TracingStore;
 pub use crate::{
     active_vec::ActiveVec,
     fmt::{Debugged, OptionDisplay, ResultDisplay, StatusDisplay},

@@ -69,7 +69,7 @@ use serde_yaml_ng::Error as SerdeYamlError;
 use std::{
     any::TypeId,
     borrow::{Borrow, BorrowMut, Cow},
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     error::Error as StdError,
     fmt::{Debug, Display},
     fs::File,
@@ -89,7 +89,7 @@ use std::{
     time::{Duration, Instant},
 };
 #[cfg(feature = "async")]
-use std::{fs::Metadata, process::ExitStatus};
+use std::{fs::Metadata, future::Future, process::ExitStatus};
 #[cfg(any(feature = "async", feature = "tui"))]
 use tokio::{
     fs::File as TokioFile,
@@ -98,7 +98,6 @@ use tokio::{
 #[cfg(feature = "async")]
 use tokio::{
     io::{AsyncReadExt, AsyncWrite, AsyncWriteExt, BufWriter as TokioBufWriter},
-    sync::oneshot::Sender as OneshotSender,
     task::{JoinHandle, JoinSet, LocalSet},
     time::{Interval, Sleep, Timeout},
 };
@@ -131,6 +130,17 @@ macro_rules! to_rope {
         }
 
         rope_builder.build().ok()
+    }};
+}
+
+#[cfg(feature = "async")]
+macro_rules! to_sink {
+    ($self:expr, $send_fn:expr $(, $($dot_await:tt)+)?) => {{
+        futures::sink::unfold(($self, $send_fn), |(mut sender, mut send_fn), item| async {
+            send_fn(sender.ref_mut(), item)$($($dot_await)+)??;
+
+            sender.pair(send_fn).ok()
+        })
     }};
 }
 
@@ -476,6 +486,13 @@ pub trait Utils {
         Self: Sized,
     {
         self.into()
+    }
+
+    fn constant_function<T>(self) -> impl FnOnce(T) -> Self
+    where
+        Self: Sized,
+    {
+        |_arg| self
     }
 
     fn contains_eq<Q, K>(&self, query: Q) -> bool
@@ -1456,18 +1473,6 @@ pub trait Utils {
         }
     }
 
-    // NOTE: [https://doc.rust-lang.org/stable/std/vec/struct.Vec.html#method.push_mut]
-    fn mut_push<T>(&mut self, item: T) -> &mut T
-    where
-        Self: BorrowMut<Vec<T>>,
-    {
-        let vec = self.borrow_mut();
-
-        vec.push(item);
-
-        vec.last_mut().unwrap()
-    }
-
     fn none<T>(&self) -> Option<T> {
         None
     }
@@ -1559,6 +1564,13 @@ pub trait Utils {
         func(self)
     }
 
+    fn pipe_into_method<T, S, F: FnOnce(S, Self) -> T>(self, receiver: S, method: F) -> T
+    where
+        Self: Sized,
+    {
+        method(receiver, self)
+    }
+
     #[cfg(feature = "http")]
     fn poem_binary(self) -> PoemBinary<Self>
     where
@@ -1627,18 +1639,38 @@ pub trait Utils {
         std::print!("{self}");
     }
 
-    fn push_to<T: Extend<Self>>(self, collection: &mut T)
-    where
-        Self: Sized,
-    {
-        collection.extend(self.once());
-    }
-
     fn push_all_to<T: Extend<Self::Item>>(self, collection: &mut T)
     where
         Self: IntoIterator + Sized,
     {
         collection.extend(self);
+    }
+
+    fn push_bounded<T>(&mut self, item: T, max_size: usize)
+    where
+        Self: BorrowMut<VecDeque<T>>,
+    {
+        let vec_deque = self.borrow_mut();
+
+        vec_deque.push_back(item);
+
+        while max_size < vec_deque.len() {
+            vec_deque.pop_back();
+        }
+    }
+
+    fn push_item<T>(&mut self, item: T)
+    where
+        Self: Extend<T>,
+    {
+        self.extend(item.once());
+    }
+
+    fn push_to<T: Extend<Self>>(self, collection: &mut T)
+    where
+        Self: Sized,
+    {
+        collection.push_item(self);
     }
 
     #[cfg(feature = "http")]
@@ -1747,6 +1779,13 @@ pub trait Utils {
         Self: Clone,
     {
         std::iter::repeat(self)
+    }
+
+    fn repeated<const N: usize>(self) -> [Self; N]
+    where
+        Self: Clone,
+    {
+        std::array::repeat(self)
     }
 
     #[cfg(feature = "tui")]
@@ -1895,18 +1934,6 @@ pub trait Utils {
         Self: Sized,
     {
         sink.send(self).await
-    }
-
-    #[cfg(feature = "async")]
-    fn send_to_oneshot(self, sender: OneshotSender<Self>) -> Result<(), AnyhowError>
-    where
-        Self: Sized,
-    {
-        // NOTE: drop error variant which wraps [Self] and may not implement [StdError]
-        sender
-            .send(self)
-            .ok()
-            .context("unable to send value over oneshot channel")
     }
 
     fn set_true(&mut self)
@@ -2168,6 +2195,25 @@ pub trait Utils {
         rmp_serde::to_vec(self)
     }
 
+    #[cfg(feature = "async")]
+    fn to_sink<Item, E, F: FnMut(&mut Self, Item) -> Result<(), E>>(self, send_fn: F) -> impl Sink<Item, Error = E>
+    where
+        Self: Sized,
+    {
+        to_sink!(self, send_fn)
+    }
+
+    #[cfg(feature = "async")]
+    fn to_sink_async<Item, E, F: AsyncFnMut(&mut Self, Item) -> Result<(), E>>(
+        self,
+        send_fn: F,
+    ) -> impl Sink<Item, Error = E>
+    where
+        Self: Sized,
+    {
+        to_sink!(self, send_fn, .await)
+    }
+
     fn to_uri(&self) -> Result<String, IoError>
     where
         Self: AsRef<str>,
@@ -2351,15 +2397,12 @@ pub trait Utils {
         value
     }
 
-    fn with_item_pushed<T>(self, item: T) -> Vec<T>
+    #[must_use]
+    fn with_item_pushed<T>(mut self, item: T) -> Self
     where
-        Self: Is<Vec<T>>,
+        Self: Extend<T> + Sized,
     {
-        let mut vec = self.into_self();
-
-        vec.push(item);
-
-        vec
+        self.push_item(item).with(self)
     }
 
     fn with_str_pushed(self, rhs: &str) -> String

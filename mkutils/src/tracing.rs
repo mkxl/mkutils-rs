@@ -112,7 +112,9 @@ impl<W> Tracing<W> {
 
     #[must_use]
     pub fn with_writer<W2>(self, writer: W2) -> Tracing<W2> {
-        // TODO: any better way to do this?
+        // TODO:
+        // [https://doc.rust-lang.org/beta/unstable-book/language-features/type-changing-struct-update.html]
+        // Tracing { writer, ..self }
         Tracing {
             level_filter: self.level_filter,
             json_enabled: self.json_enabled,

@@ -52,7 +52,7 @@ impl<T> ActiveVec<T> {
 
     pub fn push(&mut self, item: T) -> (usize, &mut T) {
         let index = self.vec.len();
-        let item = self.vec.mut_push(item);
+        let item = self.vec.push_mut(item);
 
         (index, item)
     }

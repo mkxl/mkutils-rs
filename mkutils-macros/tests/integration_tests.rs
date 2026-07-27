@@ -44,8 +44,16 @@ struct TupleStruct(&'static str, usize);
 struct UnitStruct;
 
 #[derive(Constructor)]
-#[new(pub)]
+#[constructor(pub)]
 struct PubConstructorStruct(u8);
+
+#[derive(Constructor)]
+#[constructor(from_parts)]
+struct NamedConstructorStruct(&'static str);
+
+#[derive(Constructor)]
+#[constructor(pub(crate) create)]
+struct NamedPubConstructorStruct;
 
 #[test]
 fn test_constructor_c_struct() {
@@ -73,6 +81,18 @@ fn test_constructor_pub_visibility() {
     let val = PubConstructorStruct::new(255);
 
     std::assert_eq!(val.0, 255);
+}
+
+#[test]
+fn test_custom_constructor_name() {
+    let val = NamedConstructorStruct::from_parts("hello");
+
+    std::assert_eq!(val.0, "hello");
+}
+
+#[test]
+fn test_custom_constructor_name_and_visibility() {
+    let _val = NamedPubConstructorStruct::create();
 }
 
 #[derive(ConstAssoc)]

@@ -356,15 +356,17 @@ pub fn saturating_add_signed(input_token_stream: TokenStream) -> TokenStream {
     )
 }
 
-/// Adds a `new()` constructor that accepts each field as a parameter.
-/// The method is private by default. Use `#[new("pub")]` or `#[new("pub(crate)")]`
-/// to set a custom visibility.
+/// Adds a constructor that accepts each field as a parameter.
+///
+/// The method is private and named `new` by default. Use `#[constructor(create)]`
+/// to set a custom name or `#[constructor(pub(crate) create)]` to also set its
+/// visibility.
 ///
 /// # Example
 ///
 /// ```rust
 /// #[derive(Debug, mkutils_macros::Constructor, PartialEq)]
-/// #[new(pub(crate))]
+/// #[constructor(pub(crate) create)]
 /// struct MyStruct {
 ///     name: String,
 ///     count: i32,
@@ -373,7 +375,7 @@ pub fn saturating_add_signed(input_token_stream: TokenStream) -> TokenStream {
 /// // adds
 /// // ```rust
 /// // impl MyStruct {
-/// //     pub(crate) fn new(name: String, count: i32) -> Self {
+/// //     pub(crate) fn create(name: String, count: i32) -> Self {
 /// //         Self { name, count }
 /// //     }
 /// // }
@@ -381,11 +383,11 @@ pub fn saturating_add_signed(input_token_stream: TokenStream) -> TokenStream {
 /// // as can be seen in
 ///
 /// let my_struct_literal = MyStruct { name: "hello".into(), count: 2 };
-/// let my_struct_constructed = MyStruct::new("hello".into(), 2);
+/// let my_struct_constructed = MyStruct::create("hello".into(), 2);
 ///
 /// std::assert_eq!(my_struct_literal, my_struct_constructed);
 /// ```
-#[proc_macro_derive(Constructor, attributes(new))]
+#[proc_macro_derive(Constructor, attributes(constructor))]
 pub fn constructor(input_token_stream: TokenStream) -> TokenStream {
     Constructor::derive(input_token_stream)
 }

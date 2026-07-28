@@ -1,5 +1,6 @@
 use crate::utils::Utils;
 use anyhow::Error as AnyhowError;
+use mkutils_macros::Constructor;
 use std::{
     collections::VecDeque,
     io::{Error as IoError, Write},
@@ -63,7 +64,8 @@ impl Drop for EventWriter {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Constructor)]
+#[constructor(from_sender)]
 pub struct TracingStore {
     message_sender: UnboundedSender<Message>,
 }
@@ -75,7 +77,13 @@ impl TracingStore {
 
         Self::read_messages(message_receiver, max_size).spawn_task();
 
-        Self { message_sender }
+        Self::from_sender(message_sender)
+    }
+
+    pub fn inactive() -> Self {
+        tokio::sync::mpsc::unbounded_channel()
+            .into_first()
+            .pipe_into(Self::from_sender)
     }
 
     async fn read_messages(mut message_receiver: UnboundedReceiver<Message>, max_size: usize) {

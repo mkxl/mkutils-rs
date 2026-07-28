@@ -88,7 +88,7 @@ impl Constructor {
         }
 
         let constructor_method_block = quote::quote! {
-            #visibility fn #name(#(#constructor_parameters),*) -> Self {
+            #visibility const fn #name(#(#constructor_parameters),*) -> Self {
                 Self { #(#constructor_parameter_idents),* }
             }
         };
@@ -113,7 +113,7 @@ impl Constructor {
         }
 
         quote::quote! {
-            #visibility fn #name(#(#constructor_parameters),*) -> Self {
+            #visibility const fn #name(#(#constructor_parameters),*) -> Self {
                 Self(#(#constructor_parameter_idents),*)
             }
         }
@@ -123,7 +123,7 @@ impl Constructor {
         ConstructorArgs { visibility, name }: &ConstructorArgs,
     ) -> TokenStream2 {
         quote::quote! {
-            #visibility fn #name() -> Self {
+            #visibility const fn #name() -> Self {
                 Self
             }
         }

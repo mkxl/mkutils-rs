@@ -76,7 +76,7 @@ use std::{
     future::Ready,
     hash::Hash,
     io::{BufReader, BufWriter, Error as IoError, Read, Write},
-    iter::{Flatten, Map, Once, Peekable, Repeat},
+    iter::{Empty, Flatten, Map, Once, Peekable, Repeat},
     mem::ManuallyDrop,
     ops::{Bound, ControlFlow, Index, IndexMut, Range, RangeBounds},
     os::fd::AsFd,
@@ -640,6 +640,13 @@ pub trait Utils {
         let seq_visitor = SeqVisitor::new(func);
 
         deserializer.deserialize_seq(seq_visitor)
+    }
+
+    fn empty() -> Empty<Self>
+    where
+        Self: Sized,
+    {
+        std::iter::empty()
     }
 
     #[cfg(feature = "unstable")]
@@ -1547,7 +1554,7 @@ pub trait Utils {
     where
         Self: Sized + FnMut(X) -> Y,
     {
-        move |x| self(x).pipe_into(&mut func)
+        move |x| self(x).pipe_into(func.ref_mut())
     }
 
     fn poll_ready(self) -> Poll<Self>

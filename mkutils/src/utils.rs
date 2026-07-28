@@ -66,6 +66,8 @@ use serde::{Deserialize, Deserializer};
 use serde_json::{Error as SerdeJsonError, Value as Json, value::Index as SerdeJsonIndex};
 #[cfg(feature = "serde")]
 use serde_yaml_ng::Error as SerdeYamlError;
+#[cfg(feature = "unstable")]
+use std::ops::CoerceUnsized;
 use std::{
     any::TypeId,
     borrow::{Borrow, BorrowMut, Cow},
@@ -471,6 +473,14 @@ pub trait Utils {
         let range = range_bounds.to_range(length);
 
         &slice[range]
+    }
+
+    #[cfg(feature = "unstable")]
+    fn coerce_unsized<T>(self) -> T
+    where
+        Self: CoerceUnsized<T>,
+    {
+        self
     }
 
     #[cfg(feature = "tui")]

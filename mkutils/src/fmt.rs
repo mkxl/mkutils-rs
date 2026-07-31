@@ -21,6 +21,7 @@ macro_rules! fmt_type {
 }
 
 fmt_type!(Debugged, D, T);
+fmt_type!(DebuggedPretty, D, T);
 fmt_type!(OptionDisplay, O, T);
 fmt_type!(ResultDisplay, R, T, E);
 fmt_type!(StatusDisplay, R, T, E);
@@ -28,6 +29,12 @@ fmt_type!(StatusDisplay, R, T, E);
 impl<T: Debug, D: Borrow<T>> Display for Debugged<D, T> {
     fn fmt(&self, formatter: &mut Formatter) -> Result<(), FmtError> {
         self.value.borrow().fmt(formatter)
+    }
+}
+
+impl<T: Debug, D: Borrow<T>> Display for DebuggedPretty<D, T> {
+    fn fmt(&self, formatter: &mut Formatter) -> Result<(), FmtError> {
+        std::write!(formatter, "{value:#?}", value = self.value.borrow())
     }
 }
 

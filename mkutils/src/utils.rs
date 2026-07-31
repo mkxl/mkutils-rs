@@ -5,7 +5,7 @@ use crate::output::Output;
 #[cfg(all(feature = "async", feature = "unstable", feature = "serde"))]
 use crate::socket::{Request, Socket};
 use crate::{
-    fmt::{Debugged, OptionDisplay, ResultDisplay, StatusDisplay},
+    fmt::{Debugged, DebuggedPretty, OptionDisplay, ResultDisplay, StatusDisplay},
     is::Is,
     seq_visitor::SeqVisitor,
 };
@@ -623,6 +623,13 @@ pub trait Utils {
         Self: Borrow<T> + Sized,
     {
         Debugged::new(self)
+    }
+
+    fn debug_pretty<T: Debug>(self) -> DebuggedPretty<Self, T>
+    where
+        Self: Borrow<T> + Sized,
+    {
+        DebuggedPretty::new(self)
     }
 
     fn decrement(&mut self)

@@ -65,7 +65,7 @@ use serde::{Deserialize, Deserializer};
 #[cfg(feature = "serde")]
 use serde_json::{Error as SerdeJsonError, Value as Json, value::Index as SerdeJsonIndex};
 #[cfg(feature = "serde")]
-use serde_yaml_ng::Error as SerdeYamlError;
+use serde_yaml_ng::{Error as SerdeYamlError, Mapping as YamlMapping, Value as Yaml};
 #[cfg(feature = "unstable")]
 use std::ops::CoerceUnsized;
 use std::{
@@ -2291,6 +2291,41 @@ pub trait Utils {
         Self: Read + Sized,
     {
         serde_yaml_ng::from_reader(self)
+    }
+
+    #[cfg(feature = "serde")]
+    fn to_yaml(&self) -> Result<Yaml, SerdeYamlError>
+    where
+        Self: Serialize,
+    {
+        serde_yaml_ng::to_value(self)
+    }
+
+    #[cfg(feature = "serde")]
+    fn to_yaml_bytes(&self) -> Result<Vec<u8>, SerdeYamlError>
+    where
+        Self: Serialize,
+    {
+        self.to_yaml_str()?.into_bytes().ok()
+    }
+
+    #[cfg(feature = "serde")]
+    fn to_yaml_object(self, key: &str) -> Result<Yaml, SerdeYamlError>
+    where
+        Self: Serialize + Sized,
+    {
+        let value = self.pipe_into(serde_yaml_ng::to_value)?;
+        let mapping: YamlMapping = crate::map! { key => value };
+
+        mapping.convert::<Yaml>().ok()
+    }
+
+    #[cfg(feature = "serde")]
+    fn to_yaml_str(&self) -> Result<String, SerdeYamlError>
+    where
+        Self: Serialize,
+    {
+        serde_yaml_ng::to_string(self)
     }
 
     fn toggle(&mut self)

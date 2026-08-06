@@ -470,7 +470,7 @@ checksum = "61803da095bee82a81bb1a452ecc25d3b2f1416d1897eb86430c6159ef717c17"
 [[package]]
 name = "crossterm"
 version = "0.29.0"
-source = "git+https://github.com/crossterm-rs/crossterm?rev=4f08595#4f08595ef4477de2d504dcced24060ed9e3d582a"
+source = "git+https://github.com/crossterm-rs/crossterm?rev=e27ee30#e27ee3054006616e13552d3dc176f92e315c0489"
 dependencies = [
  "bitflags 2.13.1",
  "crossterm_winapi",
@@ -1633,7 +1633,7 @@ dependencies = [
 
 [[package]]
 name = "mkutils"
-version = "0.1.193"
+version = "0.1.194"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1678,7 +1678,7 @@ dependencies = [
 
 [[package]]
 name = "mkutils-macros"
-version = "0.1.193"
+version = "0.1.194"
 dependencies = [
  "heck",
  "proc-macro2",

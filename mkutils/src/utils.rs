@@ -88,7 +88,7 @@ use std::{
     string::FromUtf8Error,
     sync::Arc,
     task::Poll,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 #[cfg(feature = "async")]
 use std::{fs::Metadata, future::Future, process::ExitStatus};
@@ -2136,6 +2136,11 @@ pub trait Utils {
         Self: Future + Sized,
     {
         tokio::time::timeout(duration, self)
+    }
+
+    #[must_use]
+    fn timestamp() -> Duration {
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default()
     }
 
     fn to_cow_borrowed(&self) -> Cow<'_, Self>

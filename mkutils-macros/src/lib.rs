@@ -10,10 +10,11 @@ mod toggle;
 mod tokio_main;
 mod type_assoc;
 mod utils;
+mod with;
 
 use crate::{
     basic::Basic, const_assoc::ConstAssoc, constructor::Constructor, default::Default, from_chain::FromChain,
-    set_variant::SetVariant, toggle::Toggle, type_assoc::TypeAssoc,
+    set_variant::SetVariant, toggle::Toggle, type_assoc::TypeAssoc, with::With,
 };
 use proc_macro::TokenStream;
 
@@ -405,4 +406,33 @@ pub fn constructor(input_token_stream: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn tokio_main(attr_args_token_stream: TokenStream, item_token_stream: TokenStream) -> TokenStream {
     crate::tokio_main::tokio_main(attr_args_token_stream, item_token_stream)
+}
+
+/// Adds a by-value builder method for a method that takes `&mut self`.
+///
+/// The generated method is named `with_*`, where `*` is the portion of the
+/// original method's name after its first underscore.
+///
+/// # Example
+///
+/// ```rust
+/// #[derive(Default)]
+/// struct Config {
+///     value: usize,
+/// }
+///
+/// impl Config {
+///     #[mkutils_macros::with]
+///     fn set_value(&mut self, value: usize) {
+///         self.value = value;
+///     }
+/// }
+///
+/// let config = Config::default().with_value(42);
+///
+/// std::assert_eq!(config.value, 42);
+/// ```
+#[proc_macro_attribute]
+pub fn with(attr_args_token_stream: TokenStream, item_token_stream: TokenStream) -> TokenStream {
+    With::derive(attr_args_token_stream, item_token_stream)
 }

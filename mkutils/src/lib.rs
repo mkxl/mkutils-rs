@@ -127,7 +127,7 @@ pub use crate::{
     screen::{Screen, ScreenConfig, ScreenTerminal, Stdout},
     scroll_view::ScrollView,
     scroll_view_state::{ScrollCountType, ScrollViewState, ScrollWhen},
-    syntax_highlighter::{ColorScheme, Highlight, SyntaxHighlighter},
+    syntax_highlighter::{CaptureName, ColorScheme, Highlight, SyntaxHighlighter},
     terminal::Terminal,
     transpose::Transpose,
 };
@@ -140,5 +140,5 @@ pub use crate::{
 pub use crate::{timer::Timer, tracing::Tracing};
 pub use mkutils_macros::{
     ConstAssoc, Constructor, Default, FromChain, SaturatingAdd, SaturatingAddSigned, SaturatingSub, SetVariant, Toggle,
-    TypeAssoc, context, tokio_main,
+    TypeAssoc, context, tokio_main, with,
 };

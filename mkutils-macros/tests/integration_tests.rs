@@ -1,4 +1,4 @@
-use mkutils_macros::{ConstAssoc, Constructor, SetVariant, Toggle};
+use mkutils_macros::{ConstAssoc, Constructor, SetVariant, Toggle, with};
 
 #[derive(Debug, PartialEq, SetVariant, Toggle)]
 enum MyEnum {
@@ -113,4 +113,39 @@ enum ConstAssocEnum {}
 #[test]
 fn test_const_assoc_enum() {
     std::assert_eq!(ConstAssocEnum::SCALE_FACTOR, 25);
+}
+
+#[derive(Default)]
+struct WithStruct {
+    values: Vec<usize>,
+    type_size: usize,
+}
+
+impl WithStruct {
+    #[with]
+    fn set_values(&mut self, (first, second): (usize, usize)) -> &mut Self {
+        self.values = std::vec![first, second];
+        self
+    }
+
+    #[with]
+    const fn record_type<T>(&mut self) {
+        self.type_size = std::mem::size_of::<T>();
+    }
+
+    #[with]
+    fn push(&mut self, value: usize) {
+        self.values.push(value);
+    }
+}
+
+#[test]
+fn test_with() {
+    let value = WithStruct::default()
+        .with_values((2, 3))
+        .with_type::<u64>()
+        .with_push(5);
+
+    std::assert_eq!(value.values, std::vec![2, 3, 5]);
+    std::assert_eq!(value.type_size, std::mem::size_of::<u64>());
 }

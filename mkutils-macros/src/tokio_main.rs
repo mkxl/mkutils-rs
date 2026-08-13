@@ -6,28 +6,28 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-pub struct BuilderCalls {
-    builder_calls: Vec<TokenStream2>,
+pub struct MethodApplications {
+    method_applications: Vec<TokenStream2>,
 }
 
-impl BuilderCalls {
-    fn builder_call(Cat3(ident, _comma, expr): IdentAssignment<Expr>) -> TokenStream2 {
+impl MethodApplications {
+    fn method_application(Cat3(ident, _comma, expr): IdentAssignment<Expr>) -> TokenStream2 {
         quote::quote! { .#ident(#expr) }
     }
 }
 
-impl Parse for BuilderCalls {
+impl Parse for MethodApplications {
     fn parse(parse_stream: ParseStream) -> Result<Self, SynError> {
         let assignments = CommaPunctuated::<IdentAssignment<Expr>>::parse_terminated(parse_stream)?;
-        let builder_calls = assignments.into_iter().map(Self::builder_call).collect();
-        let builder_calls = Self { builder_calls };
+        let method_applications = assignments.into_iter().map(Self::method_application).collect();
+        let method_applications = Self { method_applications };
 
-        Ok(builder_calls)
+        Ok(method_applications)
     }
 }
 
 pub fn tokio_main(attr_args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
-    let BuilderCalls { builder_calls } = syn::parse_macro_input!(attr_args_token_stream);
+    let MethodApplications { method_applications } = syn::parse_macro_input!(attr_args_token_stream);
     let ItemFn {
         attrs,
         vis,
@@ -43,7 +43,7 @@ pub fn tokio_main(attr_args_token_stream: TokenStream, input_token_stream: Token
         #vis #sig {
             ::tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
-                #(#builder_calls)*
+                #(#method_applications)*
                 .build()
                 .unwrap()
                 .block_on(async #block)

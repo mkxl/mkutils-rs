@@ -8,6 +8,31 @@ use tree_sitter_highlight::{
     HighlightEvent, Highlighter,
 };
 
+#[derive(mkutils_macros::ConstAssoc)]
+#[const_assoc(pub ATTRIBUTE: &str = "attribute")]
+#[const_assoc(pub CHARACTER: &str = "character")]
+#[const_assoc(pub COMMENT: &str = "comment")]
+#[const_assoc(pub CONSTANT: &str = "constant")]
+#[const_assoc(pub CONSTRUCTOR: &str = "constructor")]
+#[const_assoc(pub FUNCTION: &str = "function")]
+#[const_assoc(pub KEYWORD: &str = "keyword")]
+#[const_assoc(pub MARKUP_RAW: &str = "markup.raw")]
+#[const_assoc(pub NUMBER: &str = "number")]
+#[const_assoc(pub OPERATOR: &str = "operator")]
+#[const_assoc(pub PROPERTY: &str = "property")]
+#[const_assoc(pub PUNCTUATION: &str = "punctuation")]
+#[const_assoc(pub STRING: &str = "string")]
+#[const_assoc(pub STRING_ESCAPE: &str = "string.escape")]
+#[const_assoc(pub TEXT_EMPHASIS: &str = "text.emphasis")]
+#[const_assoc(pub TEXT_LITERAL: &str = "text.literal")]
+#[const_assoc(pub TEXT_REFERENCE: &str = "text.reference")]
+#[const_assoc(pub TEXT_STRONG: &str = "text.strong")]
+#[const_assoc(pub TEXT_TITLE: &str = "text.title")]
+#[const_assoc(pub TEXT_URI: &str = "text.uri")]
+#[const_assoc(pub TYPE: &str = "type")]
+#[const_assoc(pub WARNING: &str = "warning")]
+pub enum CaptureName {}
+
 type CowStr = Cow<'static, str>;
 
 pub struct ColorScheme<S> {
@@ -16,29 +41,6 @@ pub struct ColorScheme<S> {
 }
 
 impl<S> ColorScheme<S> {
-    pub const ATTRIBUTE: &str = "attribute";
-    pub const CHARACTER: &str = "character";
-    pub const COMMENT: &str = "comment";
-    pub const CONSTANT: &str = "constant";
-    pub const CONSTRUCTOR: &str = "constructor";
-    pub const FUNCTION: &str = "function";
-    pub const KEYWORD: &str = "keyword";
-    pub const MARKUP_RAW: &str = "markup.raw";
-    pub const NUMBER: &str = "number";
-    pub const OPERATOR: &str = "operator";
-    pub const PROPERTY: &str = "property";
-    pub const PUNCTUATION: &str = "punctuation";
-    pub const STRING: &str = "string";
-    pub const STRING_ESCAPE: &str = "string.escape";
-    pub const TEXT_EMPHASIS: &str = "text.emphasis";
-    pub const TEXT_LITERAL: &str = "text.literal";
-    pub const TEXT_REFERENCE: &str = "text.reference";
-    pub const TEXT_STRONG: &str = "text.strong";
-    pub const TEXT_TITLE: &str = "text.title";
-    pub const TEXT_URI: &str = "text.uri";
-    pub const TYPE: &str = "type";
-    pub const WARNING: &str = "warning";
-
     const CAPTURE_NAME_SEPARATOR: &str = ".";
 
     pub fn new(default_style: S) -> Self {
@@ -140,6 +142,7 @@ impl<S> SyntaxHighlighter<S> {
         }
     }
 
+    #[mkutils_macros::with]
     pub fn add_languages(
         &mut self,
         highlight_configurations: impl IntoIterator<Item = HighlightConfiguration>,
@@ -156,10 +159,12 @@ impl<S> SyntaxHighlighter<S> {
         self
     }
 
+    #[mkutils_macros::with]
     pub fn add_language(&mut self, highlight_configuration: HighlightConfiguration) -> &mut Self {
         self.add_languages(highlight_configuration.once())
     }
 
+    #[mkutils_macros::with]
     pub fn add_language_alias(
         &mut self,
         from_language_name: impl Into<CowStr>,

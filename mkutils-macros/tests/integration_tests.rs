@@ -165,6 +165,11 @@ impl EmptyCStruct {
     const NAME: &'static str = "c_struct";
 }
 
+#[empty(unit_struct)]
+#[derive(Debug, Default, PartialEq)]
+#[must_use]
+impl AttributedEmptyUnitStruct {}
+
 mod visible_empty_types {
     use super::empty;
 
@@ -177,6 +182,8 @@ mod visible_empty_types {
 
 #[test]
 fn test_empty() {
+    fn assert_default<T: std::default::Default>() {}
+
     let consume_empty_enum: fn(EmptyEnum) -> ! = |value| match value {};
     std::hint::black_box(EmptyUnitStruct);
     std::hint::black_box(EmptyCStruct {});
@@ -186,5 +193,11 @@ fn test_empty() {
     std::assert_eq!(EmptyEnum::NAME, "enum");
     std::assert_eq!(EmptyUnitStruct::NAME, "unit_struct");
     std::assert_eq!(EmptyCStruct::NAME, "c_struct");
+    assert_default::<AttributedEmptyUnitStruct>();
+    std::assert_eq!(AttributedEmptyUnitStruct, AttributedEmptyUnitStruct);
+    std::assert_eq!(
+        std::format!("{AttributedEmptyUnitStruct:?}"),
+        "AttributedEmptyUnitStruct"
+    );
     std::hint::black_box(consume_empty_enum);
 }

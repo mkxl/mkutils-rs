@@ -69,11 +69,13 @@ impl Empty {
         Ok(&segment.ident)
     }
 
-    fn derive_impl(&self, item_impl: &ItemImpl) -> Result<TokenStream2, SynError> {
+    fn derive_impl(&self, item_impl: &mut ItemImpl) -> Result<TokenStream2, SynError> {
         let Self { visibility, empty_type } = self;
+        let attributes = std::mem::take(&mut item_impl.attrs);
         let ident = Self::get_ident(item_impl)?;
         let declaration = empty_type.get_declaration(ident);
         let declaration_and_impl_token_stream = quote::quote! {
+            #(#attributes)*
             #visibility #declaration
 
             #item_impl
@@ -84,10 +86,10 @@ impl Empty {
 
     pub fn derive(attr_args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
         let empty = syn::parse_macro_input!(attr_args_token_stream as Self);
-        let item_impl = syn::parse_macro_input!(input_token_stream);
+        let mut item_impl = syn::parse_macro_input!(input_token_stream);
 
         empty
-            .derive_impl(&item_impl)
+            .derive_impl(&mut item_impl)
             .unwrap_or_else(SynError::into_compile_error)
             .into()
     }

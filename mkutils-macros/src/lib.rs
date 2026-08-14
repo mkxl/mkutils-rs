@@ -441,8 +441,9 @@ pub fn with(attr_args_token_stream: TokenStream, item_token_stream: TokenStream)
 
 /// Declares an empty type for an impl block that does not yet have a corresponding type declaration.
 ///
-/// By default the type is a private uninhabited enum. The arguments accept an
-/// optional visibility followed by `enum`, `unit`, or `struct`.
+/// By default the type is a private uninhabited enum. The arguments accept an optional
+/// visibility followed by `enum`, `unit_struct`, or `c_struct`. Outer attributes between
+/// `empty` and the impl block are applied to the generated type declaration.
 ///
 /// # Example
 ///
@@ -453,6 +454,7 @@ pub fn with(attr_args_token_stream: TokenStream, item_token_stream: TokenStream)
 /// }
 ///
 /// #[mkutils_macros::empty(pub unit_struct)]
+/// #[derive(Debug, Default)]
 /// impl Unit {}
 ///
 /// #[mkutils_macros::empty(pub(crate) c_struct)]

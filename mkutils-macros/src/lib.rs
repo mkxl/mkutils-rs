@@ -15,7 +15,8 @@ mod with;
 
 use crate::{
     basic::Basic, const_assoc::ConstAssoc, constructor::Constructor, default::Default, empty::Empty,
-    from_chain::FromChain, set_variant::SetVariant, toggle::Toggle, type_assoc::TypeAssoc, with::With,
+    from_chain::FromChain, set_variant::SetVariant, toggle::Toggle, tokio_main::TokioMain, type_assoc::TypeAssoc,
+    with::With,
 };
 use proc_macro::TokenStream;
 
@@ -406,7 +407,7 @@ pub fn constructor(input_token_stream: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro_attribute]
 pub fn tokio_main(attr_args_token_stream: TokenStream, item_token_stream: TokenStream) -> TokenStream {
-    crate::tokio_main::tokio_main(attr_args_token_stream, item_token_stream)
+    TokioMain::derive(attr_args_token_stream, item_token_stream)
 }
 
 /// Adds a by-value builder method for a method that takes `&mut self`.

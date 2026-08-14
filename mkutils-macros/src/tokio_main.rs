@@ -6,17 +6,11 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 
-pub struct MethodApplications {
+pub struct TokioMain {
     method_applications: Vec<TokenStream2>,
 }
 
-impl MethodApplications {
-    fn method_application(Cat3(ident, _comma, expr): IdentAssignment<Expr>) -> TokenStream2 {
-        quote::quote! { .#ident(#expr) }
-    }
-}
-
-impl Parse for MethodApplications {
+impl Parse for TokioMain {
     fn parse(parse_stream: ParseStream) -> Result<Self, SynError> {
         let assignments = CommaPunctuated::<IdentAssignment<Expr>>::parse_terminated(parse_stream)?;
         let method_applications = assignments.into_iter().map(Self::method_application).collect();
@@ -26,29 +20,40 @@ impl Parse for MethodApplications {
     }
 }
 
-pub fn tokio_main(attr_args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
-    let MethodApplications { method_applications } = syn::parse_macro_input!(attr_args_token_stream);
-    let ItemFn {
-        attrs,
-        vis,
-        mut sig,
-        block,
-    } = syn::parse_macro_input!(input_token_stream);
+impl TokioMain {
+    fn method_application(Cat3(ident, _equals, expr): IdentAssignment<Expr>) -> TokenStream2 {
+        quote::quote! { .#ident(#expr) }
+    }
 
-    sig.asyncness = None;
+    fn derive_impl(&self, item_fn: ItemFn) -> TokenStream2 {
+        let Self { method_applications } = self;
+        let ItemFn {
+            attrs,
+            vis,
+            mut sig,
+            block,
+        } = item_fn;
 
-    // NOTE: [https://docs.rs/tokio/latest/tokio/attr.main.html#using-the-multi-threaded-runtime]
-    let tokio_main_fn_token_stream = quote::quote! {
-        #(#attrs)*
-        #vis #sig {
-            ::tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                #(#method_applications)*
-                .build()
-                .unwrap()
-                .block_on(async #block)
+        sig.asyncness = None;
+
+        // NOTE: [https://docs.rs/tokio/latest/tokio/attr.main.html#using-the-multi-threaded-runtime]
+        quote::quote! {
+            #(#attrs)*
+            #vis #sig {
+                ::tokio::runtime::Builder::new_multi_thread()
+                    .enable_all()
+                    #(#method_applications)*
+                    .build()
+                    .unwrap()
+                    .block_on(async #block)
+            }
         }
-    };
+    }
 
-    tokio_main_fn_token_stream.into()
+    pub fn derive(attr_args_token_stream: TokenStream, input_token_stream: TokenStream) -> TokenStream {
+        let tokio_main = syn::parse_macro_input!(attr_args_token_stream as Self);
+        let item_fn = syn::parse_macro_input!(input_token_stream);
+
+        tokio_main.derive_impl(item_fn).into()
+    }
 }

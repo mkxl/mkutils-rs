@@ -62,4 +62,8 @@ impl Error {
 
         SynError::new(spanned.span(), message)
     }
+
+    pub fn empty_path<T: Spanned>(spanned: &T) -> SynError {
+        SynError::new(spanned.span(), "empty path found")
+    }
 }

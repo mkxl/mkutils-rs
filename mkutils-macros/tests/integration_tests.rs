@@ -1,4 +1,4 @@
-use mkutils_macros::{ConstAssoc, Constructor, SetVariant, Toggle, with};
+use mkutils_macros::{ConstAssoc, Constructor, SetVariant, Toggle, empty, with};
 
 #[derive(Debug, PartialEq, SetVariant, Toggle)]
 enum MyEnum {
@@ -148,4 +148,43 @@ fn test_with() {
 
     std::assert_eq!(value.values, std::vec![2, 3, 5]);
     std::assert_eq!(value.type_size, std::mem::size_of::<u64>());
+}
+
+#[empty]
+impl EmptyEnum {
+    const NAME: &'static str = "enum";
+}
+
+#[empty(unit_struct)]
+impl EmptyUnitStruct {
+    const NAME: &'static str = "unit_struct";
+}
+
+#[empty(c_struct)]
+impl EmptyCStruct {
+    const NAME: &'static str = "c_struct";
+}
+
+mod visible_empty_types {
+    use super::empty;
+
+    #[empty(pub unit_struct)]
+    impl PublicUnitStruct {}
+
+    #[empty(pub(crate) c_struct)]
+    impl CrateCStruct {}
+}
+
+#[test]
+fn test_empty() {
+    let consume_empty_enum: fn(EmptyEnum) -> ! = |value| match value {};
+    std::hint::black_box(EmptyUnitStruct);
+    std::hint::black_box(EmptyCStruct {});
+    std::hint::black_box(visible_empty_types::PublicUnitStruct);
+    std::hint::black_box(visible_empty_types::CrateCStruct {});
+
+    std::assert_eq!(EmptyEnum::NAME, "enum");
+    std::assert_eq!(EmptyUnitStruct::NAME, "unit_struct");
+    std::assert_eq!(EmptyCStruct::NAME, "c_struct");
+    std::hint::black_box(consume_empty_enum);
 }

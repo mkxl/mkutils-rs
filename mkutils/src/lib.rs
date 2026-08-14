@@ -140,5 +140,5 @@ pub use crate::{
 pub use crate::{timer::Timer, tracing::Tracing};
 pub use mkutils_macros::{
     ConstAssoc, Constructor, Default, FromChain, SaturatingAdd, SaturatingAddSigned, SaturatingSub, SetVariant, Toggle,
-    TypeAssoc, context, tokio_main, with,
+    TypeAssoc, context, empty, tokio_main, with,
 };

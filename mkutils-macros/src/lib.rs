@@ -3,6 +3,7 @@ mod const_assoc;
 mod constructor;
 mod context;
 mod default;
+mod empty;
 mod error;
 mod from_chain;
 mod set_variant;
@@ -13,8 +14,8 @@ mod utils;
 mod with;
 
 use crate::{
-    basic::Basic, const_assoc::ConstAssoc, constructor::Constructor, default::Default, from_chain::FromChain,
-    set_variant::SetVariant, toggle::Toggle, type_assoc::TypeAssoc, with::With,
+    basic::Basic, const_assoc::ConstAssoc, constructor::Constructor, default::Default, empty::Empty,
+    from_chain::FromChain, set_variant::SetVariant, toggle::Toggle, type_assoc::TypeAssoc, with::With,
 };
 use proc_macro::TokenStream;
 
@@ -435,4 +436,32 @@ pub fn tokio_main(attr_args_token_stream: TokenStream, item_token_stream: TokenS
 #[proc_macro_attribute]
 pub fn with(attr_args_token_stream: TokenStream, item_token_stream: TokenStream) -> TokenStream {
     With::derive(attr_args_token_stream, item_token_stream)
+}
+
+/// Declares an empty type for an impl block that does not yet have a corresponding type declaration.
+///
+/// By default the type is a private uninhabited enum. The arguments accept an
+/// optional visibility followed by `enum`, `unit`, or `struct`.
+///
+/// # Example
+///
+/// ```rust
+/// #[mkutils_macros::empty]
+/// impl Never {
+///     const NAME: &'static str = "never";
+/// }
+///
+/// #[mkutils_macros::empty(pub unit_struct)]
+/// impl Unit {}
+///
+/// #[mkutils_macros::empty(pub(crate) c_struct)]
+/// impl Braced {}
+///
+/// let _unit = Unit;
+/// let _braced = Braced {};
+/// std::assert_eq!(Never::NAME, "never");
+/// ```
+#[proc_macro_attribute]
+pub fn empty(attr_args_token_stream: TokenStream, item_token_stream: TokenStream) -> TokenStream {
+    Empty::derive(attr_args_token_stream, item_token_stream)
 }

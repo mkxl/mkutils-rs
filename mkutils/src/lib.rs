@@ -50,6 +50,9 @@ mod rope;
 #[cfg(feature = "async")]
 mod run_for;
 
+#[cfg(feature = "async")]
+mod sender_sink;
+
 #[cfg(feature = "tui")]
 mod screen;
 
@@ -132,6 +135,7 @@ pub use crate::{
 pub use crate::{
     event::Event,
     process::{Process, ProcessBuilder},
+    sender_sink::{SendFn, SendFuture, SenderSink},
 };
 #[cfg(feature = "tracing")]
 pub use crate::{timer::Timer, tracing::Tracing};

@@ -17,7 +17,12 @@ use crate::{
     transpose::Transpose,
 };
 #[cfg(feature = "async")]
-use crate::{process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
+use crate::{
+    process::ProcessBuilder,
+    read_value::ReadValue,
+    run_for::RunForError,
+    sender_sink::{SendFn, SendFuture, SenderSink},
+};
 use anyhow::{Context, Error as AnyhowError};
 #[cfg(feature = "async")]
 use bytes::Buf;
@@ -132,17 +137,6 @@ macro_rules! to_rope {
         }
 
         rope_builder.build().ok()
-    }};
-}
-
-#[cfg(feature = "async")]
-macro_rules! to_sink {
-    ($self:expr, $send_fn:expr $(, $($dot_await:tt)+)?) => {{
-        futures::sink::unfold(($self, $send_fn), |(mut sender, mut send_fn), item| async {
-            send_fn(sender.ref_mut(), item)$($($dot_await)+)??;
-
-            sender.pair(send_fn).ok()
-        })
     }};
 }
 
@@ -2217,22 +2211,11 @@ pub trait Utils {
     }
 
     #[cfg(feature = "async")]
-    fn to_sink<Item, E, F: FnMut(&mut Self, Item) -> Result<(), E>>(self, send_fn: F) -> impl Sink<Item, Error = E>
+    fn to_sink<Item, E>(self, send: SendFn<Self, Item, E>) -> SenderSink<Self, Item, E>
     where
         Self: Sized,
     {
-        to_sink!(self, send_fn)
-    }
-
-    #[cfg(feature = "async")]
-    fn to_sink_async<Item, E, F: AsyncFnMut(&mut Self, Item) -> Result<(), E>>(
-        self,
-        send_fn: F,
-    ) -> impl Sink<Item, Error = E>
-    where
-        Self: Sized,
-    {
-        to_sink!(self, send_fn, .await)
+        futures::sink::unfold((self, send), SendFuture::send)
     }
 
     fn to_uri(&self) -> Result<String, IoError>

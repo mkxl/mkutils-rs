@@ -17,7 +17,7 @@ use crate::{
     transpose::Transpose,
 };
 #[cfg(feature = "async")]
-use crate::{into_stream::IntoStream, process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
+use crate::{process::ProcessBuilder, read_value::ReadValue, run_for::RunForError};
 use anyhow::{Context, Error as AnyhowError};
 #[cfg(feature = "async")]
 use bytes::Buf;
@@ -1163,14 +1163,6 @@ pub trait Utils {
             value = self => value.into_left(),
             value = rhs => value.into_right(),
         }
-    }
-
-    #[cfg(feature = "async")]
-    fn into_stream(self) -> Self::Stream
-    where
-        Self: IntoStream + Sized,
-    {
-        IntoStream::into_stream(self)
     }
 
     #[cfg(feature = "async")]

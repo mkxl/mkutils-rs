@@ -32,9 +32,6 @@ mod event;
 #[cfg(feature = "tui")]
 mod geometry;
 
-#[cfg(feature = "async")]
-mod into_stream;
-
 #[cfg(feature = "tui")]
 mod key_map;
 

@@ -4,7 +4,6 @@ use mkutils_macros::Constructor;
 use std::{
     collections::VecDeque,
     io::{Error as IoError, Write},
-    ops::Deref,
 };
 use tokio::sync::{
     mpsc::{UnboundedReceiver, UnboundedSender},
@@ -50,7 +49,7 @@ impl Drop for EventWriter {
 
         let event = self
             .buffer
-            .deref()
+            .as_slice()
             .pipe_into(String::from_utf8_lossy)
             .trim_end_matches(Self::TRIM_END_PATTERN)
             .to_owned();
